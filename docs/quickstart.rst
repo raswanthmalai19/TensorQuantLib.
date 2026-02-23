@@ -28,11 +28,12 @@ Build a 3-asset basket option pricing surrogate in seconds:
 
    # Build the surrogate from an analytic approximation
    surr = TTSurrogate.from_basket_analytic(
-       n_assets=3,
-       n_points=30,
-       strike=100.0,
-       r=0.05,
-       T=1.0,
+       S0_ranges=[(80, 120)] * 3,    # Spot price ranges per asset
+       K=100, T=1.0, r=0.05,         # Strike, maturity, risk-free rate
+       sigma=[0.2, 0.25, 0.3],       # Volatilities
+       weights=[1/3, 1/3, 1/3],      # Equal-weighted basket
+       n_points=30,                   # Grid resolution per axis
+       eps=1e-4,                      # TT-SVD tolerance
    )
 
    # Print compression diagnostics
@@ -55,12 +56,13 @@ Use the ``Tensor`` class for automatic differentiation:
 
 .. code-block:: python
 
+   import numpy as np
    from tensorquantlib import Tensor, bs_price_tensor
 
-   S = Tensor([100.0], requires_grad=True)
-   K, r, T, sigma = 100.0, 0.05, 1.0, 0.2
+   S = Tensor(np.array([100.0]), requires_grad=True)
+   K, T, r, sigma = 100.0, 1.0, 0.05, 0.2
 
-   price = bs_price_tensor(S, K, r, T, sigma, option_type="call")
+   price = bs_price_tensor(S, K=K, T=T, r=r, sigma=sigma, option_type="call")
    price.backward()
 
    delta = S.grad  # dPrice/dS — exact, computed via autodiff
@@ -78,16 +80,16 @@ Compress any multi-dimensional array with TT-SVD:
    from tensorquantlib import tt_svd, tt_to_full, tt_compression_ratio
 
    # Create a large 4D tensor
-   T = np.random.randn(20, 20, 20, 20)
+   A = np.random.randn(20, 20, 20, 20)
 
    # Compress with tolerance
-   cores = tt_svd(T, eps=1e-6)
+   cores = tt_svd(A, eps=1e-6)
 
    # Check compression
-   ratio = tt_compression_ratio(cores, T.shape)
+   ratio = tt_compression_ratio(cores, A.shape)
    print(f"Compression ratio: {ratio:.1f}×")
 
    # Reconstruct
-   T_approx = tt_to_full(cores)
-   error = np.linalg.norm(T - T_approx) / np.linalg.norm(T)
+   A_approx = tt_to_full(cores)
+   error = np.linalg.norm(A - A_approx) / np.linalg.norm(A)
    print(f"Relative error: {error:.2e}")

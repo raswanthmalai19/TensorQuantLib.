@@ -9,14 +9,13 @@ Implements:
 from __future__ import annotations
 
 import numpy as np
-from typing import Optional, List
 
 
 def tt_svd(
     tensor: np.ndarray,
     eps: float = 1e-6,
-    max_rank: Optional[int] = None,
-) -> List[np.ndarray]:
+    max_rank: int | None = None,
+) -> list[np.ndarray]:
     """Tensor-Train SVD decomposition.
 
     Decomposes a d-dimensional tensor A of shape (n1, n2, ..., nd) into
@@ -113,10 +112,10 @@ def tt_svd(
 
 
 def tt_round(
-    cores: List[np.ndarray],
+    cores: list[np.ndarray],
     eps: float = 1e-6,
-    max_rank: Optional[int] = None,
-) -> List[np.ndarray]:
+    max_rank: int | None = None,
+) -> list[np.ndarray]:
     """Reduce TT-ranks via orthogonalization + truncated SVD sweep.
 
     Two-pass algorithm:
@@ -196,14 +195,14 @@ def tt_round(
 
         # Absorb S*Vt into next core
         SV = np.diag(S_trunc) @ Vt_trunc  # (r_new, r_right)
-        r_left_next, n_next, r_right_next = cores[k + 1].shape
+        _r_left_next, _n_next, _r_right_next = cores[k + 1].shape
         # cores[k+1] was (r_right, n_next, r_right_next), multiply from left
         cores[k + 1] = np.einsum("ij,jkl->ikl", SV, cores[k + 1])
 
     return cores
 
 
-def _tt_norm(cores: List[np.ndarray]) -> float:
+def _tt_norm(cores: list[np.ndarray]) -> float:
     """Compute the Frobenius norm of a tensor in TT format.
 
     Uses the transfer matrix approach: ||A||_F^2 = <A, A>_TT.
@@ -222,7 +221,7 @@ def _tt_norm(cores: List[np.ndarray]) -> float:
 
     for k in range(1, d):
         G = cores[k]
-        r_left, n_k, r_right = G.shape
+        _r_left, n_k, r_right = G.shape
         Z_new = np.zeros((r_right, r_right))
         for i in range(n_k):
             # G[:, i, :] is (r_left, r_right)

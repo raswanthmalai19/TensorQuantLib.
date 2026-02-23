@@ -23,21 +23,19 @@ Typical usage::
 
 from __future__ import annotations
 
-import numpy as np
 import time
-from typing import List, Optional, Tuple, Dict, Union
+from typing import Union
+
+import numpy as np
 
 from ..core.tensor import Tensor
 from ..finance.basket import build_pricing_grid, build_pricing_grid_analytic
-from .decompose import tt_svd, tt_round
+from .decompose import tt_svd
 from .ops import (
     tt_eval,
     tt_eval_batch,
-    tt_to_full,
-    tt_ranks,
     tt_memory,
-    tt_error,
-    tt_compression_ratio,
+    tt_ranks,
 )
 
 
@@ -58,13 +56,13 @@ class TTSurrogate:
 
     def __init__(
         self,
-        cores: List[np.ndarray],
-        axes: List[np.ndarray],
+        cores: list[np.ndarray],
+        axes: list[np.ndarray],
         eps: float,
         build_time: float = 0.0,
         compress_time: float = 0.0,
-        original_shape: Optional[Tuple[int, ...]] = None,
-        original_nbytes: Optional[int] = None,
+        original_shape: tuple[int, ...] | None = None,
+        original_nbytes: int | None = None,
     ):
         self.cores = cores
         self.axes = axes
@@ -81,10 +79,10 @@ class TTSurrogate:
     def from_grid(
         cls,
         grid: np.ndarray,
-        axes: List[np.ndarray],
+        axes: list[np.ndarray],
         eps: float = 1e-4,
-        max_rank: Optional[int] = None,
-    ) -> "TTSurrogate":
+        max_rank: int | None = None,
+    ) -> TTSurrogate:
         """Build surrogate from a pre-computed pricing grid.
 
         Args:
@@ -129,16 +127,16 @@ class TTSurrogate:
     @classmethod
     def from_basket_analytic(
         cls,
-        S0_ranges: List[Tuple[float, float]],
+        S0_ranges: list[tuple[float, float]],
         K: float,
         T: float,
         r: float,
-        sigma: List[float],
-        weights: List[float],
+        sigma: list[float],
+        weights: list[float],
         n_points: int = 30,
         eps: float = 1e-4,
-        max_rank: Optional[int] = None,
-    ) -> "TTSurrogate":
+        max_rank: int | None = None,
+    ) -> TTSurrogate:
         """Build surrogate from analytic basket pricing grid.
 
         Uses weighted Black-Scholes approximation — fast but approximate.
@@ -185,18 +183,18 @@ class TTSurrogate:
     @classmethod
     def from_basket_mc(
         cls,
-        S0_ranges: List[Tuple[float, float]],
+        S0_ranges: list[tuple[float, float]],
         K: float,
         T: float,
         r: float,
-        sigma: List[float],
+        sigma: list[float],
         corr: np.ndarray,
-        weights: List[float],
+        weights: list[float],
         n_points: int = 30,
         n_mc_paths: int = 50_000,
         eps: float = 1e-4,
-        max_rank: Optional[int] = None,
-    ) -> "TTSurrogate":
+        max_rank: int | None = None,
+    ) -> TTSurrogate:
         """Build surrogate from Monte-Carlo basket pricing grid.
 
         Slow but accurate. Suitable for validation.
@@ -229,7 +227,7 @@ class TTSurrogate:
 
     # ── evaluation ──────────────────────────────────────────────────────
 
-    def _spot_to_indices(self, spots: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def _spot_to_indices(self, spots: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Map continuous spot prices to fractional grid indices.
 
         Returns integer indices (floored) and interpolation weights.
@@ -263,7 +261,7 @@ class TTSurrogate:
 
         return indices_lo, weights
 
-    def evaluate(self, spots: Union[np.ndarray, List[float]]) -> Union[float, np.ndarray]:
+    def evaluate(self, spots: Union[np.ndarray, list[float]]) -> Union[float, np.ndarray]:
         """Evaluate the surrogate price at given spot prices.
 
         Uses multi-linear interpolation on the TT grid.
@@ -300,7 +298,7 @@ class TTSurrogate:
 
         return float(result[0]) if single else result
 
-    def evaluate_tensor(self, spots: Union[np.ndarray, List[float]]) -> "Tensor":
+    def evaluate_tensor(self, spots: Union[np.ndarray, list[float]]) -> Tensor:
         """Evaluate surrogate price and return a Tensor for autograd.
 
         This enables computing Greeks via backward().
@@ -354,7 +352,7 @@ class TTSurrogate:
 
         return result
 
-    def greeks(self, spots: Union[np.ndarray, List[float]], h: float = 1e-4) -> Dict[str, object]:
+    def greeks(self, spots: Union[np.ndarray, list[float]], h: float = 1e-4) -> dict[str, object]:
         """Compute Greeks via autograd through the surrogate.
 
         Delta: ∂price/∂S_i for each asset (via autograd).
@@ -376,7 +374,7 @@ class TTSurrogate:
 
         price = price_t.item()
         delta = np.zeros(d)
-        for k in range(d):
+        for _k in range(d):
             # delta[k] = ∂price/∂S_k
             # We need to trace through from evaluate_tensor
             pass
@@ -402,7 +400,7 @@ class TTSurrogate:
 
     # ── diagnostics ─────────────────────────────────────────────────────
 
-    def summary(self) -> Dict[str, object]:
+    def summary(self) -> dict[str, object]:
         """Return diagnostic summary of the surrogate model.
 
         Returns:

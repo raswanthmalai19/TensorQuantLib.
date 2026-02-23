@@ -5,20 +5,19 @@ import pytest
 
 from tensorquantlib.tt.decompose import tt_svd
 from tensorquantlib.tt.ops import (
+    tt_compression_ratio,
+    tt_error,
     tt_eval,
     tt_eval_batch,
-    tt_to_full,
-    tt_ranks,
     tt_memory,
-    tt_error,
-    tt_compression_ratio,
+    tt_ranks,
+    tt_to_full,
 )
-
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
 def _smooth_tensor(shape, seed=42):
-    rng = np.random.default_rng(seed)
+    np.random.default_rng(seed)
     vecs = [np.sin(np.linspace(0, np.pi, n)) + 0.1 for n in shape]
     result = vecs[0]
     for v in vecs[1:]:

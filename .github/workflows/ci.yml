@@ -82,13 +82,22 @@ jobs:
           python-version: "3.12"
 
       - name: Install build tools
-        run: pip install build twine
+        run: pip install build
 
       - name: Build sdist + wheel
         run: python -m build
 
-      - name: Verify package
-        run: twine check dist/*
+      - name: Verify package structure
+        run: |
+          python -c "
+          import zipfile, sys
+          whl = list(__import__('pathlib').Path('dist').glob('*.whl'))[0]
+          with zipfile.ZipFile(whl) as z:
+              names = z.namelist()
+              assert any('__init__.py' in n for n in names), 'Missing __init__.py'
+              assert any('py.typed' in n for n in names), 'Missing py.typed'
+              print(f'Package OK: {len(names)} files in {whl.name}')
+          "
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

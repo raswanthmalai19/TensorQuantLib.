@@ -1,36 +1,36 @@
 """Tensor-Train compression engine — TT-SVD, evaluation, surrogate pricing."""
 
-from .decompose import tt_svd, tt_round
+from .decompose import tt_round, tt_svd
 from .ops import (
+    tt_add,
+    tt_compression_ratio,
+    tt_dot,
+    tt_error,
     tt_eval,
     tt_eval_batch,
-    tt_to_full,
-    tt_ranks,
-    tt_memory,
-    tt_error,
-    tt_compression_ratio,
-    tt_add,
-    tt_scale,
-    tt_hadamard,
-    tt_dot,
     tt_frobenius_norm,
+    tt_hadamard,
+    tt_memory,
+    tt_ranks,
+    tt_scale,
+    tt_to_full,
 )
 from .surrogate import TTSurrogate
 
 __all__ = [
-    "tt_svd",
-    "tt_round",
+    "TTSurrogate",
+    "tt_add",
+    "tt_compression_ratio",
+    "tt_dot",
+    "tt_error",
     "tt_eval",
     "tt_eval_batch",
-    "tt_to_full",
-    "tt_ranks",
-    "tt_memory",
-    "tt_error",
-    "tt_compression_ratio",
-    "tt_add",
-    "tt_scale",
-    "tt_hadamard",
-    "tt_dot",
     "tt_frobenius_norm",
-    "TTSurrogate",
+    "tt_hadamard",
+    "tt_memory",
+    "tt_ranks",
+    "tt_round",
+    "tt_scale",
+    "tt_svd",
+    "tt_to_full",
 ]

@@ -1,5 +1,12 @@
 # TensorQuantLib
 
+[![CI](https://github.com/your-org/tensorquantlib/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/tensorquantlib/actions/workflows/ci.yml)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Coverage: 98%](https://img.shields.io/badge/coverage-98%25-brightgreen.svg)]()
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://docs.astral.sh/ruff/)
+[![Typed: mypy](https://img.shields.io/badge/typed-mypy%20strict-blue.svg)](https://mypy-lang.org/)
+
 **A Tensor-Train based surrogate pricing engine with autodiff for multi-asset options — runnable on a laptop.**
 
 TensorQuantLib compresses high-dimensional option pricing surfaces using Tensor-Train (TT) decomposition, enabling 1000× faster evaluation than brute-force grid lookup while computing Greeks via automatic differentiation.
@@ -32,6 +39,8 @@ tensorquantlib/
 │   ├── decompose.py     # TT-SVD, TT-rounding, TT-norm
 │   ├── ops.py           # tt_eval, tt_to_full, tt_ranks, tt_memory, etc.
 │   └── surrogate.py     # TTSurrogate class — full pipeline
+├── viz/
+│   └── plots.py         # Pricing surfaces, Greek surfaces, rank plots
 └── utils/
     └── validation.py    # Numerical gradient checking
 ```
@@ -153,23 +162,41 @@ where each $G_k[i_k]$ is an $r_{k-1} \times r_k$ matrix. The TT-ranks $r_k$ are 
 
 ## Test Coverage
 
-| Module | Tests | Status |
-|--------|-------|--------|
-| Core autograd engine | 52 | ✅ |
-| Financial engine | 32 | ✅ |
-| TT decomposition & ops | 34 | ✅ |
-| TT surrogate | 15 | ✅ |
-| **Total** | **133** | **✅** |
+| Module | Tests | Coverage |
+|--------|-------|----------|
+| Core autograd engine | 52 | 98% |
+| Financial engine | 32 | 97% |
+| TT decomposition & ops | 34 | 97% |
+| TT surrogate | 15 | 99% |
+| Edge cases & integration | 57 | — |
+| Visualization | 16 | 95% |
+| Examples & benchmarks | 37 | — |
+| **Total** | **243** | **98%** |
 
 ---
 
 ## Dependencies
 
-- Python ≥ 3.9
+- Python ≥ 3.10
 - NumPy ≥ 1.24
 - SciPy ≥ 1.10
 - pytest ≥ 7.0 (dev)
-- matplotlib ≥ 3.7 (dev)
+- matplotlib ≥ 3.7 (viz)
+- mypy ≥ 1.0, ruff ≥ 0.4 (dev)
+- Sphinx ≥ 7.0 (docs)
+
+---
+
+## Documentation
+
+- **Quickstart**: [docs/quickstart.rst](docs/quickstart.rst)
+- **API Reference**: [docs/api.rst](docs/api.rst)
+- **Theory**: [docs/theory.rst](docs/theory.rst)
+- **Limitations**: [LIMITATIONS.md](LIMITATIONS.md)
+- **Deployment**: [DEPLOYMENT.md](DEPLOYMENT.md)
+- **Contributing**: [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Notebook Tutorial**: [notebooks/tutorial.ipynb](notebooks/tutorial.ipynb)
+- **Benchmark Results**: [benchmarks/RESULTS.md](benchmarks/RESULTS.md)
 
 ---
 

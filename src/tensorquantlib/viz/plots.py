@@ -6,16 +6,17 @@ Matplotlib is imported lazily — the rest of the library works without it.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
 if TYPE_CHECKING:  # pragma: no cover
-    import matplotlib.figure
     import matplotlib.axes
+    import matplotlib.figure
 
 
-def _import_mpl() -> Tuple[Any, Any]:
+def _import_mpl() -> tuple[Any, Any]:
     """Lazy-import matplotlib and return (plt, mpl) or raise ImportError."""
     try:
         import matplotlib
@@ -36,15 +37,15 @@ def _import_mpl() -> Tuple[Any, Any]:
 def plot_pricing_surface(
     grid: np.ndarray,
     axis_values: Sequence[np.ndarray],
-    dims: Tuple[int, int] = (0, 1),
-    fixed_indices: Optional[Dict[int, int]] = None,
+    dims: tuple[int, int] = (0, 1),
+    fixed_indices: dict[int, int] | None = None,
     title: str = "Pricing Surface",
-    xlabel: Optional[str] = None,
-    ylabel: Optional[str] = None,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
     cmap: str = "viridis",
-    figsize: Tuple[float, float] = (8, 6),
+    figsize: tuple[float, float] = (8, 6),
     mode: str = "heatmap",
-) -> Tuple["matplotlib.figure.Figure", "matplotlib.axes.Axes"]:
+) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
     """Plot a 2D slice of a pricing grid as heatmap or 3D surface.
 
     Args:
@@ -119,13 +120,13 @@ def plot_pricing_surface(
 # ====================================================================== #
 
 def plot_greeks_surface(
-    greek_grids: Dict[str, np.ndarray],
+    greek_grids: dict[str, np.ndarray],
     axis_values: Sequence[np.ndarray],
-    dims: Tuple[int, int] = (0, 1),
-    fixed_indices: Optional[Dict[int, int]] = None,
+    dims: tuple[int, int] = (0, 1),
+    fixed_indices: dict[int, int] | None = None,
     cmap: str = "RdBu_r",
-    figsize: Tuple[float, float] = (14, 4),
-) -> Tuple["matplotlib.figure.Figure", List["matplotlib.axes.Axes"]]:
+    figsize: tuple[float, float] = (14, 4),
+) -> tuple[matplotlib.figure.Figure, list[matplotlib.axes.Axes]]:
     """Plot multiple Greeks as side-by-side heatmaps.
 
     Args:
@@ -183,11 +184,11 @@ def plot_greeks_surface(
 # ====================================================================== #
 
 def plot_tt_ranks(
-    cores: List[np.ndarray],
+    cores: list[np.ndarray],
     title: str = "TT-Rank Profile",
-    figsize: Tuple[float, float] = (6, 4),
+    figsize: tuple[float, float] = (6, 4),
     color: str = "#2563eb",
-) -> Tuple["matplotlib.figure.Figure", "matplotlib.axes.Axes"]:
+) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
     """Bar chart of TT-ranks across bonds.
 
     Args:
@@ -215,10 +216,10 @@ def plot_tt_ranks(
 
 
 def plot_rank_profile(
-    rank_lists: Dict[str, List[int]],
+    rank_lists: dict[str, list[int]],
     title: str = "Rank Profiles",
-    figsize: Tuple[float, float] = (7, 4),
-) -> Tuple["matplotlib.figure.Figure", "matplotlib.axes.Axes"]:
+    figsize: tuple[float, float] = (7, 4),
+) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
     """Overlay multiple rank profiles for comparison.
 
     Args:
@@ -248,10 +249,10 @@ def plot_rank_profile(
 def plot_compression_vs_tolerance(
     epsilons: Sequence[float],
     compression_ratios: Sequence[float],
-    errors: Optional[Sequence[float]] = None,
+    errors: Sequence[float] | None = None,
     title: str = "Compression vs Tolerance",
-    figsize: Tuple[float, float] = (7, 4),
-) -> Tuple["matplotlib.figure.Figure", "matplotlib.axes.Axes"]:
+    figsize: tuple[float, float] = (7, 4),
+) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
     """Plot compression ratio and (optionally) error vs SVD tolerance.
 
     Args:
@@ -301,8 +302,8 @@ def plot_convergence(
     ylabel: str = "Error",
     title: str = "Convergence",
     log_y: bool = True,
-    figsize: Tuple[float, float] = (7, 4),
-) -> Tuple["matplotlib.figure.Figure", "matplotlib.axes.Axes"]:
+    figsize: tuple[float, float] = (7, 4),
+) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
     """Line plot of a convergence metric over iterations.
 
     Args:

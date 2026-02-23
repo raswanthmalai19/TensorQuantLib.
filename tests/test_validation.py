@@ -3,8 +3,8 @@
 import numpy as np
 import pytest
 
-from tensorquantlib.finance.black_scholes import bs_price_numpy
 from tensorquantlib.finance.basket import simulate_basket
+from tensorquantlib.finance.black_scholes import bs_price_numpy
 from tensorquantlib.tt.decompose import tt_svd
 from tensorquantlib.tt.surrogate import TTSurrogate
 

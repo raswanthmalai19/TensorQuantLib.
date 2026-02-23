@@ -4,21 +4,21 @@ These tests create figures without displaying them (Agg backend)
 to verify that plotting code runs without errors.
 """
 
+import matplotlib
 import numpy as np
 import pytest
-import matplotlib
 
 matplotlib.use("Agg")  # non-interactive backend
 
 from tensorquantlib.tt.decompose import tt_svd
-from tensorquantlib.tt.ops import tt_ranks, tt_compression_ratio, tt_error
+from tensorquantlib.tt.ops import tt_ranks
 from tensorquantlib.viz import (
-    plot_pricing_surface,
-    plot_greeks_surface,
-    plot_tt_ranks,
     plot_compression_vs_tolerance,
     plot_convergence,
+    plot_greeks_surface,
+    plot_pricing_surface,
     plot_rank_profile,
+    plot_tt_ranks,
 )
 
 
@@ -44,17 +44,17 @@ def grid_3d():
 class TestPricingSurface:
     def test_heatmap(self, grid_2d):
         Z, axes = grid_2d
-        fig, ax = plot_pricing_surface(Z, axes)
+        fig, _ax = plot_pricing_surface(Z, axes)
         assert fig is not None
 
     def test_surface_3d(self, grid_2d):
         Z, axes = grid_2d
-        fig, ax = plot_pricing_surface(Z, axes, mode="surface")
+        fig, _ax = plot_pricing_surface(Z, axes, mode="surface")
         assert fig is not None
 
     def test_3d_slice(self, grid_3d):
         V, axes = grid_3d
-        fig, ax = plot_pricing_surface(V, axes, dims=(0, 1))
+        fig, _ax = plot_pricing_surface(V, axes, dims=(0, 1))
         assert fig is not None
 
 
@@ -62,12 +62,12 @@ class TestGreeksSurface:
     def test_multiple_greeks(self, grid_2d):
         Z, axes = grid_2d
         greeks = {"Delta": Z * 0.5, "Gamma": Z * 0.01}
-        fig, axs = plot_greeks_surface(greeks, axes)
+        _fig, axs = plot_greeks_surface(greeks, axes)
         assert len(axs) == 2
 
     def test_single_greek(self, grid_2d):
         Z, axes = grid_2d
-        fig, axs = plot_greeks_surface({"Delta": Z}, axes)
+        _fig, axs = plot_greeks_surface({"Delta": Z}, axes)
         assert len(axs) == 1
 
 
@@ -75,7 +75,7 @@ class TestTTRanks:
     def test_rank_bar_chart(self):
         T = np.random.default_rng(42).standard_normal((8, 6, 5))
         cores = tt_svd(T, eps=1e-10)
-        fig, ax = plot_tt_ranks(cores)
+        fig, _ax = plot_tt_ranks(cores)
         assert fig is not None
 
     def test_rank_profile_overlay(self):
@@ -84,19 +84,19 @@ class TestTTRanks:
         for eps in [1e-2, 1e-6, 1e-12]:
             cores = tt_svd(T, eps=eps)
             profiles[f"eps={eps}"] = tt_ranks(cores)
-        fig, ax = plot_rank_profile(profiles)
+        fig, _ax = plot_rank_profile(profiles)
         assert fig is not None
 
 
 class TestCompressionVsTolerance:
     def test_without_errors(self):
-        fig, ax = plot_compression_vs_tolerance(
+        fig, _ax = plot_compression_vs_tolerance(
             [1e-1, 1e-3, 1e-6], [2.0, 5.0, 1.0]
         )
         assert fig is not None
 
     def test_with_errors(self):
-        fig, ax = plot_compression_vs_tolerance(
+        fig, _ax = plot_compression_vs_tolerance(
             [1e-1, 1e-3, 1e-6],
             [2.0, 5.0, 1.0],
             errors=[0.1, 0.001, 1e-6],
@@ -106,7 +106,7 @@ class TestCompressionVsTolerance:
 
 class TestConvergence:
     def test_convergence_plot(self):
-        fig, ax = plot_convergence(
+        fig, _ax = plot_convergence(
             list(range(10)), [10 / (i + 1) for i in range(10)]
         )
         assert fig is not None

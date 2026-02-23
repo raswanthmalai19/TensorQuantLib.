@@ -8,8 +8,10 @@ and enable gradient computation via backpropagation.
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from typing import Any, Union
+
 import numpy as np
-from typing import Any, Callable, Optional, Tuple, Union
 
 
 class Tensor:
@@ -29,14 +31,14 @@ class Tensor:
         self,
         data: Union[np.ndarray, list[Any], float, int],
         requires_grad: bool = False,
-        _children: Tuple["Tensor", ...] = (),
+        _children: tuple[Tensor, ...] = (),
         _op: str = "",
     ):
         if isinstance(data, Tensor):
             data = data.data
         self.data = np.asarray(data, dtype=np.float64)
         self.requires_grad = requires_grad
-        self.grad: Optional[np.ndarray] = None
+        self.grad: np.ndarray | None = None
         self._backward: Callable[[], None] = lambda: None  # closure for local backward
         self._children = set(_children)
         self._op = _op  # label for debugging
@@ -45,7 +47,7 @@ class Tensor:
     # Properties
     # ------------------------------------------------------------------ #
     @property
-    def shape(self) -> Tuple[int, ...]:
+    def shape(self) -> tuple[int, ...]:
         return self.data.shape
 
     @property
@@ -61,7 +63,7 @@ class Tensor:
         return self.data.size
 
     @property
-    def T(self) -> "Tensor":
+    def T(self) -> Tensor:
         """Transpose (creates a new node in the graph)."""
         return tensor_transpose(self)
 
@@ -170,26 +172,26 @@ class Tensor:
     # ------------------------------------------------------------------ #
     # Convenience methods that delegate to ops
     # ------------------------------------------------------------------ #
-    def sum(self, axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False) -> Tensor:
+    def sum(self, axis: Union[int, tuple[int, ...]] | None = None, keepdims: bool = False) -> Tensor:
         return tensor_sum(self, axis=axis, keepdims=keepdims)
 
-    def mean(self, axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False) -> Tensor:
+    def mean(self, axis: Union[int, tuple[int, ...]] | None = None, keepdims: bool = False) -> Tensor:
         return tensor_mean(self, axis=axis, keepdims=keepdims)
 
-    def reshape(self, *shape: Union[int, Tuple[int, ...], list[int]]) -> Tensor:
+    def reshape(self, *shape: Union[int, tuple[int, ...], list[int]]) -> Tensor:
         if len(shape) == 1 and isinstance(shape[0], (tuple, list)):
             final_shape = tuple(shape[0])
         else:
             final_shape = tuple(int(s) for s in shape)  # type: ignore[arg-type]
         return tensor_reshape(self, final_shape)
 
-    def exp(self) -> "Tensor":
+    def exp(self) -> Tensor:
         return tensor_exp(self)
 
-    def log(self) -> "Tensor":
+    def log(self) -> Tensor:
         return tensor_log(self)
 
-    def sqrt(self) -> "Tensor":
+    def sqrt(self) -> Tensor:
         return tensor_sqrt(self)
 
     def item(self) -> float:
@@ -224,7 +226,7 @@ def _ensure_tensor(val: Union[np.ndarray, list[Any], float, int, Tensor, object]
 # ====================================================================== #
 # Unbroadcast helper (critical for correct gradients)
 # ====================================================================== #
-def _unbroadcast(grad: np.ndarray, target_shape: Tuple[int, ...]) -> np.ndarray:
+def _unbroadcast(grad: np.ndarray, target_shape: tuple[int, ...]) -> np.ndarray:
     """Sum out dimensions that were broadcast during forward pass.
 
     When an operation broadcasts (e.g., shape (3,1) + (1,4) → (3,4)),
@@ -451,7 +453,7 @@ def tensor_sqrt(a: Tensor) -> Tensor:
     return out
 
 
-def tensor_sum(a: Tensor, axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False) -> Tensor:
+def tensor_sum(a: Tensor, axis: Union[int, tuple[int, ...]] | None = None, keepdims: bool = False) -> Tensor:
     """Sum: z = sum(a, axis)."""
     out_data = a.data.sum(axis=axis, keepdims=keepdims)
     out = Tensor(out_data, _children=(a,), _op="sum")
@@ -478,7 +480,7 @@ def tensor_sum(a: Tensor, axis: Optional[Union[int, Tuple[int, ...]]] = None, ke
     return out
 
 
-def tensor_mean(a: Tensor, axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False) -> Tensor:
+def tensor_mean(a: Tensor, axis: Union[int, tuple[int, ...]] | None = None, keepdims: bool = False) -> Tensor:
     """Mean: z = mean(a, axis)."""
     out_data = a.data.mean(axis=axis, keepdims=keepdims)
     out = Tensor(out_data, _children=(a,), _op="mean")
@@ -513,7 +515,7 @@ def tensor_mean(a: Tensor, axis: Optional[Union[int, Tuple[int, ...]]] = None, k
     return out
 
 
-def tensor_reshape(a: Tensor, shape: Tuple[int, ...]) -> Tensor:
+def tensor_reshape(a: Tensor, shape: tuple[int, ...]) -> Tensor:
     """Reshape: z = a.reshape(shape)."""
     out = Tensor(a.data.reshape(shape), _children=(a,), _op="reshape")
     out.requires_grad = a.requires_grad

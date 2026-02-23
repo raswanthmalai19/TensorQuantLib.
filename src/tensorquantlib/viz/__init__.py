@@ -9,19 +9,19 @@ Provides publication-quality plots for:
 """
 
 from .plots import (
-    plot_pricing_surface,
-    plot_greeks_surface,
-    plot_tt_ranks,
     plot_compression_vs_tolerance,
     plot_convergence,
+    plot_greeks_surface,
+    plot_pricing_surface,
     plot_rank_profile,
+    plot_tt_ranks,
 )
 
 __all__ = [
-    "plot_pricing_surface",
-    "plot_greeks_surface",
-    "plot_tt_ranks",
     "plot_compression_vs_tolerance",
     "plot_convergence",
+    "plot_greeks_surface",
+    "plot_pricing_surface",
     "plot_rank_profile",
+    "plot_tt_ranks",
 ]

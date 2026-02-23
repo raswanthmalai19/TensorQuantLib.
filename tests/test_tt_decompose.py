@@ -1,18 +1,16 @@
 """Tests for TT-SVD decomposition — tensorquantlib.tt.decompose."""
 
 import numpy as np
-import pytest
 
-from tensorquantlib.tt.decompose import tt_svd, tt_round, _tt_norm
-from tensorquantlib.tt.ops import tt_to_full, tt_ranks, tt_error
-
+from tensorquantlib.tt.decompose import _tt_norm, tt_round, tt_svd
+from tensorquantlib.tt.ops import tt_error, tt_ranks, tt_to_full
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
 def _smooth_tensor(shape, seed=42):
     """Create a smooth low-rank tensor (should compress well)."""
-    rng = np.random.default_rng(seed)
-    d = len(shape)
+    np.random.default_rng(seed)
+    len(shape)
     # Outer product of smooth vectors → rank-1 tensor
     vecs = [np.sin(np.linspace(0, np.pi, n)) + 0.1 for n in shape]
     result = vecs[0]

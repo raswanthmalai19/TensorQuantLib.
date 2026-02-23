@@ -1,14 +1,17 @@
 """Tests for Black-Scholes pricing and Greeks — analytic vs autograd."""
 
 import numpy as np
-import pytest
-from tensorquantlib.core.tensor import Tensor
+
 from tensorquantlib.finance.black_scholes import (
-    bs_price_numpy, bs_price_tensor,
-    bs_delta, bs_gamma, bs_vega, bs_theta, bs_rho,
+    bs_delta,
+    bs_gamma,
+    bs_price_numpy,
+    bs_price_tensor,
+    bs_rho,
+    bs_theta,
+    bs_vega,
 )
 from tensorquantlib.finance.greeks import compute_greeks
-
 
 # Standard test parameters
 S, K, T, r, sigma = 100.0, 100.0, 1.0, 0.05, 0.2
@@ -54,18 +57,18 @@ class TestBSPriceTensor:
         """Tensor-based BS must match analytic NumPy version."""
         price_np = bs_price_numpy(S, K, T, r, sigma)
         price_t = bs_price_tensor(S, K, T, r, sigma)
-        np.testing.assert_almost_equal(float(price_t.data), price_np, decimal=10)
+        np.testing.assert_almost_equal(price_t.item(), price_np, decimal=10)
 
     def test_put_matches_numpy(self):
         price_np = bs_price_numpy(S, K, T, r, sigma, option_type="put")
         price_t = bs_price_tensor(S, K, T, r, sigma, option_type="put")
-        np.testing.assert_almost_equal(float(price_t.data), price_np, decimal=10)
+        np.testing.assert_almost_equal(price_t.item(), price_np, decimal=10)
 
     def test_with_dividend(self):
         q = 0.02
         price_np = bs_price_numpy(S, K, T, r, sigma, q=q)
         price_t = bs_price_tensor(S, K, T, r, sigma, q=q)
-        np.testing.assert_almost_equal(float(price_t.data), price_np, decimal=10)
+        np.testing.assert_almost_equal(price_t.item(), price_np, decimal=10)
 
 
 class TestAutoGradDelta:

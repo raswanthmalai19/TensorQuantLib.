@@ -17,10 +17,9 @@ Provides:
 from __future__ import annotations
 
 import numpy as np
-from typing import List, Tuple, Union
 
 
-def tt_eval(cores: List[np.ndarray], indices: Tuple[int, ...]) -> float:
+def tt_eval(cores: list[np.ndarray], indices: tuple[int, ...]) -> float:
     """Evaluate a single element of a tensor in TT format.
 
     Computes A[i1, i2, ..., id] by contracting core slices:
@@ -52,7 +51,7 @@ def tt_eval(cores: List[np.ndarray], indices: Tuple[int, ...]) -> float:
 
 
 def tt_eval_batch(
-    cores: List[np.ndarray],
+    cores: list[np.ndarray],
     indices_array: np.ndarray,
 ) -> np.ndarray:
     """Evaluate multiple elements of a tensor in TT format.
@@ -66,7 +65,7 @@ def tt_eval_batch(
     Returns:
         Array of shape (n_points,) with values at the given indices.
     """
-    n_points = indices_array.shape[0]
+    indices_array.shape[0]
     d = len(cores)
     assert indices_array.shape[1] == d
 
@@ -91,7 +90,7 @@ def tt_eval_batch(
     return result.squeeze(-1)
 
 
-def tt_to_full(cores: List[np.ndarray]) -> np.ndarray:
+def tt_to_full(cores: list[np.ndarray]) -> np.ndarray:
     """Reconstruct the full tensor from TT cores.
 
     WARNING: Only use for validation on small tensors.
@@ -132,7 +131,7 @@ def tt_to_full(cores: List[np.ndarray]) -> np.ndarray:
     return result.reshape(shape)
 
 
-def tt_ranks(cores: List[np.ndarray]) -> List[int]:
+def tt_ranks(cores: list[np.ndarray]) -> list[int]:
     """Get the TT-ranks (bond dimensions between cores).
 
     Args:
@@ -147,7 +146,7 @@ def tt_ranks(cores: List[np.ndarray]) -> List[int]:
     return ranks
 
 
-def tt_memory(cores: List[np.ndarray]) -> int:
+def tt_memory(cores: list[np.ndarray]) -> int:
     """Compute total memory usage of TT cores in bytes.
 
     Args:
@@ -160,7 +159,7 @@ def tt_memory(cores: List[np.ndarray]) -> int:
 
 
 def tt_error(
-    cores: List[np.ndarray],
+    cores: list[np.ndarray],
     original: np.ndarray,
 ) -> float:
     """Compute relative Frobenius reconstruction error.
@@ -184,8 +183,8 @@ def tt_error(
 
 
 def tt_compression_ratio(
-    cores: List[np.ndarray],
-    original_shape: Tuple[int, ...],
+    cores: list[np.ndarray],
+    original_shape: tuple[int, ...],
 ) -> float:
     """Compute compression ratio: full_size / tt_size.
 
@@ -208,9 +207,9 @@ def tt_compression_ratio(
 # ====================================================================== #
 
 def tt_add(
-    cores_a: List[np.ndarray],
-    cores_b: List[np.ndarray],
-) -> List[np.ndarray]:
+    cores_a: list[np.ndarray],
+    cores_b: list[np.ndarray],
+) -> list[np.ndarray]:
     """Add two TT tensors: C = A + B.
 
     The result has TT-ranks that are the *sum* of the input ranks.
@@ -259,9 +258,9 @@ def tt_add(
 
 
 def tt_scale(
-    cores: List[np.ndarray],
+    cores: list[np.ndarray],
     alpha: float,
-) -> List[np.ndarray]:
+) -> list[np.ndarray]:
     """Multiply a TT tensor by a scalar: B = alpha * A.
 
     Only modifies the first core (ranks unchanged).
@@ -279,9 +278,9 @@ def tt_scale(
 
 
 def tt_hadamard(
-    cores_a: List[np.ndarray],
-    cores_b: List[np.ndarray],
-) -> List[np.ndarray]:
+    cores_a: list[np.ndarray],
+    cores_b: list[np.ndarray],
+) -> list[np.ndarray]:
     """Element-wise (Hadamard) product of two TT tensors: C = A ⊙ B.
 
     The result has TT-ranks that are the *product* of the input ranks.
@@ -325,8 +324,8 @@ def tt_hadamard(
 
 
 def tt_dot(
-    cores_a: List[np.ndarray],
-    cores_b: List[np.ndarray],
+    cores_a: list[np.ndarray],
+    cores_b: list[np.ndarray],
 ) -> float:
     """Inner product of two TT tensors: <A, B> = sum(A ⊙ B).
 
@@ -352,8 +351,8 @@ def tt_dot(
     Z = np.ones((ra_l0, rb_l0))  # (1, 1)
 
     for k in range(d):
-        ra_l, n_k, ra_r = cores_a[k].shape
-        rb_l, nb, rb_r = cores_b[k].shape
+        _ra_l, n_k, ra_r = cores_a[k].shape
+        _rb_l, nb, rb_r = cores_b[k].shape
 
         if n_k != nb:
             raise ValueError(
@@ -373,7 +372,7 @@ def tt_dot(
     return float(Z.item())
 
 
-def tt_frobenius_norm(cores: List[np.ndarray]) -> float:
+def tt_frobenius_norm(cores: list[np.ndarray]) -> float:
     """Frobenius norm of a TT tensor: ||A||_F = sqrt(<A, A>).
 
     Computed without reconstruction.

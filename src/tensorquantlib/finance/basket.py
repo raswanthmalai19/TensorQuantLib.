@@ -10,7 +10,6 @@ Provides:
 from __future__ import annotations
 
 import numpy as np
-from typing import Optional, Tuple
 
 
 def simulate_basket(
@@ -22,10 +21,10 @@ def simulate_basket(
     corr: np.ndarray,
     weights: np.ndarray,
     n_paths: int = 100_000,
-    q: Optional[np.ndarray] = None,
+    q: np.ndarray | None = None,
     option_type: str = "call",
-    seed: Optional[int] = None,
-) -> Tuple[float, float]:
+    seed: int | None = None,
+) -> tuple[float, float]:
     """Price a basket option via Monte Carlo simulation.
 
     Uses correlated geometric Brownian motion (GBM) under the
@@ -124,7 +123,7 @@ def _price_at_spots(
     corr: np.ndarray,
     weights: np.ndarray,
     n_mc_paths: int,
-    q: Optional[np.ndarray],
+    q: np.ndarray | None,
     option_type: str,
     seed: int,
 ) -> float:
@@ -138,7 +137,7 @@ def _price_at_spots(
 
 
 def build_pricing_grid(
-    S0_ranges: list[Tuple[float, float]],
+    S0_ranges: list[tuple[float, float]],
     K: float,
     T: float,
     r: float,
@@ -147,10 +146,10 @@ def build_pricing_grid(
     weights: np.ndarray,
     n_points: int = 30,
     n_mc_paths: int = 1_000,
-    q: Optional[np.ndarray] = None,
+    q: np.ndarray | None = None,
     option_type: str = "call",
     seed: int = 42,
-) -> Tuple[np.ndarray, list[np.ndarray]]:
+) -> tuple[np.ndarray, list[np.ndarray]]:
     """Build a multi-dimensional pricing tensor for TT compression.
 
     For each combination of spot prices on the grid, runs a Monte Carlo
@@ -187,7 +186,7 @@ def build_pricing_grid(
 
     # Iterate over all grid points
     # Use np.ndindex for clean iteration over d-dimensional grid
-    total_points = n_points ** d
+    n_points ** d
     for flat_idx, multi_idx in enumerate(np.ndindex(*grid_shape)):
         # Construct spot vector for this grid point
         spots = np.array([axes[i][multi_idx[i]] for i in range(d)])
@@ -202,14 +201,14 @@ def build_pricing_grid(
 
 
 def build_pricing_grid_analytic(
-    S0_ranges: list[Tuple[float, float]],
+    S0_ranges: list[tuple[float, float]],
     K: float,
     T: float,
     r: float,
     sigma: np.ndarray,
     weights: np.ndarray,
     n_points: int = 30,
-) -> Tuple[np.ndarray, list[np.ndarray]]:
+) -> tuple[np.ndarray, list[np.ndarray]]:
     """Build a pricing grid using a fast analytic approximation.
 
     Instead of MC (slow), uses the discounted expected payoff of a basket

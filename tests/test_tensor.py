@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+
 from tensorquantlib.core.tensor import Tensor
 
 

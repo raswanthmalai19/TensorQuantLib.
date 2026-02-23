@@ -13,26 +13,68 @@ Usage:
 
 from tensorquantlib.core.tensor import (
     tensor_add as add,
-    tensor_sub as sub,
-    tensor_mul as mul,
+)
+from tensorquantlib.core.tensor import (
     tensor_div as div,
-    tensor_neg as neg,
-    tensor_matmul as matmul,
-    tensor_pow as pow,
+)
+from tensorquantlib.core.tensor import (
     tensor_exp as exp,
+)
+from tensorquantlib.core.tensor import (
     tensor_log as log,
-    tensor_sqrt as sqrt,
-    tensor_sum as sum,
-    tensor_mean as mean,
-    tensor_reshape as reshape,
-    tensor_transpose as transpose,
+)
+from tensorquantlib.core.tensor import (
+    tensor_matmul as matmul,
+)
+from tensorquantlib.core.tensor import (
     tensor_maximum as maximum,
+)
+from tensorquantlib.core.tensor import (
+    tensor_mean as mean,
+)
+from tensorquantlib.core.tensor import (
+    tensor_mul as mul,
+)
+from tensorquantlib.core.tensor import (
+    tensor_neg as neg,
+)
+from tensorquantlib.core.tensor import (
     tensor_norm_cdf as norm_cdf,
+)
+from tensorquantlib.core.tensor import (
+    tensor_pow as pow,
+)
+from tensorquantlib.core.tensor import (
+    tensor_reshape as reshape,
+)
+from tensorquantlib.core.tensor import (
+    tensor_sqrt as sqrt,
+)
+from tensorquantlib.core.tensor import (
+    tensor_sub as sub,
+)
+from tensorquantlib.core.tensor import (
+    tensor_sum as sum,
+)
+from tensorquantlib.core.tensor import (
+    tensor_transpose as transpose,
 )
 
 __all__ = [
-    "add", "sub", "mul", "div", "neg",
-    "matmul", "pow", "exp", "log", "sqrt",
-    "sum", "mean", "reshape", "transpose",
-    "maximum", "norm_cdf",
+    "add",
+    "div",
+    "exp",
+    "log",
+    "matmul",
+    "maximum",
+    "mean",
+    "mul",
+    "neg",
+    "norm_cdf",
+    "pow",
+    "reshape",
+    "sqrt",
+    "sub",
+    "sum",
+    "transpose",
 ]

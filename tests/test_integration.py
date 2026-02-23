@@ -4,31 +4,27 @@ These tests exercise the full pipeline: grid construction → TT-SVD
 compression → surrogate evaluation → Greeks → visualization.
 """
 
-import numpy as np
-import pytest
 import matplotlib
+import numpy as np
 
 matplotlib.use("Agg")
 
 from tensorquantlib.core.tensor import Tensor
 from tensorquantlib.finance.black_scholes import (
+    bs_delta,
     bs_price_numpy,
     bs_price_tensor,
-    bs_delta,
-    bs_vega,
 )
 from tensorquantlib.finance.greeks import compute_greeks
-from tensorquantlib.tt.decompose import tt_svd, tt_round
+from tensorquantlib.tt.decompose import tt_round, tt_svd
 from tensorquantlib.tt.ops import (
-    tt_to_full,
-    tt_ranks,
-    tt_eval,
-    tt_compression_ratio,
     tt_add,
-    tt_scale,
-    tt_hadamard,
     tt_dot,
     tt_frobenius_norm,
+    tt_hadamard,
+    tt_ranks,
+    tt_scale,
+    tt_to_full,
 )
 from tensorquantlib.tt.surrogate import TTSurrogate
 from tensorquantlib.viz import plot_pricing_surface, plot_tt_ranks
@@ -202,14 +198,14 @@ class TestVisualizationPipeline:
 
         # Reconstruct full grid for plotting
         grid = tt_to_full(surr.cores)
-        fig, ax = plot_pricing_surface(grid, surr.axes, title="Basket Surface")
+        fig, _ax = plot_pricing_surface(grid, surr.axes, title="Basket Surface")
         assert fig is not None
 
     def test_tt_ranks_plot_from_decomposition(self):
         rng = np.random.default_rng(42)
         T = rng.standard_normal((10, 8, 6, 5))
         cores = tt_svd(T, eps=1e-6)
-        fig, ax = plot_tt_ranks(cores)
+        fig, _ax = plot_tt_ranks(cores)
         assert fig is not None
 
 
@@ -386,7 +382,7 @@ class TestPutCallParity:
 
         parity = S_val - K * np.exp(-r * T)
         np.testing.assert_allclose(
-            float(call.data) - float(put.data), parity, atol=1e-8
+            call.item() - put.item(), parity, atol=1e-8
         )
 
 

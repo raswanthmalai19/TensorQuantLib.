@@ -6,7 +6,6 @@ import pytest
 from tensorquantlib.core.tensor import Tensor
 from tensorquantlib.tt.decompose import tt_svd
 
-
 # ── Random number generator (reproducible) ───────────────────────────────
 
 @pytest.fixture

@@ -1,11 +1,11 @@
 """Tests for basket option Monte Carlo pricing and grid construction."""
 
 import numpy as np
-import pytest
+
 from tensorquantlib.finance.basket import (
-    simulate_basket,
     build_pricing_grid,
     build_pricing_grid_analytic,
+    simulate_basket,
 )
 
 
@@ -28,7 +28,7 @@ class TestSimulateBasket:
         self.weights = np.array([1/3, 1/3, 1/3])
 
     def test_price_positive(self):
-        price, stderr = simulate_basket(
+        price, _stderr = simulate_basket(
             self.S0, self.K, self.T, self.r, self.sigma,
             self.corr, self.weights, n_paths=50_000, seed=42,
         )

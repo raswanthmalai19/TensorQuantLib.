@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Tensor-Train surrogate pricing engine with autodiff for multi-asset options"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {file = "LICENSE"}
+license = {text = "MIT"}
 authors = [
     {name = "TensorQuantLib Contributors"},
 ]
@@ -25,7 +25,6 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Financial and Insurance Industry",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -110,6 +109,8 @@ ignore = [
     "B905",   # zip strict (Python 3.10+)
     "SIM108", # ternary operator
     "UP007",  # X | Y union syntax (keep Optional for readability)
+    "RUF001", # ambiguous unicode in strings (× is intentional)
+    "RUF002", # ambiguous unicode in docstrings (× is intentional)
 ]
 
 [tool.ruff.lint.isort]

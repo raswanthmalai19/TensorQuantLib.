@@ -1,5 +1,5 @@
 """Utilities — gradient validation and numerical checking."""
 
-from .validation import numerical_gradient, check_grad
+from .validation import check_grad, numerical_gradient
 
-__all__ = ["numerical_gradient", "check_grad"]
+__all__ = ["check_grad", "numerical_gradient"]

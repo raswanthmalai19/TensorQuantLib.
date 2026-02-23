@@ -6,13 +6,12 @@ import pytest
 from tensorquantlib.tt.decompose import tt_svd
 from tensorquantlib.tt.ops import (
     tt_add,
-    tt_scale,
-    tt_hadamard,
     tt_dot,
     tt_frobenius_norm,
+    tt_hadamard,
+    tt_scale,
     tt_to_full,
 )
-
 
 # ── helpers ──────────────────────────────────────────────────────────────
 
@@ -170,7 +169,7 @@ class TestTTFrobeniusNorm:
         assert tt_frobenius_norm(zero_cores) == pytest.approx(0.0, abs=1e-15)
 
     def test_norm_scales_with_scalar(self):
-        A, ca = _make_tt(5, 6, seed=2)
+        _A, ca = _make_tt(5, 6, seed=2)
         alpha = 3.7
         scaled_cores = tt_scale(ca, alpha)
         np.testing.assert_allclose(
@@ -196,8 +195,8 @@ class TestCrossOperations:
 
     def test_dot_via_hadamard_and_sum(self):
         """tt_dot matches sum-of-hadamard."""
-        A, ca = _make_tt(5, 4, 3, seed=10)
-        B, cb = _make_tt(5, 4, 3, seed=11)
+        _A, ca = _make_tt(5, 4, 3, seed=10)
+        _B, cb = _make_tt(5, 4, 3, seed=11)
 
         dot_result = tt_dot(ca, cb)
         had_full = tt_to_full(tt_hadamard(ca, cb))

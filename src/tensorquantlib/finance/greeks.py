@@ -11,10 +11,11 @@ the Tensor autograd engine and extracting gradients.
 
 from __future__ import annotations
 
-import numpy as np
-from typing import Callable, Dict
+from collections.abc import Callable
 
-from tensorquantlib.core.tensor import Tensor, _ensure_tensor
+import numpy as np
+
+from tensorquantlib.core.tensor import Tensor
 
 
 def compute_greeks(
@@ -26,7 +27,7 @@ def compute_greeks(
     sigma: float,
     q: float = 0.0,
     option_type: str = "call",
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Compute Delta, Vega, and Gamma using autograd + finite differences.
 
     Args:
@@ -48,7 +49,7 @@ def compute_greeks(
     sigma_t = Tensor(np.array(sigma, dtype=np.float64), requires_grad=True)
 
     price = price_fn(S_t, K, T, r, sigma_t, q, option_type)
-    price_val = float(price.data)
+    price_val = float(price.data.item()) if price.data.size == 1 else float(price.data.sum())
 
     # Backward pass
     if price.data.size > 1:
@@ -56,8 +57,8 @@ def compute_greeks(
     else:
         price.backward()
 
-    delta = float(S_t.grad) if S_t.grad is not None else 0.0
-    vega = float(sigma_t.grad) if sigma_t.grad is not None else 0.0
+    delta = float(S_t.grad.item()) if S_t.grad is not None and S_t.grad.size == 1 else (float(S_t.grad.sum()) if S_t.grad is not None else 0.0)
+    vega = float(sigma_t.grad.item()) if sigma_t.grad is not None and sigma_t.grad.size == 1 else (float(sigma_t.grad.sum()) if sigma_t.grad is not None else 0.0)
 
     # ---- Gamma via finite-difference on Delta ----
     h = S * 1e-4
@@ -87,7 +88,7 @@ def _finite_diff_gamma(
             p.sum().backward()
         else:
             p.backward()
-        return float(s.grad) if s.grad is not None else 0.0
+        return float(s.grad.item()) if (s.grad is not None and s.grad.size == 1) else (float(s.grad.sum()) if s.grad is not None else 0.0)
 
     delta_up = _delta_at(S + h)
     delta_down = _delta_at(S - h)
@@ -103,7 +104,7 @@ def compute_greeks_vectorized(
     sigma: float,
     q: float = 0.0,
     option_type: str = "call",
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """Compute Greeks for a vector of spot prices.
 
     Args:
@@ -127,5 +128,5 @@ def compute_greeks_vectorized(
     return {
         "price": price.data.copy(),
         "delta": S_t.grad.copy() if S_t.grad is not None else np.zeros_like(S_array),
-        "vega": np.atleast_1d(float(sigma_t.grad)) if sigma_t.grad is not None else np.zeros(1),
+        "vega": np.atleast_1d(float(sigma_t.grad.item())) if (sigma_t.grad is not None and sigma_t.grad.size == 1) else (sigma_t.grad.copy() if sigma_t.grad is not None else np.zeros(1)),
     }

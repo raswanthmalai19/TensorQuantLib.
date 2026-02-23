@@ -1,9 +1,9 @@
 """Tests for all differentiable operations — gradient checks via numerical differences."""
 
 import numpy as np
-import pytest
-from tensorquantlib.core.tensor import Tensor
+
 from tensorquantlib.core import ops
+from tensorquantlib.core.tensor import Tensor
 from tensorquantlib.utils.validation import check_grad
 
 TOL = 1e-5

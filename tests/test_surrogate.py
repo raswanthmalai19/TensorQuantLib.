@@ -1,12 +1,8 @@
 """Tests for TT Surrogate engine — tensorquantlib.tt.surrogate."""
 
 import numpy as np
-import pytest
 
 from tensorquantlib.tt.surrogate import TTSurrogate
-from tensorquantlib.tt.decompose import tt_svd
-from tensorquantlib.tt.ops import tt_to_full, tt_ranks
-
 
 # ── from_grid ────────────────────────────────────────────────────────────────
 

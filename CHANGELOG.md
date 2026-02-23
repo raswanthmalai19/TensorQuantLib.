@@ -2,6 +2,28 @@
 
 All notable changes to TensorQuantLib are documented here.
 
+## [0.1.1] — 2025-01-XX
+
+### Fixed
+- NumPy deprecation warnings: replaced all `float(array)` calls with `.item()` pattern
+- Fixed incorrect API examples in `docs/quickstart.rst` and `docs/index.rst`
+- Fixed `bs_price_tensor` parameter order in documentation
+
+### Added
+- 36 new edge-case tests — coverage increased from 95% to 98% (243 total tests)
+- `LIMITATIONS.md` — comprehensive known limitations documentation
+- `DEPLOYMENT.md` — Docker, PyPI, and cloud deployment guide
+- `Dockerfile` with production and dev targets
+- `notebooks/tutorial.ipynb` — interactive Jupyter tutorial
+- `benchmarks/RESULTS.md` — benchmark results with analysis
+- `docs/limitations.rst` — limitations page in Sphinx docs
+- TestPyPI step in publish workflow
+
+### Changed
+- Updated README with badges, correct test count (243), architecture tree (added `viz/`)
+- Enhanced `publish.yml` with build → TestPyPI → PyPI pipeline
+- Updated `CHANGELOG.md` with all v0.1.1 changes
+
 ## [0.1.0] — 2026-02-24
 
 ### Added

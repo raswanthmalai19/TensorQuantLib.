@@ -11,6 +11,7 @@ reverse-mode autodiff for multi-asset options, designed to run on a laptop.
    quickstart
    api
    theory
+   limitations
    changelog
 
 
@@ -23,7 +24,11 @@ Quick Overview
 
    # Build a 3-asset basket option surrogate
    surr = TTSurrogate.from_basket_analytic(
-       n_assets=3, n_points=30, strike=100.0
+       S0_ranges=[(80, 120)] * 3,
+       K=100, T=1.0, r=0.05,
+       sigma=[0.2, 0.25, 0.3],
+       weights=[1/3, 1/3, 1/3],
+       n_points=30,
    )
    surr.print_summary()
 

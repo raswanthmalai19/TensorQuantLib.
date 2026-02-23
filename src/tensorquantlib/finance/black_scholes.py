@@ -9,12 +9,12 @@ Provides:
 
 from __future__ import annotations
 
+from typing import Any, Union
+
 import numpy as np
-from typing import Any, Tuple, Union
 from scipy.stats import norm
 
-from tensorquantlib.core.tensor import Tensor, tensor_norm_cdf, tensor_exp, tensor_log, tensor_sqrt
-
+from tensorquantlib.core.tensor import Tensor, tensor_norm_cdf
 
 # ====================================================================== #
 # Analytic Black-Scholes (NumPy) — ground truth
@@ -27,7 +27,7 @@ def _d1_d2(
     r: float,
     sigma: float,
     q: float = 0.0,
-) -> Tuple[Any, Any]:
+) -> tuple[Any, Any]:
     """Compute d1 and d2 for Black-Scholes formula."""
     d1 = (np.log(S / K) + (r - q + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
     d2 = d1 - sigma * np.sqrt(T)
