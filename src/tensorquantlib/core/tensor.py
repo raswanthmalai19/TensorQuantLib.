@@ -1,0 +1,567 @@
+"""
+Tensor class with reverse-mode automatic differentiation.
+
+This is the core data structure for TensorQuantLib. Every computation
+flows through Tensor objects, which track the computational graph
+and enable gradient computation via backpropagation.
+"""
+
+from __future__ import annotations
+
+import numpy as np
+from typing import Optional, Tuple, Union
+
+
+class Tensor:
+    """A multi-dimensional array with automatic differentiation support.
+
+    Stores data as a NumPy float64 array, optionally tracking gradients.
+    When requires_grad=True, all operations on this tensor build a
+    computational graph that enables reverse-mode autodiff via .backward().
+
+    Attributes:
+        data: The underlying NumPy array (float64).
+        grad: Gradient array, populated after .backward(). None until first backward pass.
+        requires_grad: Whether this tensor participates in gradient computation.
+    """
+
+    def __init__(
+        self,
+        data: Union[np.ndarray, list, float, int],
+        requires_grad: bool = False,
+        _children: Tuple["Tensor", ...] = (),
+        _op: str = "",
+    ):
+        if isinstance(data, Tensor):
+            data = data.data
+        self.data = np.asarray(data, dtype=np.float64)
+        self.requires_grad = requires_grad
+        self.grad: Optional[np.ndarray] = None
+        self._backward = lambda: None  # closure for local backward
+        self._children = set(_children)
+        self._op = _op  # label for debugging
+
+    # ------------------------------------------------------------------ #
+    # Properties
+    # ------------------------------------------------------------------ #
+    @property
+    def shape(self) -> Tuple[int, ...]:
+        return self.data.shape
+
+    @property
+    def ndim(self) -> int:
+        return self.data.ndim
+
+    @property
+    def dtype(self):
+        return self.data.dtype
+
+    @property
+    def size(self) -> int:
+        return self.data.size
+
+    @property
+    def T(self) -> "Tensor":
+        """Transpose (creates a new node in the graph)."""
+        return tensor_transpose(self)
+
+    # ------------------------------------------------------------------ #
+    # Backward (reverse-mode autodiff)
+    # ------------------------------------------------------------------ #
+    def backward(self) -> None:
+        """Compute gradients via reverse-mode automatic differentiation.
+
+        Performs a topological sort of the computational graph, then
+        propagates gradients from this tensor back to all ancestors
+        with requires_grad=True.
+
+        This tensor's grad is seeded with ones (dL/dL = 1).
+        """
+        # Build topological order via DFS
+        topo: list[Tensor] = []
+        visited: set[int] = set()
+
+        def _build_topo(v: Tensor) -> None:
+            vid = id(v)
+            if vid not in visited:
+                visited.add(vid)
+                for child in v._children:
+                    _build_topo(child)
+                topo.append(v)
+
+        _build_topo(self)
+
+        # Seed gradient
+        self.grad = np.ones_like(self.data)
+
+        # Reverse pass
+        for node in reversed(topo):
+            node._backward()
+
+    def zero_grad(self) -> None:
+        """Reset gradient to None."""
+        self.grad = None
+
+    # ------------------------------------------------------------------ #
+    # Dunder methods — delegate to ops module functions
+    # ------------------------------------------------------------------ #
+    def __add__(self, other):
+        other = _ensure_tensor(other)
+        return tensor_add(self, other)
+
+    def __radd__(self, other):
+        other = _ensure_tensor(other)
+        return tensor_add(other, self)
+
+    def __sub__(self, other):
+        other = _ensure_tensor(other)
+        return tensor_sub(self, other)
+
+    def __rsub__(self, other):
+        other = _ensure_tensor(other)
+        return tensor_sub(other, self)
+
+    def __mul__(self, other):
+        other = _ensure_tensor(other)
+        return tensor_mul(self, other)
+
+    def __rmul__(self, other):
+        other = _ensure_tensor(other)
+        return tensor_mul(other, self)
+
+    def __truediv__(self, other):
+        other = _ensure_tensor(other)
+        return tensor_div(self, other)
+
+    def __rtruediv__(self, other):
+        other = _ensure_tensor(other)
+        return tensor_div(other, self)
+
+    def __neg__(self):
+        return tensor_neg(self)
+
+    def __matmul__(self, other):
+        other = _ensure_tensor(other)
+        return tensor_matmul(self, other)
+
+    def __rmatmul__(self, other):
+        other = _ensure_tensor(other)
+        return tensor_matmul(other, self)
+
+    def __pow__(self, exponent):
+        return tensor_pow(self, exponent)
+
+    # Forbid in-place ops to protect the computational graph
+    def __iadd__(self, other):
+        raise NotImplementedError(
+            "In-place operations are not supported on Tensors with autograd. "
+            "Use out-of-place operations instead: z = x + y"
+        )
+
+    def __isub__(self, other):
+        raise NotImplementedError("In-place sub not supported. Use z = x - y.")
+
+    def __imul__(self, other):
+        raise NotImplementedError("In-place mul not supported. Use z = x * y.")
+
+    def __itruediv__(self, other):
+        raise NotImplementedError("In-place div not supported. Use z = x / y.")
+
+    # ------------------------------------------------------------------ #
+    # Convenience methods that delegate to ops
+    # ------------------------------------------------------------------ #
+    def sum(self, axis=None, keepdims=False) -> "Tensor":
+        return tensor_sum(self, axis=axis, keepdims=keepdims)
+
+    def mean(self, axis=None, keepdims=False) -> "Tensor":
+        return tensor_mean(self, axis=axis, keepdims=keepdims)
+
+    def reshape(self, *shape) -> "Tensor":
+        if len(shape) == 1 and isinstance(shape[0], (tuple, list)):
+            shape = tuple(shape[0])
+        return tensor_reshape(self, shape)
+
+    def exp(self) -> "Tensor":
+        return tensor_exp(self)
+
+    def log(self) -> "Tensor":
+        return tensor_log(self)
+
+    def sqrt(self) -> "Tensor":
+        return tensor_sqrt(self)
+
+    def item(self) -> float:
+        """Return scalar value (only works for size-1 tensors)."""
+        return float(self.data.item())
+
+    # ------------------------------------------------------------------ #
+    # Representation
+    # ------------------------------------------------------------------ #
+    def __repr__(self) -> str:
+        grad_str = ", requires_grad=True" if self.requires_grad else ""
+        return f"Tensor({self.data}{grad_str})"
+
+    def __len__(self) -> int:
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        """Basic indexing — no gradient support (for inspection only)."""
+        return self.data[idx]
+
+
+# ====================================================================== #
+# Helper: ensure value is a Tensor
+# ====================================================================== #
+def _ensure_tensor(val) -> Tensor:
+    """Wrap scalars/arrays as Tensor if needed."""
+    if isinstance(val, Tensor):
+        return val
+    return Tensor(val, requires_grad=False)
+
+
+# ====================================================================== #
+# Unbroadcast helper (critical for correct gradients)
+# ====================================================================== #
+def _unbroadcast(grad: np.ndarray, target_shape: Tuple[int, ...]) -> np.ndarray:
+    """Sum out dimensions that were broadcast during forward pass.
+
+    When an operation broadcasts (e.g., shape (3,1) + (1,4) → (3,4)),
+    the backward pass must sum gradients along the broadcast dimensions
+    to produce the correct gradient shape for each input.
+    """
+    # Sum out leading dimensions that were added
+    while grad.ndim > len(target_shape):
+        grad = grad.sum(axis=0)
+
+    # Sum along axes where target had size 1 but grad has size > 1
+    for i, dim in enumerate(target_shape):
+        if dim == 1 and grad.shape[i] > 1:
+            grad = grad.sum(axis=i, keepdims=True)
+
+    return grad
+
+
+# ====================================================================== #
+# Core differentiable operations
+# ====================================================================== #
+
+def tensor_add(a: Tensor, b: Tensor) -> Tensor:
+    """Element-wise addition: z = a + b."""
+    out = Tensor(a.data + b.data, _children=(a, b), _op="+")
+    out.requires_grad = a.requires_grad or b.requires_grad
+
+    def _backward():
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            a.grad += _unbroadcast(out.grad, a.shape)
+        if b.requires_grad:
+            if b.grad is None:
+                b.grad = np.zeros_like(b.data)
+            b.grad += _unbroadcast(out.grad, b.shape)
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_sub(a: Tensor, b: Tensor) -> Tensor:
+    """Element-wise subtraction: z = a - b."""
+    out = Tensor(a.data - b.data, _children=(a, b), _op="-")
+    out.requires_grad = a.requires_grad or b.requires_grad
+
+    def _backward():
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            a.grad += _unbroadcast(out.grad, a.shape)
+        if b.requires_grad:
+            if b.grad is None:
+                b.grad = np.zeros_like(b.data)
+            b.grad += _unbroadcast(-out.grad, b.shape)
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_mul(a: Tensor, b: Tensor) -> Tensor:
+    """Element-wise multiplication: z = a * b."""
+    out = Tensor(a.data * b.data, _children=(a, b), _op="*")
+    out.requires_grad = a.requires_grad or b.requires_grad
+
+    def _backward():
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            a.grad += _unbroadcast(out.grad * b.data, a.shape)
+        if b.requires_grad:
+            if b.grad is None:
+                b.grad = np.zeros_like(b.data)
+            b.grad += _unbroadcast(out.grad * a.data, b.shape)
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_div(a: Tensor, b: Tensor) -> Tensor:
+    """Element-wise division: z = a / b."""
+    out = Tensor(a.data / b.data, _children=(a, b), _op="/")
+    out.requires_grad = a.requires_grad or b.requires_grad
+
+    def _backward():
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            a.grad += _unbroadcast(out.grad / b.data, a.shape)
+        if b.requires_grad:
+            if b.grad is None:
+                b.grad = np.zeros_like(b.data)
+            b.grad += _unbroadcast(-out.grad * a.data / (b.data ** 2), b.shape)
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_neg(a: Tensor) -> Tensor:
+    """Negation: z = -a."""
+    out = Tensor(-a.data, _children=(a,), _op="neg")
+    out.requires_grad = a.requires_grad
+
+    def _backward():
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            a.grad += -out.grad
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_matmul(a: Tensor, b: Tensor) -> Tensor:
+    """Matrix multiplication: Z = A @ B."""
+    out = Tensor(a.data @ b.data, _children=(a, b), _op="@")
+    out.requires_grad = a.requires_grad or b.requires_grad
+
+    def _backward():
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            # dL/dA = dL/dZ @ B^T
+            if b.data.ndim == 1:
+                # vector case: (m,n) @ (n,) -> (m,)
+                a.grad += np.outer(out.grad, b.data)
+            else:
+                a.grad += out.grad @ b.data.T
+        if b.requires_grad:
+            if b.grad is None:
+                b.grad = np.zeros_like(b.data)
+            # dL/dB = A^T @ dL/dZ
+            if a.data.ndim == 1:
+                b.grad += np.outer(a.data, out.grad)
+            else:
+                b.grad += a.data.T @ out.grad
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_pow(a: Tensor, exponent: Union[int, float]) -> Tensor:
+    """Power: z = a^exponent (exponent is a constant, not a Tensor)."""
+    out = Tensor(a.data ** exponent, _children=(a,), _op=f"**{exponent}")
+    out.requires_grad = a.requires_grad
+
+    def _backward():
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            a.grad += out.grad * exponent * (a.data ** (exponent - 1))
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_exp(a: Tensor) -> Tensor:
+    """Exponential: z = exp(a)."""
+    out_data = np.exp(a.data)
+    out = Tensor(out_data, _children=(a,), _op="exp")
+    out.requires_grad = a.requires_grad
+
+    def _backward():
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            a.grad += out.grad * out_data
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_log(a: Tensor) -> Tensor:
+    """Natural logarithm: z = log(a). Clamps input to avoid log(0)."""
+    safe_data = np.maximum(a.data, 1e-12)
+    out = Tensor(np.log(safe_data), _children=(a,), _op="log")
+    out.requires_grad = a.requires_grad
+
+    def _backward():
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            a.grad += out.grad / safe_data
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_sqrt(a: Tensor) -> Tensor:
+    """Square root: z = sqrt(a)."""
+    out_data = np.sqrt(a.data)
+    out = Tensor(out_data, _children=(a,), _op="sqrt")
+    out.requires_grad = a.requires_grad
+
+    def _backward():
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            # dz/da = 1 / (2 * sqrt(a)), guard against division by zero
+            safe_out = np.where(out_data == 0, 1e-12, out_data)
+            a.grad += out.grad / (2.0 * safe_out)
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_sum(a: Tensor, axis=None, keepdims=False) -> Tensor:
+    """Sum: z = sum(a, axis)."""
+    out_data = a.data.sum(axis=axis, keepdims=keepdims)
+    out = Tensor(out_data, _children=(a,), _op="sum")
+    out.requires_grad = a.requires_grad
+
+    def _backward():
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            # Broadcast the gradient back to the original shape
+            g = out.grad
+            if axis is not None and not keepdims:
+                # Re-expand the reduced dimension(s) for broadcasting
+                if isinstance(axis, int):
+                    g = np.expand_dims(g, axis=axis)
+                else:
+                    for ax in sorted(axis):
+                        g = np.expand_dims(g, axis=ax)
+            a.grad += np.broadcast_to(g, a.shape).copy()
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_mean(a: Tensor, axis=None, keepdims=False) -> Tensor:
+    """Mean: z = mean(a, axis)."""
+    out_data = a.data.mean(axis=axis, keepdims=keepdims)
+    out = Tensor(out_data, _children=(a,), _op="mean")
+    out.requires_grad = a.requires_grad
+
+    # Compute the number of elements being averaged
+    if axis is None:
+        count = a.data.size
+    elif isinstance(axis, int):
+        count = a.data.shape[axis]
+    else:
+        count = 1
+        for ax in axis:
+            count *= a.data.shape[ax]
+
+    def _backward():
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            g = out.grad
+            if axis is not None and not keepdims:
+                if isinstance(axis, int):
+                    g = np.expand_dims(g, axis=axis)
+                else:
+                    for ax in sorted(axis):
+                        g = np.expand_dims(g, axis=ax)
+            a.grad += np.broadcast_to(g / count, a.shape).copy()
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_reshape(a: Tensor, shape: Tuple[int, ...]) -> Tensor:
+    """Reshape: z = a.reshape(shape)."""
+    out = Tensor(a.data.reshape(shape), _children=(a,), _op="reshape")
+    out.requires_grad = a.requires_grad
+
+    def _backward():
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            a.grad += out.grad.reshape(a.shape)
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_transpose(a: Tensor) -> Tensor:
+    """Transpose: z = a.T."""
+    out = Tensor(a.data.T, _children=(a,), _op="T")
+    out.requires_grad = a.requires_grad
+
+    def _backward():
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            a.grad += out.grad.T
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_maximum(a: Tensor, val: float = 0.0) -> Tensor:
+    """Element-wise maximum: z = max(a, val). Used for ReLU and payoff clipping."""
+    out = Tensor(np.maximum(a.data, val), _children=(a,), _op=f"max({val})")
+    out.requires_grad = a.requires_grad
+
+    def _backward():
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            # Subgradient: 1 where a > val, 0 where a <= val
+            a.grad += out.grad * (a.data > val).astype(np.float64)
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_norm_cdf(a: Tensor) -> Tensor:
+    """Standard normal CDF: z = Phi(a)."""
+    from scipy.stats import norm
+
+    out = Tensor(norm.cdf(a.data), _children=(a,), _op="Φ")
+    out.requires_grad = a.requires_grad
+
+    def _backward():
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            # dΦ/da = φ(a) = normal PDF
+            a.grad += out.grad * norm.pdf(a.data)
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out

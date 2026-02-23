@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tensorquantlib"
+version = "0.1.0"
+description = "Tensor-Train surrogate pricing engine with autodiff for multi-asset options"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [
+    {name = "TensorQuantLib Contributors"},
+]
+keywords = [
+    "quantitative finance",
+    "tensor train",
+    "autodiff",
+    "options pricing",
+    "basket options",
+    "surrogate model",
+    "tensor decomposition",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Office/Business :: Financial",
+    "Typing :: Typed",
+]
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",
+    "matplotlib>=3.7",
+    "mypy>=1.0",
+    "ruff>=0.1",
+]
+
+[project.urls]
+Repository = "https://github.com/your-org/tensorquantlib"
+Documentation = "https://tensorquantlib.readthedocs.io"
+"Bug Tracker" = "https://github.com/your-org/tensorquantlib/issues"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+tensorquantlib = ["py.typed"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = false
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
