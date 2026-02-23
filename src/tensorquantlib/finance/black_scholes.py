@@ -41,6 +41,18 @@ def bs_price_numpy(S, K, T, r, sigma, q=0.0, option_type="call"):
     Returns:
         Option price (same shape as S).
     """
+    if option_type not in ("call", "put"):
+        raise ValueError(f"option_type must be 'call' or 'put', got {option_type!r}")
+    S_arr = np.asarray(S, dtype=float)
+    if np.any(S_arr <= 0):
+        raise ValueError("Spot price S must be positive")
+    if K <= 0:
+        raise ValueError("Strike K must be positive")
+    if T <= 0:
+        raise ValueError("Time to expiry T must be positive")
+    if sigma <= 0:
+        raise ValueError("Volatility sigma must be positive")
+
     d1, d2 = _d1_d2(S, K, T, r, sigma, q)
     if option_type == "call":
         return S * np.exp(-q * T) * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)

@@ -50,7 +50,31 @@ def simulate_basket(
     Returns:
         (price, stderr): Discounted expected payoff and its standard error.
     """
+    S0 = np.asarray(S0, dtype=float)
+    sigma = np.asarray(sigma, dtype=float)
+    corr = np.asarray(corr, dtype=float)
+    weights = np.asarray(weights, dtype=float)
     d = len(S0)
+
+    if option_type not in ("call", "put"):
+        raise ValueError(f"option_type must be 'call' or 'put', got {option_type!r}")
+    if np.any(S0 <= 0):
+        raise ValueError("All initial spot prices S0 must be positive")
+    if K <= 0:
+        raise ValueError("Strike K must be positive")
+    if T <= 0:
+        raise ValueError("Time to expiry T must be positive")
+    if np.any(sigma <= 0):
+        raise ValueError("All volatilities must be positive")
+    if sigma.shape != (d,):
+        raise ValueError(f"sigma shape {sigma.shape} doesn't match S0 length {d}")
+    if corr.shape != (d, d):
+        raise ValueError(f"corr shape {corr.shape} doesn't match (d,d)=({d},{d})")
+    if weights.shape != (d,):
+        raise ValueError(f"weights shape {weights.shape} doesn't match S0 length {d}")
+    if n_paths < 1:
+        raise ValueError("n_paths must be >= 1")
+
     if q is None:
         q = np.zeros(d)
 

@@ -41,6 +41,10 @@ def tt_svd(
     d = tensor.ndim
     if d < 2:
         raise ValueError(f"Tensor must have at least 2 dimensions, got {d}")
+    if eps < 0:
+        raise ValueError(f"eps must be non-negative, got {eps}")
+    if max_rank is not None and max_rank < 1:
+        raise ValueError(f"max_rank must be >= 1, got {max_rank}")
 
     shape = tensor.shape
     norm_A = np.linalg.norm(tensor)

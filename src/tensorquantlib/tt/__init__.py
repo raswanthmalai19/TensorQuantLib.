@@ -9,5 +9,10 @@ from .ops import (
     tt_memory,
     tt_error,
     tt_compression_ratio,
+    tt_add,
+    tt_scale,
+    tt_hadamard,
+    tt_dot,
+    tt_frobenius_norm,
 )
 from .surrogate import TTSurrogate

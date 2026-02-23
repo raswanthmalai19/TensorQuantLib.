@@ -1,10 +1,14 @@
 """
-Tensor-Train operations — evaluation, reconstruction, diagnostics.
+Tensor-Train operations — evaluation, reconstruction, arithmetic, diagnostics.
 
 Provides:
     - tt_eval: Evaluate a single element from TT cores
     - tt_eval_batch: Vectorized multi-point evaluation
     - tt_to_full: Reconstruct full tensor from TT cores (validation only)
+    - tt_add: Add two TT tensors (rank-additive)
+    - tt_scale: Multiply a TT tensor by a scalar
+    - tt_hadamard: Element-wise product of two TT tensors
+    - tt_dot: Inner product of two TT tensors (no reconstruction)
     - tt_ranks: Get TT-ranks
     - tt_memory: Compute memory usage of TT format
     - tt_error: Compute relative reconstruction error
@@ -197,3 +201,187 @@ def tt_compression_ratio(
     if tt_bytes == 0:
         return float("inf")
     return full_bytes / tt_bytes
+
+
+# ====================================================================== #
+# TT Arithmetic
+# ====================================================================== #
+
+def tt_add(
+    cores_a: List[np.ndarray],
+    cores_b: List[np.ndarray],
+) -> List[np.ndarray]:
+    """Add two TT tensors: C = A + B.
+
+    The result has TT-ranks that are the *sum* of the input ranks.
+    Use tt_round() afterwards to compress back down.
+
+    Both tensors must have the same mode sizes (n_k).
+
+    Args:
+        cores_a: TT-cores of tensor A.
+        cores_b: TT-cores of tensor B.
+
+    Returns:
+        TT-cores of A + B.
+    """
+    d = len(cores_a)
+    if len(cores_b) != d:
+        raise ValueError(
+            f"Dimension mismatch: A has {d} cores, B has {len(cores_b)}"
+        )
+
+    result = []
+    for k in range(d):
+        ra_l, na, ra_r = cores_a[k].shape
+        rb_l, nb, rb_r = cores_b[k].shape
+
+        if na != nb:
+            raise ValueError(
+                f"Mode size mismatch at core {k}: A has {na}, B has {nb}"
+            )
+
+        if k == 0:
+            # First core: concatenate along right rank → (1, n, ra_r + rb_r)
+            new_core = np.concatenate([cores_a[k], cores_b[k]], axis=2)
+        elif k == d - 1:
+            # Last core: concatenate along left rank → (ra_l + rb_l, n, 1)
+            new_core = np.concatenate([cores_a[k], cores_b[k]], axis=0)
+        else:
+            # Interior: block-diagonal → (ra_l + rb_l, n, ra_r + rb_r)
+            new_core = np.zeros((ra_l + rb_l, na, ra_r + rb_r))
+            new_core[:ra_l, :, :ra_r] = cores_a[k]
+            new_core[ra_l:, :, ra_r:] = cores_b[k]
+
+        result.append(new_core)
+
+    return result
+
+
+def tt_scale(
+    cores: List[np.ndarray],
+    alpha: float,
+) -> List[np.ndarray]:
+    """Multiply a TT tensor by a scalar: B = alpha * A.
+
+    Only modifies the first core (ranks unchanged).
+
+    Args:
+        cores: TT-cores of tensor A.
+        alpha: Scalar multiplier.
+
+    Returns:
+        TT-cores of alpha * A.
+    """
+    result = [c.copy() for c in cores]
+    result[0] = alpha * result[0]
+    return result
+
+
+def tt_hadamard(
+    cores_a: List[np.ndarray],
+    cores_b: List[np.ndarray],
+) -> List[np.ndarray]:
+    """Element-wise (Hadamard) product of two TT tensors: C = A ⊙ B.
+
+    The result has TT-ranks that are the *product* of the input ranks.
+    Use tt_round() afterwards to compress.
+
+    Args:
+        cores_a: TT-cores of tensor A.
+        cores_b: TT-cores of tensor B.
+
+    Returns:
+        TT-cores of A ⊙ B.
+    """
+    d = len(cores_a)
+    if len(cores_b) != d:
+        raise ValueError(
+            f"Dimension mismatch: A has {d} cores, B has {len(cores_b)}"
+        )
+
+    result = []
+    for k in range(d):
+        ra_l, na, ra_r = cores_a[k].shape
+        rb_l, nb, rb_r = cores_b[k].shape
+
+        if na != nb:
+            raise ValueError(
+                f"Mode size mismatch at core {k}: A has {na}, B has {nb}"
+            )
+
+        # Kronecker product along rank dimensions for each mode index
+        # Result core shape: (ra_l * rb_l, n, ra_r * rb_r)
+        new_core = np.zeros((ra_l * rb_l, na, ra_r * rb_r))
+        for i in range(na):
+            # cores_a[k][:, i, :] is (ra_l, ra_r)
+            # cores_b[k][:, i, :] is (rb_l, rb_r)
+            # Kronecker product → (ra_l * rb_l, ra_r * rb_r)
+            new_core[:, i, :] = np.kron(cores_a[k][:, i, :], cores_b[k][:, i, :])
+
+        result.append(new_core)
+
+    return result
+
+
+def tt_dot(
+    cores_a: List[np.ndarray],
+    cores_b: List[np.ndarray],
+) -> float:
+    """Inner product of two TT tensors: <A, B> = sum(A ⊙ B).
+
+    Computed efficiently without full reconstruction via
+    sequential transfer-matrix contraction. O(d * r_a^2 * r_b^2 * n).
+
+    Args:
+        cores_a: TT-cores of tensor A.
+        cores_b: TT-cores of tensor B.
+
+    Returns:
+        Scalar inner product.
+    """
+    d = len(cores_a)
+    if len(cores_b) != d:
+        raise ValueError(
+            f"Dimension mismatch: A has {d} cores, B has {len(cores_b)}"
+        )
+
+    # Transfer matrix: shape (ra_l * rb_l,) initially (1,1) → scalar 1
+    ra_l0 = cores_a[0].shape[0]
+    rb_l0 = cores_b[0].shape[0]
+    Z = np.ones((ra_l0, rb_l0))  # (1, 1)
+
+    for k in range(d):
+        ra_l, n_k, ra_r = cores_a[k].shape
+        rb_l, nb, rb_r = cores_b[k].shape
+
+        if n_k != nb:
+            raise ValueError(
+                f"Mode size mismatch at core {k}: A has {n_k}, B has {nb}"
+            )
+
+        # Contract: Z_new[ia, ib] = sum_j sum_{ia', ib'} Z[ia', ib'] * Ga[ia',j,ia] * Gb[ib',j,ib]
+        # Efficient: loop over mode index j, accumulate
+        Z_new = np.zeros((ra_r, rb_r))
+        for j in range(n_k):
+            # Ga_j = cores_a[k][:, j, :]  shape (ra_l, ra_r)
+            # Gb_j = cores_b[k][:, j, :]  shape (rb_l, rb_r)
+            # contribution = Ga_j^T @ Z @ Gb_j
+            Z_new += cores_a[k][:, j, :].T @ Z @ cores_b[k][:, j, :]
+        Z = Z_new
+
+    return float(Z.item())
+
+
+def tt_frobenius_norm(cores: List[np.ndarray]) -> float:
+    """Frobenius norm of a TT tensor: ||A||_F = sqrt(<A, A>).
+
+    Computed without reconstruction.
+
+    Args:
+        cores: TT-cores.
+
+    Returns:
+        Frobenius norm (scalar).
+    """
+    return np.sqrt(max(0.0, tt_dot(cores, cores)))

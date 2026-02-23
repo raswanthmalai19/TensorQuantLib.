@@ -99,6 +99,20 @@ class TTSurrogate:
         original_shape = grid.shape
         original_nbytes = grid.nbytes
 
+        if grid.ndim < 2:
+            raise ValueError(f"Grid must be at least 2D, got {grid.ndim}D")
+        if len(axes) != grid.ndim:
+            raise ValueError(
+                f"Number of axes ({len(axes)}) must match grid dimensions ({grid.ndim})"
+            )
+        for i, (ax, n) in enumerate(zip(axes, grid.shape)):
+            if len(ax) != n:
+                raise ValueError(
+                    f"Axis {i} length ({len(ax)}) doesn't match grid size ({n})"
+                )
+        if eps <= 0:
+            raise ValueError(f"eps must be positive, got {eps}")
+
         t0 = time.perf_counter()
         cores = tt_svd(grid, eps=eps, max_rank=max_rank)
         compress_time = time.perf_counter() - t0
