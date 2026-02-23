@@ -72,7 +72,7 @@ def compute_greeks(
 
 
 def _finite_diff_gamma(
-    price_fn: Callable,
+    price_fn: Callable[..., Tensor],
     S: float, K: float, T: float, r: float, sigma: float,
     q: float, option_type: str, h: float,
 ) -> float:
@@ -80,7 +80,7 @@ def _finite_diff_gamma(
 
     Gamma ≈ (Delta(S+h) - Delta(S-h)) / (2*h)
     """
-    def _delta_at(s_val):
+    def _delta_at(s_val: float) -> float:
         s = Tensor(np.array(s_val, dtype=np.float64), requires_grad=True)
         p = price_fn(s, K, T, r, sigma, q, option_type)
         if p.data.size > 1:
@@ -127,5 +127,5 @@ def compute_greeks_vectorized(
     return {
         "price": price.data.copy(),
         "delta": S_t.grad.copy() if S_t.grad is not None else np.zeros_like(S_array),
-        "vega": float(sigma_t.grad) if sigma_t.grad is not None else 0.0,
+        "vega": np.atleast_1d(float(sigma_t.grad)) if sigma_t.grad is not None else np.zeros(1),
     }

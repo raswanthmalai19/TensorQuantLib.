@@ -9,7 +9,7 @@ and enable gradient computation via backpropagation.
 from __future__ import annotations
 
 import numpy as np
-from typing import Optional, Tuple, Union
+from typing import Any, Callable, Optional, Tuple, Union
 
 
 class Tensor:
@@ -27,7 +27,7 @@ class Tensor:
 
     def __init__(
         self,
-        data: Union[np.ndarray, list, float, int],
+        data: Union[np.ndarray, list[Any], float, int],
         requires_grad: bool = False,
         _children: Tuple["Tensor", ...] = (),
         _op: str = "",
@@ -37,7 +37,7 @@ class Tensor:
         self.data = np.asarray(data, dtype=np.float64)
         self.requires_grad = requires_grad
         self.grad: Optional[np.ndarray] = None
-        self._backward = lambda: None  # closure for local backward
+        self._backward: Callable[[], None] = lambda: None  # closure for local backward
         self._children = set(_children)
         self._op = _op  # label for debugging
 
@@ -53,7 +53,7 @@ class Tensor:
         return self.data.ndim
 
     @property
-    def dtype(self):
+    def dtype(self) -> np.dtype[Any]:
         return self.data.dtype
 
     @property
@@ -105,81 +105,83 @@ class Tensor:
     # ------------------------------------------------------------------ #
     # Dunder methods — delegate to ops module functions
     # ------------------------------------------------------------------ #
-    def __add__(self, other):
+    def __add__(self, other: object) -> Tensor:
         other = _ensure_tensor(other)
         return tensor_add(self, other)
 
-    def __radd__(self, other):
+    def __radd__(self, other: object) -> Tensor:
         other = _ensure_tensor(other)
         return tensor_add(other, self)
 
-    def __sub__(self, other):
+    def __sub__(self, other: object) -> Tensor:
         other = _ensure_tensor(other)
         return tensor_sub(self, other)
 
-    def __rsub__(self, other):
+    def __rsub__(self, other: object) -> Tensor:
         other = _ensure_tensor(other)
         return tensor_sub(other, self)
 
-    def __mul__(self, other):
+    def __mul__(self, other: object) -> Tensor:
         other = _ensure_tensor(other)
         return tensor_mul(self, other)
 
-    def __rmul__(self, other):
+    def __rmul__(self, other: object) -> Tensor:
         other = _ensure_tensor(other)
         return tensor_mul(other, self)
 
-    def __truediv__(self, other):
+    def __truediv__(self, other: object) -> Tensor:
         other = _ensure_tensor(other)
         return tensor_div(self, other)
 
-    def __rtruediv__(self, other):
+    def __rtruediv__(self, other: object) -> Tensor:
         other = _ensure_tensor(other)
         return tensor_div(other, self)
 
-    def __neg__(self):
+    def __neg__(self) -> Tensor:
         return tensor_neg(self)
 
-    def __matmul__(self, other):
+    def __matmul__(self, other: object) -> Tensor:
         other = _ensure_tensor(other)
         return tensor_matmul(self, other)
 
-    def __rmatmul__(self, other):
+    def __rmatmul__(self, other: object) -> Tensor:
         other = _ensure_tensor(other)
         return tensor_matmul(other, self)
 
-    def __pow__(self, exponent):
+    def __pow__(self, exponent: Union[int, float]) -> Tensor:
         return tensor_pow(self, exponent)
 
     # Forbid in-place ops to protect the computational graph
-    def __iadd__(self, other):
+    def __iadd__(self, other: object) -> Tensor:
         raise NotImplementedError(
             "In-place operations are not supported on Tensors with autograd. "
             "Use out-of-place operations instead: z = x + y"
         )
 
-    def __isub__(self, other):
+    def __isub__(self, other: object) -> Tensor:
         raise NotImplementedError("In-place sub not supported. Use z = x - y.")
 
-    def __imul__(self, other):
+    def __imul__(self, other: object) -> Tensor:
         raise NotImplementedError("In-place mul not supported. Use z = x * y.")
 
-    def __itruediv__(self, other):
+    def __itruediv__(self, other: object) -> Tensor:
         raise NotImplementedError("In-place div not supported. Use z = x / y.")
 
     # ------------------------------------------------------------------ #
     # Convenience methods that delegate to ops
     # ------------------------------------------------------------------ #
-    def sum(self, axis=None, keepdims=False) -> "Tensor":
+    def sum(self, axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False) -> Tensor:
         return tensor_sum(self, axis=axis, keepdims=keepdims)
 
-    def mean(self, axis=None, keepdims=False) -> "Tensor":
+    def mean(self, axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False) -> Tensor:
         return tensor_mean(self, axis=axis, keepdims=keepdims)
 
-    def reshape(self, *shape) -> "Tensor":
+    def reshape(self, *shape: Union[int, Tuple[int, ...], list[int]]) -> Tensor:
         if len(shape) == 1 and isinstance(shape[0], (tuple, list)):
-            shape = tuple(shape[0])
-        return tensor_reshape(self, shape)
+            final_shape = tuple(shape[0])
+        else:
+            final_shape = tuple(int(s) for s in shape)  # type: ignore[arg-type]
+        return tensor_reshape(self, final_shape)
 
     def exp(self) -> "Tensor":
         return tensor_exp(self)
@@ -204,7 +206,7 @@ class Tensor:
     def __len__(self) -> int:
         return len(self.data)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: Any) -> Any:
         """Basic indexing — no gradient support (for inspection only)."""
         return self.data[idx]
 
@@ -212,11 +214,11 @@ class Tensor:
 # ====================================================================== #
 # Helper: ensure value is a Tensor
 # ====================================================================== #
-def _ensure_tensor(val) -> Tensor:
+def _ensure_tensor(val: Union[np.ndarray, list[Any], float, int, Tensor, object]) -> Tensor:
     """Wrap scalars/arrays as Tensor if needed."""
     if isinstance(val, Tensor):
         return val
-    return Tensor(val, requires_grad=False)
+    return Tensor(val, requires_grad=False)  # type: ignore[arg-type]
 
 
 # ====================================================================== #
@@ -250,7 +252,8 @@ def tensor_add(a: Tensor, b: Tensor) -> Tensor:
     out = Tensor(a.data + b.data, _children=(a, b), _op="+")
     out.requires_grad = a.requires_grad or b.requires_grad
 
-    def _backward():
+    def _backward() -> None:
+        assert out.grad is not None
         if a.requires_grad:
             if a.grad is None:
                 a.grad = np.zeros_like(a.data)
@@ -270,7 +273,8 @@ def tensor_sub(a: Tensor, b: Tensor) -> Tensor:
     out = Tensor(a.data - b.data, _children=(a, b), _op="-")
     out.requires_grad = a.requires_grad or b.requires_grad
 
-    def _backward():
+    def _backward() -> None:
+        assert out.grad is not None
         if a.requires_grad:
             if a.grad is None:
                 a.grad = np.zeros_like(a.data)
@@ -290,7 +294,8 @@ def tensor_mul(a: Tensor, b: Tensor) -> Tensor:
     out = Tensor(a.data * b.data, _children=(a, b), _op="*")
     out.requires_grad = a.requires_grad or b.requires_grad
 
-    def _backward():
+    def _backward() -> None:
+        assert out.grad is not None
         if a.requires_grad:
             if a.grad is None:
                 a.grad = np.zeros_like(a.data)
@@ -310,7 +315,8 @@ def tensor_div(a: Tensor, b: Tensor) -> Tensor:
     out = Tensor(a.data / b.data, _children=(a, b), _op="/")
     out.requires_grad = a.requires_grad or b.requires_grad
 
-    def _backward():
+    def _backward() -> None:
+        assert out.grad is not None
         if a.requires_grad:
             if a.grad is None:
                 a.grad = np.zeros_like(a.data)
@@ -330,7 +336,8 @@ def tensor_neg(a: Tensor) -> Tensor:
     out = Tensor(-a.data, _children=(a,), _op="neg")
     out.requires_grad = a.requires_grad
 
-    def _backward():
+    def _backward() -> None:
+        assert out.grad is not None
         if a.requires_grad:
             if a.grad is None:
                 a.grad = np.zeros_like(a.data)
@@ -346,7 +353,8 @@ def tensor_matmul(a: Tensor, b: Tensor) -> Tensor:
     out = Tensor(a.data @ b.data, _children=(a, b), _op="@")
     out.requires_grad = a.requires_grad or b.requires_grad
 
-    def _backward():
+    def _backward() -> None:
+        assert out.grad is not None
         if a.requires_grad:
             if a.grad is None:
                 a.grad = np.zeros_like(a.data)
@@ -375,7 +383,8 @@ def tensor_pow(a: Tensor, exponent: Union[int, float]) -> Tensor:
     out = Tensor(a.data ** exponent, _children=(a,), _op=f"**{exponent}")
     out.requires_grad = a.requires_grad
 
-    def _backward():
+    def _backward() -> None:
+        assert out.grad is not None
         if a.requires_grad:
             if a.grad is None:
                 a.grad = np.zeros_like(a.data)
@@ -392,7 +401,8 @@ def tensor_exp(a: Tensor) -> Tensor:
     out = Tensor(out_data, _children=(a,), _op="exp")
     out.requires_grad = a.requires_grad
 
-    def _backward():
+    def _backward() -> None:
+        assert out.grad is not None
         if a.requires_grad:
             if a.grad is None:
                 a.grad = np.zeros_like(a.data)
@@ -409,7 +419,8 @@ def tensor_log(a: Tensor) -> Tensor:
     out = Tensor(np.log(safe_data), _children=(a,), _op="log")
     out.requires_grad = a.requires_grad
 
-    def _backward():
+    def _backward() -> None:
+        assert out.grad is not None
         if a.requires_grad:
             if a.grad is None:
                 a.grad = np.zeros_like(a.data)
@@ -426,7 +437,8 @@ def tensor_sqrt(a: Tensor) -> Tensor:
     out = Tensor(out_data, _children=(a,), _op="sqrt")
     out.requires_grad = a.requires_grad
 
-    def _backward():
+    def _backward() -> None:
+        assert out.grad is not None
         if a.requires_grad:
             if a.grad is None:
                 a.grad = np.zeros_like(a.data)
@@ -439,13 +451,14 @@ def tensor_sqrt(a: Tensor) -> Tensor:
     return out
 
 
-def tensor_sum(a: Tensor, axis=None, keepdims=False) -> Tensor:
+def tensor_sum(a: Tensor, axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False) -> Tensor:
     """Sum: z = sum(a, axis)."""
     out_data = a.data.sum(axis=axis, keepdims=keepdims)
     out = Tensor(out_data, _children=(a,), _op="sum")
     out.requires_grad = a.requires_grad
 
-    def _backward():
+    def _backward() -> None:
+        assert out.grad is not None
         if a.requires_grad:
             if a.grad is None:
                 a.grad = np.zeros_like(a.data)
@@ -465,7 +478,7 @@ def tensor_sum(a: Tensor, axis=None, keepdims=False) -> Tensor:
     return out
 
 
-def tensor_mean(a: Tensor, axis=None, keepdims=False) -> Tensor:
+def tensor_mean(a: Tensor, axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False) -> Tensor:
     """Mean: z = mean(a, axis)."""
     out_data = a.data.mean(axis=axis, keepdims=keepdims)
     out = Tensor(out_data, _children=(a,), _op="mean")
@@ -481,7 +494,8 @@ def tensor_mean(a: Tensor, axis=None, keepdims=False) -> Tensor:
         for ax in axis:
             count *= a.data.shape[ax]
 
-    def _backward():
+    def _backward() -> None:
+        assert out.grad is not None
         if a.requires_grad:
             if a.grad is None:
                 a.grad = np.zeros_like(a.data)
@@ -504,7 +518,8 @@ def tensor_reshape(a: Tensor, shape: Tuple[int, ...]) -> Tensor:
     out = Tensor(a.data.reshape(shape), _children=(a,), _op="reshape")
     out.requires_grad = a.requires_grad
 
-    def _backward():
+    def _backward() -> None:
+        assert out.grad is not None
         if a.requires_grad:
             if a.grad is None:
                 a.grad = np.zeros_like(a.data)
@@ -520,7 +535,8 @@ def tensor_transpose(a: Tensor) -> Tensor:
     out = Tensor(a.data.T, _children=(a,), _op="T")
     out.requires_grad = a.requires_grad
 
-    def _backward():
+    def _backward() -> None:
+        assert out.grad is not None
         if a.requires_grad:
             if a.grad is None:
                 a.grad = np.zeros_like(a.data)
@@ -536,7 +552,8 @@ def tensor_maximum(a: Tensor, val: float = 0.0) -> Tensor:
     out = Tensor(np.maximum(a.data, val), _children=(a,), _op=f"max({val})")
     out.requires_grad = a.requires_grad
 
-    def _backward():
+    def _backward() -> None:
+        assert out.grad is not None
         if a.requires_grad:
             if a.grad is None:
                 a.grad = np.zeros_like(a.data)
@@ -555,7 +572,8 @@ def tensor_norm_cdf(a: Tensor) -> Tensor:
     out = Tensor(norm.cdf(a.data), _children=(a,), _op="Φ")
     out.requires_grad = a.requires_grad
 
-    def _backward():
+    def _backward() -> None:
+        assert out.grad is not None
         if a.requires_grad:
             if a.grad is None:
                 a.grad = np.zeros_like(a.data)

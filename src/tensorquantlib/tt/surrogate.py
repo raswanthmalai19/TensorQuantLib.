@@ -160,8 +160,8 @@ class TTSurrogate:
         t0 = time.perf_counter()
         grid, axes = build_pricing_grid_analytic(
             S0_ranges=S0_ranges,
-            K=K, T=T, r=r, sigma=sigma,
-            weights=weights, n_points=n_points,
+            K=K, T=T, r=r, sigma=np.asarray(sigma),
+            weights=np.asarray(weights), n_points=n_points,
         )
         build_time = time.perf_counter() - t0
 
@@ -204,8 +204,8 @@ class TTSurrogate:
         t0 = time.perf_counter()
         grid, axes = build_pricing_grid(
             S0_ranges=S0_ranges,
-            K=K, T=T, r=r, sigma=sigma,
-            corr=corr, weights=weights,
+            K=K, T=T, r=r, sigma=np.asarray(sigma),
+            corr=corr, weights=np.asarray(weights),
             n_points=n_points, n_mc_paths=n_mc_paths,
         )
         build_time = time.perf_counter() - t0
@@ -354,7 +354,7 @@ class TTSurrogate:
 
         return result
 
-    def greeks(self, spots: Union[np.ndarray, List[float]], h: float = 1e-4) -> Dict:
+    def greeks(self, spots: Union[np.ndarray, List[float]], h: float = 1e-4) -> Dict[str, object]:
         """Compute Greeks via autograd through the surrogate.
 
         Delta: ∂price/∂S_i for each asset (via autograd).
@@ -402,7 +402,7 @@ class TTSurrogate:
 
     # ── diagnostics ─────────────────────────────────────────────────────
 
-    def summary(self) -> Dict:
+    def summary(self) -> Dict[str, object]:
         """Return diagnostic summary of the surrogate model.
 
         Returns:
@@ -430,7 +430,7 @@ class TTSurrogate:
 
         return info
 
-    def print_summary(self):
+    def print_summary(self) -> None:
         """Print a formatted diagnostic summary."""
         s = self.summary()
         print("=" * 60)

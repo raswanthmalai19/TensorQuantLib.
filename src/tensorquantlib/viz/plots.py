@@ -6,7 +6,7 @@ Matplotlib is imported lazily — the rest of the library works without it.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
@@ -15,7 +15,7 @@ if TYPE_CHECKING:  # pragma: no cover
     import matplotlib.axes
 
 
-def _import_mpl():
+def _import_mpl() -> Tuple[Any, Any]:
     """Lazy-import matplotlib and return (plt, mpl) or raise ImportError."""
     try:
         import matplotlib
@@ -67,7 +67,7 @@ def plot_pricing_surface(
     fixed_indices = fixed_indices or {}
 
     # Build slicer for all dimensions
-    slicer: list = []
+    slicer: list[Any] = []
     for i in range(grid.ndim):
         if i in dims:
             slicer.append(slice(None))
@@ -151,7 +151,7 @@ def plot_greeks_surface(
     Y = axis_values[dims[1]]
 
     for ax, (name, grid) in zip(axes, greek_grids.items()):
-        slicer: list = []
+        slicer: list[Any] = []
         for i in range(grid.ndim):
             if i in dims:
                 slicer.append(slice(None))

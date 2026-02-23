@@ -9,9 +9,6 @@ Core — Autodiff Engine
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: tensorquantlib.core.ops
-   :members:
-
 Finance — Pricing & Greeks
 --------------------------
 

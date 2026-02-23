@@ -8,7 +8,7 @@ Used in tests to verify that backward() produces correct gradients.
 from __future__ import annotations
 
 import numpy as np
-from typing import Callable, List
+from typing import Callable, Dict, List, Optional
 
 from tensorquantlib.core.tensor import Tensor
 
@@ -17,7 +17,7 @@ def numerical_gradient(
     fn: Callable[..., Tensor],
     inputs: List[Tensor],
     eps: float = 1e-5,
-) -> List[np.ndarray]:
+) -> List[Optional[np.ndarray]]:
     """Compute numerical gradients via central differences.
 
     For each input tensor with requires_grad=True, perturbs each element
@@ -32,14 +32,14 @@ def numerical_gradient(
         List of gradient arrays, one per input. None for inputs
         where requires_grad=False.
     """
-    grads = []
+    grads: List[Optional[np.ndarray]] = []
     for inp in inputs:
         if not inp.requires_grad:
             grads.append(None)
             continue
 
         grad = np.zeros_like(inp.data)
-        it = np.nditer(inp.data, flags=["multi_index"], op_flags=["readwrite"])
+        it = np.nditer(inp.data, flags=["multi_index"], op_flags=[['readwrite']])
         while not it.finished:
             idx = it.multi_index
             old_val = inp.data[idx]
@@ -68,7 +68,7 @@ def check_grad(
     inputs: List[Tensor],
     eps: float = 1e-5,
     tol: float = 1e-5,
-) -> dict:
+) -> Dict[str, object]:
     """Compare autograd gradients with numerical gradients.
 
     Runs forward + backward through fn, then computes numerical gradients
@@ -100,7 +100,7 @@ def check_grad(
     # Numerical gradients
     num_grads = numerical_gradient(fn, inputs, eps=eps)
 
-    errors = []
+    errors: List[Optional[float]] = []
     max_error = 0.0
 
     for inp, ng in zip(inputs, num_grads):

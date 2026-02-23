@@ -20,15 +20,14 @@ def tt_svd(
     """Tensor-Train SVD decomposition.
 
     Decomposes a d-dimensional tensor A of shape (n1, n2, ..., nd) into
-    a list of TT-cores [G1, G2, ..., Gd] where:
-        G_k has shape (r_{k-1}, n_k, r_k)
-        r_0 = r_d = 1
+    a list of TT-cores [G1, G2, ..., Gd] where
+    G_k has shape (r_{k-1}, n_k, r_k) and r_0 = r_d = 1.
 
-    The reconstruction satisfies:
-        ||A - A_TT||_F <= eps * ||A||_F
+    The reconstruction satisfies
+    ``||A - A_TT||_F <= eps * ||A||_F``.
 
     Algorithm: Sequential left-to-right unfolding with truncated SVD.
-    Per-step truncation threshold: delta = eps * ||A||_F / sqrt(d-1)
+    Per-step truncation threshold: ``delta = eps * ||A||_F / sqrt(d-1)``.
 
     Args:
         tensor: Input tensor, shape (n1, n2, ..., nd).
@@ -234,4 +233,4 @@ def _tt_norm(cores: List[np.ndarray]) -> float:
         Z = Z_new
 
     # Z is now (1, 1) — the squared norm
-    return np.sqrt(float(Z.item()))
+    return float(np.sqrt(float(Z.item())))

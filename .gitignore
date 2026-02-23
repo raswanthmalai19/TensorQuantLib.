@@ -41,3 +41,4 @@ htmlcov/
 *.tar.gz
 *.whl
 MANIFEST
+docs/_build/

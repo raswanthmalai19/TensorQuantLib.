@@ -45,13 +45,25 @@ dev = [
     "pytest-cov",
     "matplotlib>=3.7",
     "mypy>=1.0",
-    "ruff>=0.1",
+    "ruff>=0.4",
+    "pre-commit>=3.0",
+]
+viz = [
+    "matplotlib>=3.7",
+]
+docs = [
+    "sphinx>=7.0",
+    "sphinx-autodoc-typehints>=1.25",
+]
+all = [
+    "tensorquantlib[dev,viz,docs]",
 ]
 
 [project.urls]
 Repository = "https://github.com/your-org/tensorquantlib"
 Documentation = "https://tensorquantlib.readthedocs.io"
 "Bug Tracker" = "https://github.com/your-org/tensorquantlib/issues"
+Changelog = "https://github.com/your-org/tensorquantlib/blob/main/CHANGELOG.md"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -65,9 +77,40 @@ tensorquantlib = ["py.typed"]
 
 [tool.mypy]
 python_version = "3.10"
-strict = false
+strict = true
+warn_return_any = true
+warn_unused_configs = true
 ignore_missing_imports = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
 
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "UP",   # pyupgrade
+    "B",    # bugbear
+    "SIM",  # simplify
+    "RUF",  # ruff-specific
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "B905",   # zip strict (Python 3.10+)
+    "SIM108", # ternary operator
+    "UP007",  # X | Y union syntax (keep Optional for readability)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["tensorquantlib"]

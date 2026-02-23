@@ -252,3 +252,180 @@ class TestFullPipelineRoundTrip:
         # Delta for a call should be positive
         for d in greeks["delta"]:
             assert d > 0, f"Expected positive delta for ATM call, got {d}"
+
+
+class TestVectorizedGreeksPipeline:
+    """Vectorized Greeks computation across spot range."""
+
+    def test_vectorized_greeks_shape_and_monotonicity(self):
+        """Delta should be monotonically increasing for a call."""
+        from tensorquantlib.finance.greeks import compute_greeks_vectorized
+
+        S_array = np.linspace(80, 120, 21)
+        result = compute_greeks_vectorized(
+            bs_price_tensor, S_array,
+            K=100.0, T=1.0, r=0.05, sigma=0.2,
+            option_type="call",
+        )
+
+        # Shape checks
+        assert result["price"].shape == S_array.shape
+        assert result["delta"].shape == S_array.shape
+
+        # All call prices should be non-negative
+        assert np.all(result["price"] >= -1e-12)
+
+        # Delta should increase with S for a call (monotonic)
+        for i in range(len(S_array) - 1):
+            assert result["delta"][i] <= result["delta"][i + 1] + 1e-6
+
+    def test_vectorized_vs_scalar_greeks_agree(self):
+        """Vectorized and scalar compute_greeks should match."""
+        from tensorquantlib.finance.greeks import compute_greeks_vectorized
+
+        S_pts = np.array([90.0, 100.0, 110.0])
+        K, T, r, sigma = 100.0, 1.0, 0.05, 0.2
+
+        vec = compute_greeks_vectorized(
+            bs_price_tensor, S_pts, K, T, r, sigma, option_type="call"
+        )
+
+        for i, S_val in enumerate(S_pts):
+            scalar = compute_greeks(
+                bs_price_tensor, S_val, K, T, r, sigma, option_type="call"
+            )
+            np.testing.assert_allclose(
+                vec["delta"][i], scalar["delta"], atol=1e-5,
+                err_msg=f"Delta mismatch at S={S_val}"
+            )
+
+
+class TestValidationIntegration:
+    """Gradient validation (check_grad) on financial pricing functions."""
+
+    def test_check_grad_on_bs_pricing(self):
+        from tensorquantlib.utils.validation import check_grad
+
+        K, T, r, sigma = 100.0, 1.0, 0.05, 0.2
+        S_input = Tensor(np.array([100.0]), requires_grad=True)
+
+        result = check_grad(
+            lambda s: bs_price_tensor(s, K, T, r, sigma, option_type="call"),
+            [S_input],
+            tol=1e-4,
+        )
+        assert result["passed"], f"Gradient check failed: {result}"
+
+    def test_check_grad_bs_wrt_sigma(self):
+        from tensorquantlib.utils.validation import check_grad
+
+        S, K, T, r = 100.0, 100.0, 1.0, 0.05
+        sigma_input = Tensor(np.array([0.2]), requires_grad=True)
+
+        result = check_grad(
+            lambda sig: bs_price_tensor(
+                Tensor(np.array([S])), K, T, r, sig, option_type="call"
+            ),
+            [sigma_input],
+            tol=1e-4,
+        )
+        assert result["passed"], f"Gradient check failed: {result}"
+
+
+class TestTopLevelImports:
+    """Verify the public API is accessible from top-level package."""
+
+    def test_all_core_imports(self):
+        import tensorquantlib as tql
+
+        # Core
+        assert hasattr(tql, "Tensor")
+        # Finance
+        assert hasattr(tql, "bs_price_numpy")
+        assert hasattr(tql, "bs_price_tensor")
+        assert hasattr(tql, "bs_delta")
+        assert hasattr(tql, "bs_vega")
+        assert hasattr(tql, "compute_greeks")
+        assert hasattr(tql, "compute_greeks_vectorized")
+        # TT
+        assert hasattr(tql, "tt_svd")
+        assert hasattr(tql, "tt_round")
+        assert hasattr(tql, "tt_to_full")
+        assert hasattr(tql, "TTSurrogate")
+        # Viz
+        assert hasattr(tql, "plot_pricing_surface")
+        assert hasattr(tql, "plot_tt_ranks")
+
+    def test_version_defined(self):
+        import tensorquantlib as tql
+        assert hasattr(tql, "__version__")
+        assert isinstance(tql.__version__, str)
+        assert len(tql.__version__) > 0
+
+
+class TestPutCallParity:
+    """Cross-validate put-call parity through multiple code paths."""
+
+    def test_parity_analytic(self):
+        """C - P = S*e^{-qT} - K*e^{-rT} for q=0."""
+        S, K, T, r, sigma = 100.0, 100.0, 1.0, 0.05, 0.2
+        call = bs_price_numpy(S, K, T, r, sigma, option_type="call")
+        put = bs_price_numpy(S, K, T, r, sigma, option_type="put")
+        parity = S - K * np.exp(-r * T)
+        np.testing.assert_allclose(call - put, parity, atol=1e-10)
+
+    def test_parity_autograd(self):
+        """Put-call parity holds through the autograd engine too."""
+        S_val, K, T, r, sigma = 105.0, 100.0, 0.5, 0.03, 0.25
+        S = Tensor(np.array([S_val]), requires_grad=True)
+
+        call = bs_price_tensor(S, K, T, r, sigma, option_type="call")
+        # Need a fresh Tensor for put
+        S2 = Tensor(np.array([S_val]), requires_grad=True)
+        put = bs_price_tensor(S2, K, T, r, sigma, option_type="put")
+
+        parity = S_val - K * np.exp(-r * T)
+        np.testing.assert_allclose(
+            float(call.data) - float(put.data), parity, atol=1e-8
+        )
+
+
+class TestTTSurrogateEdgeCases:
+    """Edge-case tests for surrogate construction and evaluation."""
+
+    def test_boundary_evaluation(self):
+        """Evaluate surrogate at the boundary of the grid."""
+        surr = TTSurrogate.from_basket_analytic(
+            S0_ranges=[(80, 120), (80, 120)],
+            K=100.0, T=1.0, r=0.05,
+            sigma=[0.2, 0.2], weights=[0.5, 0.5],
+            n_points=15, eps=1e-4,
+        )
+        # Low boundary → deep OTM call ≈ 0
+        price_low = surr.evaluate([80.0, 80.0])
+        assert price_low >= -1e-6
+
+        # High boundary → deep ITM call
+        price_high = surr.evaluate([120.0, 120.0])
+        assert price_high > price_low
+
+    def test_surrogate_recompress(self):
+        """Build → recompress with tighter tolerance → verify accuracy."""
+        surr = TTSurrogate.from_basket_analytic(
+            S0_ranges=[(80, 120), (80, 120)],
+            K=100.0, T=1.0, r=0.05,
+            sigma=[0.2, 0.2], weights=[0.5, 0.5],
+            n_points=20, eps=1e-8,
+        )
+
+        original_price = surr.evaluate([100.0, 100.0])
+
+        # Recompress
+        from tensorquantlib.tt.decompose import tt_round
+        rounded_cores = tt_round(surr.cores, eps=1e-4)
+        rounded_surr = TTSurrogate.from_grid(
+            tt_to_full(rounded_cores), surr.axes, eps=1e-4
+        )
+        rounded_price = rounded_surr.evaluate([100.0, 100.0])
+
+        np.testing.assert_allclose(rounded_price, original_price, atol=0.1)

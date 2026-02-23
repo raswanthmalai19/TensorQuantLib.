@@ -384,4 +384,4 @@ def tt_frobenius_norm(cores: List[np.ndarray]) -> float:
     Returns:
         Frobenius norm (scalar).
     """
-    return np.sqrt(max(0.0, tt_dot(cores, cores)))
+    return float(np.sqrt(max(0.0, tt_dot(cores, cores))))

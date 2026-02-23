@@ -10,6 +10,7 @@ Provides:
 from __future__ import annotations
 
 import numpy as np
+from typing import Any, Tuple, Union
 from scipy.stats import norm
 
 from tensorquantlib.core.tensor import Tensor, tensor_norm_cdf, tensor_exp, tensor_log, tensor_sqrt
@@ -19,14 +20,30 @@ from tensorquantlib.core.tensor import Tensor, tensor_norm_cdf, tensor_exp, tens
 # Analytic Black-Scholes (NumPy) — ground truth
 # ====================================================================== #
 
-def _d1_d2(S, K, T, r, sigma, q=0.0):
+def _d1_d2(
+    S: Union[float, np.ndarray],
+    K: float,
+    T: float,
+    r: float,
+    sigma: float,
+    q: float = 0.0,
+) -> Tuple[Any, Any]:
     """Compute d1 and d2 for Black-Scholes formula."""
     d1 = (np.log(S / K) + (r - q + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
     d2 = d1 - sigma * np.sqrt(T)
     return d1, d2
 
 
-def bs_price_numpy(S, K, T, r, sigma, q=0.0, option_type="call"):
+def bs_price_numpy(
+    S: Union[float, np.ndarray],
+    K: float,
+    T: float,
+    r: float,
+    sigma: float,
+    q: float = 0.0,
+    option_type: str = "call",
+
+) -> Any:
     """Analytic Black-Scholes price (pure NumPy).
 
     Args:
@@ -64,7 +81,16 @@ def bs_price_numpy(S, K, T, r, sigma, q=0.0, option_type="call"):
 # Analytic Greeks (NumPy) — for validation
 # ====================================================================== #
 
-def bs_delta(S, K, T, r, sigma, q=0.0, option_type="call"):
+def bs_delta(
+    S: Union[float, np.ndarray],
+    K: float,
+    T: float,
+    r: float,
+    sigma: float,
+    q: float = 0.0,
+    option_type: str = "call",
+
+) -> Any:
     """Analytic Delta: dV/dS."""
     d1, _ = _d1_d2(S, K, T, r, sigma, q)
     if option_type == "call":
@@ -73,19 +99,44 @@ def bs_delta(S, K, T, r, sigma, q=0.0, option_type="call"):
         return -np.exp(-q * T) * norm.cdf(-d1)
 
 
-def bs_gamma(S, K, T, r, sigma, q=0.0):
+def bs_gamma(
+    S: Union[float, np.ndarray],
+    K: float,
+    T: float,
+    r: float,
+    sigma: float,
+    q: float = 0.0,
+
+) -> Any:
     """Analytic Gamma: d²V/dS² (same for call and put)."""
     d1, _ = _d1_d2(S, K, T, r, sigma, q)
     return np.exp(-q * T) * norm.pdf(d1) / (S * sigma * np.sqrt(T))
 
 
-def bs_vega(S, K, T, r, sigma, q=0.0):
+def bs_vega(
+    S: Union[float, np.ndarray],
+    K: float,
+    T: float,
+    r: float,
+    sigma: float,
+    q: float = 0.0,
+
+) -> Any:
     """Analytic Vega: dV/dsigma (same for call and put)."""
     d1, _ = _d1_d2(S, K, T, r, sigma, q)
     return S * np.exp(-q * T) * norm.pdf(d1) * np.sqrt(T)
 
 
-def bs_theta(S, K, T, r, sigma, q=0.0, option_type="call"):
+def bs_theta(
+    S: Union[float, np.ndarray],
+    K: float,
+    T: float,
+    r: float,
+    sigma: float,
+    q: float = 0.0,
+    option_type: str = "call",
+
+) -> Any:
     """Analytic Theta: -dV/dT (time decay per year)."""
     d1, d2 = _d1_d2(S, K, T, r, sigma, q)
     term1 = -S * np.exp(-q * T) * norm.pdf(d1) * sigma / (2 * np.sqrt(T))
@@ -95,7 +146,16 @@ def bs_theta(S, K, T, r, sigma, q=0.0, option_type="call"):
         return term1 + r * K * np.exp(-r * T) * norm.cdf(-d2) - q * S * np.exp(-q * T) * norm.cdf(-d1)
 
 
-def bs_rho(S, K, T, r, sigma, q=0.0, option_type="call"):
+def bs_rho(
+    S: Union[float, np.ndarray],
+    K: float,
+    T: float,
+    r: float,
+    sigma: float,
+    q: float = 0.0,
+    option_type: str = "call",
+
+) -> Any:
     """Analytic Rho: dV/dr."""
     _, d2 = _d1_d2(S, K, T, r, sigma, q)
     if option_type == "call":
@@ -108,7 +168,15 @@ def bs_rho(S, K, T, r, sigma, q=0.0, option_type="call"):
 # Tensor-based Black-Scholes (flows through autograd)
 # ====================================================================== #
 
-def bs_price_tensor(S, K, T, r, sigma, q=0.0, option_type="call"):
+def bs_price_tensor(
+    S: Union[float, Tensor],
+    K: Union[float, Tensor],
+    T: Union[float, Tensor],
+    r: Union[float, Tensor],
+    sigma: Union[float, Tensor],
+    q: float = 0.0,
+    option_type: str = "call",
+) -> Tensor:
     """Black-Scholes price using Tensor operations (supports autograd).
 
     All inputs can be Tensor objects. The computation graph is built

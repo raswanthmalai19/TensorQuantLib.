@@ -29,8 +29,13 @@ from tensorquantlib.finance.black_scholes import (
     bs_theta,
     bs_rho,
 )
-from tensorquantlib.finance.basket import simulate_basket
-from tensorquantlib.finance.greeks import compute_greeks
+from tensorquantlib.finance.basket import (
+    simulate_basket,
+    build_pricing_grid,
+    build_pricing_grid_analytic,
+)
+from tensorquantlib.finance.greeks import compute_greeks, compute_greeks_vectorized
+from tensorquantlib.viz import plot_pricing_surface, plot_greeks_surface, plot_tt_ranks
 
 __all__ = [
     # Core
@@ -60,5 +65,12 @@ __all__ = [
     "bs_theta",
     "bs_rho",
     "simulate_basket",
+    "build_pricing_grid",
+    "build_pricing_grid_analytic",
     "compute_greeks",
+    "compute_greeks_vectorized",
+    # Visualization
+    "plot_pricing_surface",
+    "plot_greeks_surface",
+    "plot_tt_ranks",
 ]
