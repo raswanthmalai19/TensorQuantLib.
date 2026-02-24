@@ -371,3 +371,4 @@ MIT — see [`LICENSE`](LICENSE).
 ---
 
 *Built from scratch — no ML framework dependencies. Custom autograd + custom TT-SVD + custom interpolation.*
+# TensorQuantLib.
