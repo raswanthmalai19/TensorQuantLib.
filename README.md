@@ -48,22 +48,50 @@ Pricing a 5-asset basket option via Monte Carlo at 100,000 paths takes ~30 secon
 
 ## Installation
 
-```bash
-# Clone the repository
-git clone https://github.com/raswanthmalai19/TensorQuantLib.git
-cd TensorQuantLib
+### pip install (recommended — works in Google Colab, Jupyter, or anywhere)
 
-# Install with all dependencies
+```bash
+pip install git+https://github.com/raswanthmalai19/TensorQuantLib..git
+```
+
+That's it. No cloning required.
+
+---
+
+### Google Colab
+
+Paste this into the first cell of any Colab notebook:
+
+```python
+!pip install git+https://github.com/raswanthmalai19/TensorQuantLib..git
+
+# Then import and use immediately:
+import numpy as np
+from tensorquantlib import TTSurrogate, Tensor, bs_price_tensor
+```
+
+---
+
+### With visualization support
+
+```bash
+pip install "git+https://github.com/raswanthmalai19/TensorQuantLib..git#egg=tensorquantlib[viz]"
+```
+
+---
+
+### Clone & install locally (for development)
+
+```bash
+git clone https://github.com/raswanthmalai19/TensorQuantLib..git
+cd TensorQuantLib.
+
+# Install with all dev dependencies
 pip install -e ".[dev]"
 
 # Verify everything works
 python -m pytest tests/ -q
 # 243 passed in ~2s
-```
-
-For visualization support only:
-```bash
-pip install -e ".[viz]"
 ```
 
 ---
