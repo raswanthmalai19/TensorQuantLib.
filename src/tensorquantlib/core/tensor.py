@@ -194,6 +194,21 @@ class Tensor:
     def sqrt(self) -> Tensor:
         return tensor_sqrt(self)
 
+    def sin(self) -> Tensor:
+        return tensor_sin(self)
+
+    def cos(self) -> Tensor:
+        return tensor_cos(self)
+
+    def tanh(self) -> Tensor:
+        return tensor_tanh(self)
+
+    def abs(self) -> Tensor:
+        return tensor_abs(self)
+
+    def clip(self, a_min: float, a_max: float) -> Tensor:
+        return tensor_clip(self, a_min, a_max)
+
     def item(self) -> float:
         """Return scalar value (only works for size-1 tensors)."""
         return float(self.data.item())
@@ -581,6 +596,151 @@ def tensor_norm_cdf(a: Tensor) -> Tensor:
                 a.grad = np.zeros_like(a.data)
             # dΦ/da = φ(a) = normal PDF
             a.grad += out.grad * norm.pdf(a.data)
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_sin(a: Tensor) -> Tensor:
+    """Element-wise sine: z = sin(a)."""
+    out = Tensor(np.sin(a.data), _children=(a,), _op="sin")
+    out.requires_grad = a.requires_grad
+
+    def _backward() -> None:
+        assert out.grad is not None
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            a.grad += out.grad * np.cos(a.data)
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_cos(a: Tensor) -> Tensor:
+    """Element-wise cosine: z = cos(a)."""
+    out = Tensor(np.cos(a.data), _children=(a,), _op="cos")
+    out.requires_grad = a.requires_grad
+
+    def _backward() -> None:
+        assert out.grad is not None
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            a.grad += out.grad * (-np.sin(a.data))
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_tanh(a: Tensor) -> Tensor:
+    """Element-wise hyperbolic tangent: z = tanh(a)."""
+    out_data = np.tanh(a.data)
+    out = Tensor(out_data, _children=(a,), _op="tanh")
+    out.requires_grad = a.requires_grad
+
+    def _backward() -> None:
+        assert out.grad is not None
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            # d tanh/da = 1 - tanh²(a)
+            a.grad += out.grad * (1.0 - out_data ** 2)
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_abs(a: Tensor) -> Tensor:
+    """Element-wise absolute value: z = abs(a). Subgradient at 0 is 0."""
+    out = Tensor(np.abs(a.data), _children=(a,), _op="abs")
+    out.requires_grad = a.requires_grad
+
+    def _backward() -> None:
+        assert out.grad is not None
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            a.grad += out.grad * np.sign(a.data)
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_clip(a: Tensor, a_min: float, a_max: float) -> Tensor:
+    """Element-wise clip: z = clip(a, a_min, a_max).
+
+    Gradient is 1 where a is within [a_min, a_max], 0 otherwise.
+    """
+    out = Tensor(np.clip(a.data, a_min, a_max), _children=(a,), _op="clip")
+    out.requires_grad = a.requires_grad
+
+    def _backward() -> None:
+        assert out.grad is not None
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            mask = ((a.data >= a_min) & (a.data <= a_max)).astype(np.float64)
+            a.grad += out.grad * mask
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_where(condition: np.ndarray, a: Tensor, b: Tensor) -> Tensor:
+    """Element-wise selection: z = a where condition else b.
+
+    Args:
+        condition: Boolean NumPy array.
+        a: Values where condition is True.
+        b: Values where condition is False.
+    """
+    out = Tensor(np.where(condition, a.data, b.data), _children=(a, b), _op="where")
+    out.requires_grad = a.requires_grad or b.requires_grad
+
+    def _backward() -> None:
+        assert out.grad is not None
+        mask = condition.astype(np.float64)
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            a.grad += _unbroadcast(out.grad * mask, a.shape)
+        if b.requires_grad:
+            if b.grad is None:
+                b.grad = np.zeros_like(b.data)
+            b.grad += _unbroadcast(out.grad * (1.0 - mask), b.shape)
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_softmax(a: Tensor, axis: int = -1) -> Tensor:
+    """Softmax along an axis: z_i = exp(a_i) / sum_j(exp(a_j)).
+
+    Numerically stable via max subtraction.
+    """
+    shifted = a.data - a.data.max(axis=axis, keepdims=True)
+    exp_a = np.exp(shifted)
+    out_data = exp_a / exp_a.sum(axis=axis, keepdims=True)
+    out = Tensor(out_data, _children=(a,), _op="softmax")
+    out.requires_grad = a.requires_grad
+
+    def _backward() -> None:
+        assert out.grad is not None
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            # Jacobian-vector product for softmax
+            s = out_data
+            dot = (out.grad * s).sum(axis=axis, keepdims=True)
+            a.grad += s * (out.grad - dot)
 
     if out.requires_grad:
         out._backward = _backward

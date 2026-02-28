@@ -16,6 +16,12 @@ from .ops import (
     tt_to_full,
 )
 from .surrogate import TTSurrogate
+from .pricing import (
+    heston_surrogate,
+    american_surrogate,
+    exotic_surrogate,
+    jump_diffusion_surrogate,
+)
 
 __all__ = [
     "TTSurrogate",

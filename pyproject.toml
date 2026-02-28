@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tensorquantlib"
-version = "0.1.0"
-description = "Tensor-Train surrogate pricing engine with autodiff for multi-asset options"
+version = "0.3.0"
+description = "Comprehensive quantitative finance library with tensor-train compression, autodiff, and stochastic models"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
@@ -20,6 +20,14 @@ keywords = [
     "basket options",
     "surrogate model",
     "tensor decomposition",
+    "black-scholes",
+    "heston",
+    "american options",
+    "exotic options",
+    "implied volatility",
+    "risk management",
+    "monte carlo",
+    "variance reduction",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -54,15 +62,18 @@ docs = [
     "sphinx>=7.0",
     "sphinx-autodoc-typehints>=1.25",
 ]
+data = [
+    "yfinance>=0.2",
+]
 all = [
-    "tensorquantlib[dev,viz,docs]",
+    "tensorquantlib[dev,viz,docs,data]",
 ]
 
 [project.urls]
-Repository = "https://github.com/your-org/tensorquantlib"
+Repository = "https://github.com/raswanthmalai19/TensorQuantLib"
 Documentation = "https://tensorquantlib.readthedocs.io"
-"Bug Tracker" = "https://github.com/your-org/tensorquantlib/issues"
-Changelog = "https://github.com/your-org/tensorquantlib/blob/main/CHANGELOG.md"
+"Bug Tracker" = "https://github.com/raswanthmalai19/TensorQuantLib/issues"
+Changelog = "https://github.com/raswanthmalai19/TensorQuantLib/blob/main/CHANGELOG.md"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.abspath("../src"))
 project = "TensorQuantLib"
 copyright = "2024, TensorQuantLib Contributors"
 author = "TensorQuantLib Contributors"
-release = "0.1.0"
+release = "0.3.0"
 
 # -- General configuration ---------------------------------------------------
 
@@ -28,7 +28,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # Napoleon settings (Google-style docstrings)
 napoleon_google_docstring = True
-napoleon_numpy_docstring = False
+napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = True
 
 # Autodoc settings
@@ -47,9 +47,9 @@ intersphinx_mapping = {
 
 html_theme = "alabaster"
 html_theme_options = {
-    "description": "Tensor-Train surrogate pricing with autodiff",
-    "github_user": "your-org",
-    "github_repo": "tensorquantlib",
+    "description": "Comprehensive quant finance library with TT compression & autodiff",
+    "github_user": "raswanthmalai19",
+    "github_repo": "TensorQuantLib",
     "github_banner": True,
     "fixed_sidebar": True,
 }
