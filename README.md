@@ -7,12 +7,27 @@
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://docs.astral.sh/ruff/)
 [![Typed: mypy strict](https://img.shields.io/badge/typed-mypy%20strict-blue.svg)](https://mypy-lang.org/)
 [![Tests: 353](https://img.shields.io/badge/tests-353%20passing-brightgreen.svg)](https://github.com/raswanthmalai19/TensorQuantLib/actions)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://raswanthmalai19.github.io/TensorQuantLib)
 
 **A comprehensive quantitative finance library with tensor-train compression, automatic differentiation, and stochastic models — built from scratch with NumPy and SciPy.**
 
 TensorQuantLib provides a complete toolkit for derivatives pricing, risk management, and portfolio analysis. It compresses high-dimensional pricing surfaces using **Tensor-Train (TT) decomposition**, prices options with **Black-Scholes, Heston, and Monte Carlo engines**, and computes Greeks via a custom **reverse-mode autodiff engine**.
 
 > **No PyTorch. No TensorFlow. No JAX.** Custom autograd, custom TT-SVD, custom stochastic models — built entirely with NumPy and SciPy.
+
+---
+
+## 📖 Documentation
+
+Complete documentation with API reference, tutorials, and examples is available at:
+**[https://raswanthmalai19.github.io/TensorQuantLib](https://raswanthmalai19.github.io/TensorQuantLib)**
+
+### Quick Links
+- [**API Reference**](https://raswanthmalai19.github.io/TensorQuantLib/api.html) — Full module documentation
+- [**Quick Start**](https://raswanthmalai19.github.io/TensorQuantLib/quickstart.html) — Getting started guide
+- [**Theory**](https://raswanthmalai19.github.io/TensorQuantLib/theory.html) — Mathematical foundations
+- [**Examples**](https://raswanthmalai19.github.io/TensorQuantLib/quickstart.html#examples) — Code examples and tutorials
+- [**Changelog**](https://raswanthmalai19.github.io/TensorQuantLib/changelog.html) — Version history
 
 ---
 
