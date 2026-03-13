@@ -4,14 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'docs/**'
-      - 'src/**'
-      - 'examples/**'
-      - '.github/workflows/pages.yml'
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
