@@ -49,7 +49,7 @@ html_theme = "alabaster"
 html_theme_options = {
     "description": "Comprehensive quant finance library with TT compression & autodiff",
     "github_user": "raswanthmalai19",
-    "github_repo": "TensorQuantLib",
+    "github_repo": "TensorQuantLib.",
     "github_banner": True,
     "fixed_sidebar": True,
 }
