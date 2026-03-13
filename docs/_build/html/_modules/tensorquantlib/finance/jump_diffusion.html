@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tensorquantlib.finance.jump_diffusion &#8212; TensorQuantLib 0.3.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=f6a572b4" />
+    <script src="../../../_static/documentation_options.js?v=e259d695"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">TensorQuantLib</a></h1>
+
+
+
+<p class="blurb">Comprehensive quant finance library with TT compression & autodiff</p>
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=raswanthmalai19&repo=TensorQuantLib&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../theory.html">Theory &amp; Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../limitations.html">Known Limitations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for tensorquantlib.finance.jump_diffusion</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Jump-diffusion models for option pricing.</span>
+
+<span class="sd">- Merton (1976) jump-diffusion: analytic + MC</span>
+<span class="sd">- Kou (2002) double-exponential jump-diffusion: MC</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">norm</span>
+<span class="kn">from</span> <span class="nn">scipy.special</span> <span class="kn">import</span> <span class="n">factorial</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Merton jump-diffusion (1976)</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="merton_jump_price">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.jump_diffusion.merton_jump_price">[docs]</a>
+<span class="k">def</span> <span class="nf">merton_jump_price</span><span class="p">(</span><span class="n">S</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">K</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                      <span class="n">lam</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">mu_j</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">sigma_j</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                      <span class="n">option_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;call&quot;</span><span class="p">,</span> <span class="n">n_terms</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Merton (1976) jump-diffusion price via series expansion.</span>
+
+<span class="sd">    The stock follows dS/S = (r - lambda*k)*dt + sigma*dW + J*dN</span>
+<span class="sd">    where N is Poisson(lambda*T), J ~ LogNormal(mu_j, sigma_j^2),</span>
+<span class="sd">    and k = E[e^J - 1] = exp(mu_j + sigma_j^2/2) - 1.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    S : float</span>
+<span class="sd">        Spot price.</span>
+<span class="sd">    K : float</span>
+<span class="sd">        Strike price.</span>
+<span class="sd">    T : float</span>
+<span class="sd">        Time to expiry (years).</span>
+<span class="sd">    r : float</span>
+<span class="sd">        Risk-free rate.</span>
+<span class="sd">    sigma : float</span>
+<span class="sd">        Diffusion volatility.</span>
+<span class="sd">    lam : float</span>
+<span class="sd">        Jump intensity (expected number of jumps per year).</span>
+<span class="sd">    mu_j : float</span>
+<span class="sd">        Mean of log-jump size.</span>
+<span class="sd">    sigma_j : float</span>
+<span class="sd">        Std dev of log-jump size.</span>
+<span class="sd">    option_type : str</span>
+<span class="sd">        ``&#39;call&#39;`` or ``&#39;put&#39;``.</span>
+<span class="sd">    n_terms : int</span>
+<span class="sd">        Number of terms in the series expansion.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        Option price.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">mu_j</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">sigma_j</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span>
+    <span class="n">lam_prime</span> <span class="o">=</span> <span class="n">lam</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">k</span><span class="p">)</span>
+    <span class="n">price</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_terms</span><span class="p">):</span>
+        <span class="n">sigma_n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sigma</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">n</span> <span class="o">*</span> <span class="n">sigma_j</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">T</span><span class="p">)</span>
+        <span class="n">r_n</span> <span class="o">=</span> <span class="n">r</span> <span class="o">-</span> <span class="n">lam</span> <span class="o">*</span> <span class="n">k</span> <span class="o">+</span> <span class="n">n</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">k</span><span class="p">)</span> <span class="o">/</span> <span class="n">T</span>
+        <span class="c1"># Standard BS price with (r_n, sigma_n)</span>
+        <span class="n">d1</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">S</span> <span class="o">/</span> <span class="n">K</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">r_n</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">sigma_n</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">T</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">sigma_n</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">T</span><span class="p">))</span>
+        <span class="n">d2</span> <span class="o">=</span> <span class="n">d1</span> <span class="o">-</span> <span class="n">sigma_n</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">option_type</span> <span class="o">==</span> <span class="s2">&quot;call&quot;</span><span class="p">:</span>
+            <span class="n">bs_n</span> <span class="o">=</span> <span class="n">S</span> <span class="o">*</span> <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">d1</span><span class="p">)</span> <span class="o">-</span> <span class="n">K</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">r_n</span> <span class="o">*</span> <span class="n">T</span><span class="p">)</span> <span class="o">*</span> <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">d2</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">bs_n</span> <span class="o">=</span> <span class="n">K</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">r_n</span> <span class="o">*</span> <span class="n">T</span><span class="p">)</span> <span class="o">*</span> <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="o">-</span><span class="n">d2</span><span class="p">)</span> <span class="o">-</span> <span class="n">S</span> <span class="o">*</span> <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="o">-</span><span class="n">d1</span><span class="p">)</span>
+
+        <span class="n">weight</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">lam_prime</span> <span class="o">*</span> <span class="n">T</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">lam_prime</span> <span class="o">*</span> <span class="n">T</span><span class="p">)</span><span class="o">**</span><span class="n">n</span> <span class="o">/</span> <span class="n">factorial</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">exact</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">price</span> <span class="o">+=</span> <span class="n">weight</span> <span class="o">*</span> <span class="n">bs_n</span>
+
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">price</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="merton_jump_price_mc">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.jump_diffusion.merton_jump_price_mc">[docs]</a>
+<span class="k">def</span> <span class="nf">merton_jump_price_mc</span><span class="p">(</span><span class="n">S</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">K</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                         <span class="n">lam</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">mu_j</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">sigma_j</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                         <span class="n">option_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;call&quot;</span><span class="p">,</span> <span class="n">n_paths</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100_000</span><span class="p">,</span>
+                         <span class="n">n_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">252</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Merton jump-diffusion price via Monte Carlo.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    S, K, T, r, sigma, lam, mu_j, sigma_j, option_type</span>
+<span class="sd">        Same as :func:`merton_jump_price`.</span>
+<span class="sd">    n_paths : int</span>
+<span class="sd">        Number of MC paths.</span>
+<span class="sd">    n_steps : int</span>
+<span class="sd">        Time steps per path.</span>
+<span class="sd">    seed : int, optional</span>
+<span class="sd">        Random seed.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        MC estimate of the option price.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">T</span> <span class="o">/</span> <span class="n">n_steps</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">mu_j</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">sigma_j</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span>
+
+    <span class="n">log_S</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_paths</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">S</span><span class="p">))</span>
+    <span class="n">drift</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">lam</span> <span class="o">*</span> <span class="n">k</span><span class="p">)</span> <span class="o">*</span> <span class="n">dt</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">):</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">n_paths</span><span class="p">)</span>
+        <span class="c1"># Poisson jumps in [t, t+dt]</span>
+        <span class="n">n_jumps</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">lam</span> <span class="o">*</span> <span class="n">dt</span><span class="p">,</span> <span class="n">n_paths</span><span class="p">)</span>
+        <span class="c1"># Total jump size: sum of n_jumps LogNormal jumps</span>
+        <span class="n">jump</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_paths</span><span class="p">)</span>
+        <span class="n">has_jumps</span> <span class="o">=</span> <span class="n">n_jumps</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">has_jumps</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">has_jumps</span><span class="p">)[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="n">jump</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mu_j</span><span class="p">,</span> <span class="n">sigma_j</span><span class="p">,</span> <span class="n">n_jumps</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+        <span class="n">log_S</span> <span class="o">+=</span> <span class="n">drift</span> <span class="o">+</span> <span class="n">sigma</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span> <span class="o">*</span> <span class="n">z</span> <span class="o">+</span> <span class="n">jump</span>
+
+    <span class="n">S_T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_S</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">option_type</span> <span class="o">==</span> <span class="s2">&quot;call&quot;</span><span class="p">:</span>
+        <span class="n">payoff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">S_T</span> <span class="o">-</span> <span class="n">K</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">payoff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">K</span> <span class="o">-</span> <span class="n">S_T</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">r</span> <span class="o">*</span> <span class="n">T</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">payoff</span><span class="p">))</span></div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Kou double-exponential jump-diffusion (2002)</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="kou_jump_price_mc">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.jump_diffusion.kou_jump_price_mc">[docs]</a>
+<span class="k">def</span> <span class="nf">kou_jump_price_mc</span><span class="p">(</span><span class="n">S</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">K</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                      <span class="n">lam</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">eta1</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">eta2</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                      <span class="n">option_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;call&quot;</span><span class="p">,</span> <span class="n">n_paths</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100_000</span><span class="p">,</span>
+                      <span class="n">n_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">252</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Kou (2002) double-exponential jump-diffusion via Monte Carlo.</span>
+
+<span class="sd">    Jump sizes J follow a double-exponential distribution:</span>
+<span class="sd">        f(x) = p * eta1 * exp(-eta1*x) * 1_{x&gt;=0}</span>
+<span class="sd">             + (1-p) * eta2 * exp(eta2*x) * 1_{x&lt;0}</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    S : float</span>
+<span class="sd">        Spot price.</span>
+<span class="sd">    K : float</span>
+<span class="sd">        Strike price.</span>
+<span class="sd">    T : float</span>
+<span class="sd">        Time to expiry.</span>
+<span class="sd">    r : float</span>
+<span class="sd">        Risk-free rate.</span>
+<span class="sd">    sigma : float</span>
+<span class="sd">        Diffusion volatility.</span>
+<span class="sd">    lam : float</span>
+<span class="sd">        Jump intensity.</span>
+<span class="sd">    p : float</span>
+<span class="sd">        Probability of upward jump (0 &lt; p &lt; 1).</span>
+<span class="sd">    eta1 : float</span>
+<span class="sd">        Rate parameter for upward jumps (eta1 &gt; 1 for finite expectation).</span>
+<span class="sd">    eta2 : float</span>
+<span class="sd">        Rate parameter for downward jumps (eta2 &gt; 0).</span>
+<span class="sd">    option_type : str</span>
+<span class="sd">        ``&#39;call&#39;`` or ``&#39;put&#39;``.</span>
+<span class="sd">    n_paths : int</span>
+<span class="sd">        Number of MC paths.</span>
+<span class="sd">    n_steps : int</span>
+<span class="sd">        Time steps.</span>
+<span class="sd">    seed : int, optional</span>
+<span class="sd">        Random seed.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        MC estimate of option price.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">T</span> <span class="o">/</span> <span class="n">n_steps</span>
+    <span class="c1"># E[e^J] = p*eta1/(eta1-1) + (1-p)*eta2/(eta2+1)</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">p</span> <span class="o">*</span> <span class="n">eta1</span> <span class="o">/</span> <span class="p">(</span><span class="n">eta1</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">p</span><span class="p">)</span> <span class="o">*</span> <span class="n">eta2</span> <span class="o">/</span> <span class="p">(</span><span class="n">eta2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span>
+
+    <span class="n">log_S</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_paths</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">S</span><span class="p">))</span>
+    <span class="n">drift</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">lam</span> <span class="o">*</span> <span class="n">k</span><span class="p">)</span> <span class="o">*</span> <span class="n">dt</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">):</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">n_paths</span><span class="p">)</span>
+        <span class="n">n_jumps</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">lam</span> <span class="o">*</span> <span class="n">dt</span><span class="p">,</span> <span class="n">n_paths</span><span class="p">)</span>
+        <span class="n">jump</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_paths</span><span class="p">)</span>
+        <span class="n">has_jumps</span> <span class="o">=</span> <span class="n">n_jumps</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">has_jumps</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">has_jumps</span><span class="p">)[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_jumps</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+                    <span class="n">u</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">u</span> <span class="o">&lt;</span> <span class="n">p</span><span class="p">:</span>
+                        <span class="n">jump</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">rng</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">eta1</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">jump</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-=</span> <span class="n">rng</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">eta2</span><span class="p">)</span>
+        <span class="n">log_S</span> <span class="o">+=</span> <span class="n">drift</span> <span class="o">+</span> <span class="n">sigma</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span> <span class="o">*</span> <span class="n">z</span> <span class="o">+</span> <span class="n">jump</span>
+
+    <span class="n">S_T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_S</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">option_type</span> <span class="o">==</span> <span class="s2">&quot;call&quot;</span><span class="p">:</span>
+        <span class="n">payoff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">S_T</span> <span class="o">-</span> <span class="n">K</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">payoff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">K</span> <span class="o">-</span> <span class="n">S_T</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">r</span> <span class="o">*</span> <span class="n">T</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">payoff</span><span class="p">))</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &#169;2024, TensorQuantLib Contributors.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.0.4</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+    <a href="https://github.com/raswanthmalai19/TensorQuantLib" class="github">
+        <img src="../../../_static/github-banner.svg" alt="Fork me on GitHub" class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

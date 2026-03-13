@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Theory &amp; Background &#8212; TensorQuantLib 0.3.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=f6a572b4" />
+    <script src="_static/documentation_options.js?v=e259d695"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Known Limitations" href="limitations.html" />
+    <link rel="prev" title="API Reference" href="api.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">TensorQuantLib</a></h1>
+
+
+
+<p class="blurb">Comprehensive quant finance library with TT compression & autodiff</p>
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=raswanthmalai19&repo=TensorQuantLib&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Theory &amp; Background</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#tensor-train-decomposition">Tensor-Train Decomposition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reverse-mode-automatic-differentiation">Reverse-Mode Automatic Differentiation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#black-scholes-model">Black-Scholes Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basket-options">Basket Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#surrogate-pricing">Surrogate Pricing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="limitations.html">Known Limitations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="api.html" title="previous chapter">API Reference</a></li>
+      <li>Next: <a href="limitations.html" title="next chapter">Known Limitations</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="theory-background">
+<h1>Theory &amp; Background<a class="headerlink" href="#theory-background" title="Link to this heading">¶</a></h1>
+<p>This page gives a brief summary of the mathematical ideas behind
+TensorQuantLib.  For full details see the references.</p>
+<section id="tensor-train-decomposition">
+<h2>Tensor-Train Decomposition<a class="headerlink" href="#tensor-train-decomposition" title="Link to this heading">¶</a></h2>
+<p>A <em>d</em>-dimensional tensor <span class="math notranslate nohighlight">\(\mathbf{T} \in \mathbb{R}^{n_1 \times \cdots \times n_d}\)</span>
+is represented in <strong>Tensor-Train (TT) format</strong> as:</p>
+<div class="math notranslate nohighlight">
+\[T(i_1, \dots, i_d) = G_1(i_1) \, G_2(i_2) \, \cdots \, G_d(i_d)\]</div>
+<p>where each <em>core</em> <span class="math notranslate nohighlight">\(G_k(i_k)\)</span> is an <span class="math notranslate nohighlight">\(r_{k-1} \times r_k\)</span> matrix
+(with <span class="math notranslate nohighlight">\(r_0 = r_d = 1\)</span>).  The integers <span class="math notranslate nohighlight">\(r_k\)</span> are the <strong>TT-ranks</strong>.</p>
+<p><strong>Storage</strong>: <span class="math notranslate nohighlight">\(\sum_k r_{k-1} \, n_k \, r_k\)</span> — linear in <em>d</em> for bounded
+ranks, compared to <span class="math notranslate nohighlight">\(\prod_k n_k\)</span> for the full tensor.</p>
+<section id="tt-svd-algorithm">
+<h3>TT-SVD Algorithm<a class="headerlink" href="#tt-svd-algorithm" title="Link to this heading">¶</a></h3>
+<p>We use the <strong>TT-SVD</strong> algorithm (Oseledets, 2011):</p>
+<ol class="arabic simple">
+<li><p>Reshape the tensor into a matrix <span class="math notranslate nohighlight">\((n_1, n_2 \cdots n_d)\)</span>.</p></li>
+<li><p>Compute a truncated SVD; keep singular values above threshold.</p></li>
+<li><p>The left factor becomes core <span class="math notranslate nohighlight">\(G_1\)</span>; the right factor is reshaped and
+the process repeats for the remaining dimensions.</p></li>
+</ol>
+<p>The tolerance parameter <span class="math notranslate nohighlight">\(\varepsilon\)</span> controls the trade-off between
+compression and accuracy.</p>
+</section>
+<section id="tt-arithmetic">
+<h3>TT Arithmetic<a class="headerlink" href="#tt-arithmetic" title="Link to this heading">¶</a></h3>
+<p>TT format supports closed-form arithmetic:</p>
+<ul class="simple">
+<li><p><strong>Addition</strong>: rank-additive (<span class="math notranslate nohighlight">\(r_k^{A+B} = r_k^A + r_k^B\)</span>)</p></li>
+<li><p><strong>Hadamard product</strong>: rank-multiplicative (<span class="math notranslate nohighlight">\(r_k^{A \circ B} = r_k^A \cdot r_k^B\)</span>)</p></li>
+<li><p><strong>Scaling</strong>: no rank increase</p></li>
+<li><p><strong>Inner product</strong>: <span class="math notranslate nohighlight">\(O(d \, r^2 \, n)\)</span> via transfer-matrix contraction</p></li>
+</ul>
+<p>Use <code class="docutils literal notranslate"><span class="pre">tt_round()</span></code> after addition / Hadamard to compress ranks back down.</p>
+</section>
+</section>
+<section id="reverse-mode-automatic-differentiation">
+<h2>Reverse-Mode Automatic Differentiation<a class="headerlink" href="#reverse-mode-automatic-differentiation" title="Link to this heading">¶</a></h2>
+<p>TensorQuantLib implements <strong>reverse-mode autodiff</strong> (back-propagation) via a
+tape-based computational graph:</p>
+<ol class="arabic simple">
+<li><p>Each <code class="docutils literal notranslate"><span class="pre">Tensor</span></code> operation records its inputs and a <code class="docutils literal notranslate"><span class="pre">_backward</span></code> closure.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">backward()</span></code> performs a topological sort (DFS) of the graph, then
+traverses in reverse, accumulating gradients via the chain rule.</p></li>
+<li><p>Gradients are un-broadcast where necessary.</p></li>
+</ol>
+<p>This gives exact first-order derivatives (Delta, Vega) of any pricing function
+built from the supported operations.</p>
+</section>
+<section id="black-scholes-model">
+<h2>Black-Scholes Model<a class="headerlink" href="#black-scholes-model" title="Link to this heading">¶</a></h2>
+<p>For a European option on a single asset with spot <span class="math notranslate nohighlight">\(S\)</span>, strike <span class="math notranslate nohighlight">\(K\)</span>,
+risk-free rate <span class="math notranslate nohighlight">\(r\)</span>, time to maturity <span class="math notranslate nohighlight">\(T\)</span>, and volatility
+<span class="math notranslate nohighlight">\(\sigma\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[C = S \, \Phi(d_1) - K e^{-rT} \Phi(d_2)\]</div>
+<div class="math notranslate nohighlight">
+\[d_1 = \frac{\ln(S/K) + (r + \tfrac{1}{2}\sigma^2)T}{\sigma\sqrt{T}}, \quad
+d_2 = d_1 - \sigma\sqrt{T}\]</div>
+</section>
+<section id="basket-options">
+<h2>Basket Options<a class="headerlink" href="#basket-options" title="Link to this heading">¶</a></h2>
+<p>A basket call on <span class="math notranslate nohighlight">\(d\)</span> assets with equal weights pays
+<span class="math notranslate nohighlight">\(\max\!\bigl(\frac{1}{d}\sum_i S_i^T - K, \; 0\bigr)\)</span>.</p>
+<p>We price via <strong>Monte-Carlo</strong> simulation of correlated geometric Brownian
+motions:</p>
+<div class="math notranslate nohighlight">
+\[S_i^T = S_i^0 \exp\!\Bigl[\bigl(r - \tfrac{1}{2}\sigma_i^2\bigr)T
++ \sigma_i \sqrt{T}\, Z_i\Bigr]\]</div>
+<p>where <span class="math notranslate nohighlight">\(Z \sim \mathcal{N}(0, \Sigma)\)</span> and <span class="math notranslate nohighlight">\(\Sigma\)</span> is the
+correlation matrix (Cholesky-factored for sampling).</p>
+</section>
+<section id="surrogate-pricing">
+<h2>Surrogate Pricing<a class="headerlink" href="#surrogate-pricing" title="Link to this heading">¶</a></h2>
+<p>The <strong>TTSurrogate</strong> workflow:</p>
+<ol class="arabic simple">
+<li><p>Build a pricing grid over spot prices (one axis per asset).</p></li>
+<li><p>Compress the grid using TT-SVD — achieving 10–1000× compression.</p></li>
+<li><p>Evaluate prices at new points via <strong>multi-linear interpolation</strong> on the
+compressed TT cores, avoiding full grid reconstruction.</p></li>
+<li><p>Compute Greeks via <strong>finite differences</strong> on the surrogate.</p></li>
+</ol>
+<p>This enables real-time pricing of 3–5 asset options on a laptop.</p>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><ol class="upperroman simple">
+<li><ol class="upperalpha simple" start="22">
+<li><p>Oseledets, <em>Tensor-Train Decomposition</em>, SIAM J. Sci. Comput., 2011.</p></li>
+</ol>
+</li>
+</ol>
+</li>
+<li><p>F. Black and M. Scholes, <em>The Pricing of Options and Corporate Liabilities</em>,
+J. Political Economy, 1973.</p></li>
+<li><ol class="upperalpha simple" start="16">
+<li><p>Glasserman, <em>Monte Carlo Methods in Financial Engineering</em>, Springer, 2003.</p></li>
+</ol>
+</li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &#169;2024, TensorQuantLib Contributors.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.0.4</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/theory.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+    <a href="https://github.com/raswanthmalai19/TensorQuantLib" class="github">
+        <img src="_static/github-banner.svg" alt="Fork me on GitHub" class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

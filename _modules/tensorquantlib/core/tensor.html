@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tensorquantlib.core.tensor &#8212; TensorQuantLib 0.3.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=f6a572b4" />
+    <script src="../../../_static/documentation_options.js?v=e259d695"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">TensorQuantLib</a></h1>
+
+
+
+<p class="blurb">Comprehensive quant finance library with TT compression & autodiff</p>
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=raswanthmalai19&repo=TensorQuantLib&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../theory.html">Theory &amp; Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../limitations.html">Known Limitations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for tensorquantlib.core.tensor</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Tensor class with reverse-mode automatic differentiation.</span>
+
+<span class="sd">This is the core data structure for TensorQuantLib. Every computation</span>
+<span class="sd">flows through Tensor objects, which track the computational graph</span>
+<span class="sd">and enable gradient computation via backpropagation.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<div class="viewcode-block" id="Tensor">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.Tensor">[docs]</a>
+<span class="k">class</span> <span class="nc">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A multi-dimensional array with automatic differentiation support.</span>
+
+<span class="sd">    Stores data as a NumPy float64 array, optionally tracking gradients.</span>
+<span class="sd">    When requires_grad=True, all operations on this tensor build a</span>
+<span class="sd">    computational graph that enables reverse-mode autodiff via .backward().</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        data: The underlying NumPy array (float64).</span>
+<span class="sd">        grad: Gradient array, populated after .backward(). None until first backward pass.</span>
+<span class="sd">        requires_grad: Whether this tensor participates in gradient computation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+        <span class="n">requires_grad</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">_children</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+        <span class="n">_op</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">requires_grad</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grad</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_backward</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="kc">None</span>  <span class="c1"># closure for local backward</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_children</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">_children</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_op</span> <span class="o">=</span> <span class="n">_op</span>  <span class="c1"># label for debugging</span>
+
+    <span class="c1"># ------------------------------------------------------------------ #</span>
+    <span class="c1"># Properties</span>
+    <span class="c1"># ------------------------------------------------------------------ #</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ndim</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">ndim</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dtype</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dtype</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">T</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Transpose (creates a new node in the graph).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">tensor_transpose</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="c1"># ------------------------------------------------------------------ #</span>
+    <span class="c1"># Backward (reverse-mode autodiff)</span>
+    <span class="c1"># ------------------------------------------------------------------ #</span>
+<div class="viewcode-block" id="Tensor.backward">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.Tensor.backward">[docs]</a>
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute gradients via reverse-mode automatic differentiation.</span>
+
+<span class="sd">        Performs a topological sort of the computational graph, then</span>
+<span class="sd">        propagates gradients from this tensor back to all ancestors</span>
+<span class="sd">        with requires_grad=True.</span>
+
+<span class="sd">        This tensor&#39;s grad is seeded with ones (dL/dL = 1).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Build topological order via DFS</span>
+        <span class="n">topo</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">visited</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">_build_topo</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vid</span> <span class="o">=</span> <span class="nb">id</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">vid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
+                <span class="n">visited</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">vid</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">v</span><span class="o">.</span><span class="n">_children</span><span class="p">:</span>
+                    <span class="n">_build_topo</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+                <span class="n">topo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+        <span class="n">_build_topo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="c1"># Seed gradient</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="c1"># Reverse pass</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">topo</span><span class="p">):</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">_backward</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Tensor.zero_grad">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.Tensor.zero_grad">[docs]</a>
+    <span class="k">def</span> <span class="nf">zero_grad</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset gradient to None.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------ #</span>
+    <span class="c1"># Dunder methods — delegate to ops module functions</span>
+    <span class="c1"># ------------------------------------------------------------------ #</span>
+    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">_ensure_tensor</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tensor_add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__radd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">_ensure_tensor</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tensor_add</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">_ensure_tensor</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tensor_sub</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__rsub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">_ensure_tensor</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tensor_sub</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">_ensure_tensor</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tensor_mul</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">_ensure_tensor</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tensor_mul</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__truediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">_ensure_tensor</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tensor_div</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__rtruediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">_ensure_tensor</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tensor_div</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__neg__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tensor_neg</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__matmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">_ensure_tensor</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tensor_matmul</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__rmatmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">_ensure_tensor</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tensor_matmul</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__pow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exponent</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tensor_pow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exponent</span><span class="p">)</span>
+
+    <span class="c1"># Forbid in-place ops to protect the computational graph</span>
+    <span class="k">def</span> <span class="fm">__iadd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;In-place operations are not supported on Tensors with autograd. &quot;</span>
+            <span class="s2">&quot;Use out-of-place operations instead: z = x + y&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__isub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;In-place sub not supported. Use z = x - y.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__imul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;In-place mul not supported. Use z = x * y.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__itruediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;In-place div not supported. Use z = x / y.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># ------------------------------------------------------------------ #</span>
+    <span class="c1"># Convenience methods that delegate to ops</span>
+    <span class="c1"># ------------------------------------------------------------------ #</span>
+<div class="viewcode-block" id="Tensor.sum">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.Tensor.sum">[docs]</a>
+    <span class="k">def</span> <span class="nf">sum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">keepdims</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tensor_sum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="n">keepdims</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Tensor.mean">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.Tensor.mean">[docs]</a>
+    <span class="k">def</span> <span class="nf">mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">keepdims</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tensor_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="n">keepdims</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Tensor.reshape">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.Tensor.reshape">[docs]</a>
+    <span class="k">def</span> <span class="nf">reshape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">shape</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+            <span class="n">final_shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">final_shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">shape</span><span class="p">)</span>  <span class="c1"># type: ignore[arg-type]</span>
+        <span class="k">return</span> <span class="n">tensor_reshape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">final_shape</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Tensor.exp">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.Tensor.exp">[docs]</a>
+    <span class="k">def</span> <span class="nf">exp</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tensor_exp</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Tensor.log">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.Tensor.log">[docs]</a>
+    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tensor_log</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Tensor.sqrt">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.Tensor.sqrt">[docs]</a>
+    <span class="k">def</span> <span class="nf">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tensor_sqrt</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Tensor.sin">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.Tensor.sin">[docs]</a>
+    <span class="k">def</span> <span class="nf">sin</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tensor_sin</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Tensor.cos">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.Tensor.cos">[docs]</a>
+    <span class="k">def</span> <span class="nf">cos</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tensor_cos</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Tensor.tanh">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.Tensor.tanh">[docs]</a>
+    <span class="k">def</span> <span class="nf">tanh</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tensor_tanh</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Tensor.abs">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.Tensor.abs">[docs]</a>
+    <span class="k">def</span> <span class="nf">abs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tensor_abs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Tensor.clip">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.Tensor.clip">[docs]</a>
+    <span class="k">def</span> <span class="nf">clip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a_min</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">a_max</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tensor_clip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a_min</span><span class="p">,</span> <span class="n">a_max</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Tensor.item">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.Tensor.item">[docs]</a>
+    <span class="k">def</span> <span class="nf">item</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return scalar value (only works for size-1 tensors).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">item</span><span class="p">())</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------ #</span>
+    <span class="c1"># Representation</span>
+    <span class="c1"># ------------------------------------------------------------------ #</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">grad_str</span> <span class="o">=</span> <span class="s2">&quot;, requires_grad=True&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">requires_grad</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Tensor(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="si">}{</span><span class="n">grad_str</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Basic indexing — no gradient support (for inspection only).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span></div>
+
+
+
+<span class="c1"># ====================================================================== #</span>
+<span class="c1"># Helper: ensure value is a Tensor</span>
+<span class="c1"># ====================================================================== #</span>
+<span class="k">def</span> <span class="nf">_ensure_tensor</span><span class="p">(</span><span class="n">val</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="nb">object</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrap scalars/arrays as Tensor if needed.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">val</span>
+    <span class="k">return</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># type: ignore[arg-type]</span>
+
+
+<span class="c1"># ====================================================================== #</span>
+<span class="c1"># Unbroadcast helper (critical for correct gradients)</span>
+<span class="c1"># ====================================================================== #</span>
+<span class="k">def</span> <span class="nf">_unbroadcast</span><span class="p">(</span><span class="n">grad</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">target_shape</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sum out dimensions that were broadcast during forward pass.</span>
+
+<span class="sd">    When an operation broadcasts (e.g., shape (3,1) + (1,4) → (3,4)),</span>
+<span class="sd">    the backward pass must sum gradients along the broadcast dimensions</span>
+<span class="sd">    to produce the correct gradient shape for each input.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Sum out leading dimensions that were added</span>
+    <span class="k">while</span> <span class="n">grad</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">target_shape</span><span class="p">):</span>
+        <span class="n">grad</span> <span class="o">=</span> <span class="n">grad</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Sum along axes where target had size 1 but grad has size &gt; 1</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">target_shape</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">grad</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">grad</span> <span class="o">=</span> <span class="n">grad</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="n">i</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">grad</span>
+
+
+<span class="c1"># ====================================================================== #</span>
+<span class="c1"># Core differentiable operations</span>
+<span class="c1"># ====================================================================== #</span>
+
+<div class="viewcode-block" id="tensor_add">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_add">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_add</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Element-wise addition: z = a + b.&quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span> <span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">),</span> <span class="n">_op</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span> <span class="ow">or</span> <span class="n">b</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">_unbroadcast</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">grad</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">b</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">b</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">_unbroadcast</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">grad</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="tensor_sub">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_sub">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_sub</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Element-wise subtraction: z = a - b.&quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span> <span class="o">-</span> <span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">),</span> <span class="n">_op</span><span class="o">=</span><span class="s2">&quot;-&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span> <span class="ow">or</span> <span class="n">b</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">_unbroadcast</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">grad</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">b</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">b</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">_unbroadcast</span><span class="p">(</span><span class="o">-</span><span class="n">out</span><span class="o">.</span><span class="n">grad</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="tensor_mul">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_mul">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_mul</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Element-wise multiplication: z = a * b.&quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span> <span class="o">*</span> <span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">),</span> <span class="n">_op</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span> <span class="ow">or</span> <span class="n">b</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">_unbroadcast</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="o">*</span> <span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">b</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">b</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">_unbroadcast</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="o">*</span> <span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="tensor_div">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_div">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_div</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Element-wise division: z = a / b.&quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span> <span class="o">/</span> <span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">),</span> <span class="n">_op</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span> <span class="ow">or</span> <span class="n">b</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">_unbroadcast</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="o">/</span> <span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">b</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">b</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">_unbroadcast</span><span class="p">(</span><span class="o">-</span><span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="o">*</span> <span class="n">a</span><span class="o">.</span><span class="n">data</span> <span class="o">/</span> <span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">data</span> <span class="o">**</span> <span class="mi">2</span><span class="p">),</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="tensor_neg">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_neg">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_neg</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Negation: z = -a.&quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="o">-</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,),</span> <span class="n">_op</span><span class="o">=</span><span class="s2">&quot;neg&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="o">-</span><span class="n">out</span><span class="o">.</span><span class="n">grad</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="tensor_matmul">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_matmul">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_matmul</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Matrix multiplication: Z = A @ B.&quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span> <span class="o">@</span> <span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">),</span> <span class="n">_op</span><span class="o">=</span><span class="s2">&quot;@&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span> <span class="ow">or</span> <span class="n">b</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="c1"># dL/dA = dL/dZ @ B^T</span>
+            <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="c1"># vector case: (m,n) @ (n,) -&gt; (m,)</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">grad</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="o">@</span> <span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">b</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="c1"># dL/dB = A^T @ dL/dZ</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">b</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">b</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="tensor_pow">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_pow">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_pow</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">exponent</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Power: z = a^exponent (exponent is a constant, not a Tensor).&quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span> <span class="o">**</span> <span class="n">exponent</span><span class="p">,</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,),</span> <span class="n">_op</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;**</span><span class="si">{</span><span class="n">exponent</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="o">*</span> <span class="n">exponent</span> <span class="o">*</span> <span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span> <span class="o">**</span> <span class="p">(</span><span class="n">exponent</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="tensor_exp">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_exp">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_exp</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Exponential: z = exp(a).&quot;&quot;&quot;</span>
+    <span class="n">out_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">out_data</span><span class="p">,</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,),</span> <span class="n">_op</span><span class="o">=</span><span class="s2">&quot;exp&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="o">*</span> <span class="n">out_data</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="tensor_log">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_log">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_log</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Natural logarithm: z = log(a). Clamps input to avoid log(0).&quot;&quot;&quot;</span>
+    <span class="n">safe_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="mf">1e-12</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">safe_data</span><span class="p">),</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,),</span> <span class="n">_op</span><span class="o">=</span><span class="s2">&quot;log&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="o">/</span> <span class="n">safe_data</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="tensor_sqrt">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_sqrt">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_sqrt</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Square root: z = sqrt(a).&quot;&quot;&quot;</span>
+    <span class="n">out_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">out_data</span><span class="p">,</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,),</span> <span class="n">_op</span><span class="o">=</span><span class="s2">&quot;sqrt&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="c1"># dz/da = 1 / (2 * sqrt(a)), guard against division by zero</span>
+            <span class="n">safe_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">out_data</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">1e-12</span><span class="p">,</span> <span class="n">out_data</span><span class="p">)</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">safe_out</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="tensor_sum">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_sum">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_sum</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">keepdims</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sum: z = sum(a, axis).&quot;&quot;&quot;</span>
+    <span class="n">out_data</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="n">keepdims</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">out_data</span><span class="p">,</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,),</span> <span class="n">_op</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="c1"># Broadcast the gradient back to the original shape</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span>
+            <span class="k">if</span> <span class="n">axis</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">keepdims</span><span class="p">:</span>
+                <span class="c1"># Re-expand the reduced dimension(s) for broadcasting</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                    <span class="n">g</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">axis</span><span class="p">):</span>
+                        <span class="n">g</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="tensor_mean">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_mean">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_mean</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">keepdims</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mean: z = mean(a, axis).&quot;&quot;&quot;</span>
+    <span class="n">out_data</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="n">keepdims</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">out_data</span><span class="p">,</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,),</span> <span class="n">_op</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="c1"># Compute the number of elements being averaged</span>
+    <span class="k">if</span> <span class="n">axis</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">axis</span><span class="p">:</span>
+            <span class="n">count</span> <span class="o">*=</span> <span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">ax</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span>
+            <span class="k">if</span> <span class="n">axis</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">keepdims</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                    <span class="n">g</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">axis</span><span class="p">):</span>
+                        <span class="n">g</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">g</span> <span class="o">/</span> <span class="n">count</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="tensor_reshape">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_reshape">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_reshape</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reshape: z = a.reshape(shape).&quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">),</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,),</span> <span class="n">_op</span><span class="o">=</span><span class="s2">&quot;reshape&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="tensor_transpose">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_transpose">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_transpose</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Transpose: z = a.T.&quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,),</span> <span class="n">_op</span><span class="o">=</span><span class="s2">&quot;T&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="tensor_maximum">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_maximum">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_maximum</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Element-wise maximum: z = max(a, val). Used for ReLU and payoff clipping.&quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">val</span><span class="p">),</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,),</span> <span class="n">_op</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;max(</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="c1"># Subgradient: 1 where a &gt; val, 0 where a &lt;= val</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="o">*</span> <span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span> <span class="o">&gt;</span> <span class="n">val</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="tensor_norm_cdf">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_norm_cdf">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_norm_cdf</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Standard normal CDF: z = Phi(a).&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">norm</span>
+
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,),</span> <span class="n">_op</span><span class="o">=</span><span class="s2">&quot;Φ&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="c1"># dΦ/da = φ(a) = normal PDF</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="o">*</span> <span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="tensor_sin">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_sin">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_sin</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Element-wise sine: z = sin(a).&quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,),</span> <span class="n">_op</span><span class="o">=</span><span class="s2">&quot;sin&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="tensor_cos">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_cos">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_cos</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Element-wise cosine: z = cos(a).&quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,),</span> <span class="n">_op</span><span class="o">=</span><span class="s2">&quot;cos&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="tensor_tanh">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_tanh">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_tanh</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Element-wise hyperbolic tangent: z = tanh(a).&quot;&quot;&quot;</span>
+    <span class="n">out_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">out_data</span><span class="p">,</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,),</span> <span class="n">_op</span><span class="o">=</span><span class="s2">&quot;tanh&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="c1"># d tanh/da = 1 - tanh²(a)</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">out_data</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="tensor_abs">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_abs">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_abs</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Element-wise absolute value: z = abs(a). Subgradient at 0 is 0.&quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,),</span> <span class="n">_op</span><span class="o">=</span><span class="s2">&quot;abs&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="tensor_clip">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_clip">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_clip</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">a_min</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">a_max</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Element-wise clip: z = clip(a, a_min, a_max).</span>
+
+<span class="sd">    Gradient is 1 where a is within [a_min, a_max], 0 otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">a_min</span><span class="p">,</span> <span class="n">a_max</span><span class="p">),</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,),</span> <span class="n">_op</span><span class="o">=</span><span class="s2">&quot;clip&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="p">((</span><span class="n">a</span><span class="o">.</span><span class="n">data</span> <span class="o">&gt;=</span> <span class="n">a_min</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span> <span class="o">&lt;=</span> <span class="n">a_max</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="o">*</span> <span class="n">mask</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="tensor_where">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_where">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_where</span><span class="p">(</span><span class="n">condition</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Element-wise selection: z = a where condition else b.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        condition: Boolean NumPy array.</span>
+<span class="sd">        a: Values where condition is True.</span>
+<span class="sd">        b: Values where condition is False.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">),</span> <span class="n">_op</span><span class="o">=</span><span class="s2">&quot;where&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span> <span class="ow">or</span> <span class="n">b</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">condition</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">_unbroadcast</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="o">*</span> <span class="n">mask</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">b</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">b</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">_unbroadcast</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">mask</span><span class="p">),</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="tensor_softmax">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.core.tensor.tensor_softmax">[docs]</a>
+<span class="k">def</span> <span class="nf">tensor_softmax</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Softmax along an axis: z_i = exp(a_i) / sum_j(exp(a_j)).</span>
+
+<span class="sd">    Numerically stable via max subtraction.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">shifted</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">data</span> <span class="o">-</span> <span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">exp_a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">shifted</span><span class="p">)</span>
+    <span class="n">out_data</span> <span class="o">=</span> <span class="n">exp_a</span> <span class="o">/</span> <span class="n">exp_a</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">out_data</span><span class="p">,</span> <span class="n">_children</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,),</span> <span class="n">_op</span><span class="o">=</span><span class="s2">&quot;softmax&quot;</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span>
+
+    <span class="k">def</span> <span class="nf">_backward</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="c1"># Jacobian-vector product for softmax</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">out_data</span>
+            <span class="n">dot</span> <span class="o">=</span> <span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="o">*</span> <span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">+=</span> <span class="n">s</span> <span class="o">*</span> <span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">grad</span> <span class="o">-</span> <span class="n">dot</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">_backward</span> <span class="o">=</span> <span class="n">_backward</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &#169;2024, TensorQuantLib Contributors.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.0.4</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+    <a href="https://github.com/raswanthmalai19/TensorQuantLib" class="github">
+        <img src="../../../_static/github-banner.svg" alt="Fork me on GitHub" class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

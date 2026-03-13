@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tensorquantlib.finance.local_vol &#8212; TensorQuantLib 0.3.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=f6a572b4" />
+    <script src="../../../_static/documentation_options.js?v=e259d695"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">TensorQuantLib</a></h1>
+
+
+
+<p class="blurb">Comprehensive quant finance library with TT compression & autodiff</p>
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=raswanthmalai19&repo=TensorQuantLib&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../theory.html">Theory &amp; Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../limitations.html">Known Limitations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for tensorquantlib.finance.local_vol</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Local volatility model (Dupire).</span>
+
+<span class="sd">The Dupire (1994) local volatility formula extracts local vol from</span>
+<span class="sd">an implied volatility surface, enabling exact calibration to European</span>
+<span class="sd">option prices.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">norm</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">RectBivariateSpline</span>
+
+
+<div class="viewcode-block" id="dupire_local_vol">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.local_vol.dupire_local_vol">[docs]</a>
+<span class="k">def</span> <span class="nf">dupire_local_vol</span><span class="p">(</span><span class="n">strikes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">expiries</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                     <span class="n">iv_surface</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">S</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                     <span class="n">r</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute Dupire local volatility from an implied vol surface.</span>
+
+<span class="sd">    Uses the Dupire (1994) formula:</span>
+
+<span class="sd">        sigma_loc^2(K,T) = (dC/dT + (r-q)*K*dC/dK + q*C)</span>
+<span class="sd">                           / (0.5 * K^2 * d2C/dK^2)</span>
+
+<span class="sd">    where C(K,T) is the Black-Scholes price at implied vol sigma(K,T).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    strikes : array, shape (nK,)</span>
+<span class="sd">        Strike grid.</span>
+<span class="sd">    expiries : array, shape (nT,)</span>
+<span class="sd">        Expiry grid (must be &gt; 0).</span>
+<span class="sd">    iv_surface : array, shape (nK, nT)</span>
+<span class="sd">        Implied volatility surface, ``iv_surface[i,j] = sigma(K_i, T_j)``.</span>
+<span class="sd">    S : float</span>
+<span class="sd">        Spot price.</span>
+<span class="sd">    r : float</span>
+<span class="sd">        Risk-free rate.</span>
+<span class="sd">    q : float</span>
+<span class="sd">        Dividend yield.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    local_vol : array, shape (nK, nT)</span>
+<span class="sd">        Local volatility surface.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nK</span><span class="p">,</span> <span class="n">nT</span> <span class="o">=</span> <span class="n">iv_surface</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="c1"># Build BS prices on the (K, T) grid</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">iv_surface</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nK</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nT</span><span class="p">):</span>
+            <span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">sig</span> <span class="o">=</span> <span class="n">strikes</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">expiries</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">iv_surface</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+            <span class="n">d1</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">S</span> <span class="o">/</span> <span class="n">K</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">r</span> <span class="o">-</span> <span class="n">q</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">sig</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">T</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">sig</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">T</span><span class="p">))</span>
+            <span class="n">d2</span> <span class="o">=</span> <span class="n">d1</span> <span class="o">-</span> <span class="n">sig</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+            <span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">S</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">q</span> <span class="o">*</span> <span class="n">T</span><span class="p">)</span> <span class="o">*</span> <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">d1</span><span class="p">)</span> <span class="o">-</span> <span class="n">K</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">r</span> <span class="o">*</span> <span class="n">T</span><span class="p">)</span> <span class="o">*</span> <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">d2</span><span class="p">)</span>
+
+    <span class="c1"># Use spline interpolation for smooth derivatives</span>
+    <span class="n">spline</span> <span class="o">=</span> <span class="n">RectBivariateSpline</span><span class="p">(</span><span class="n">strikes</span><span class="p">,</span> <span class="n">expiries</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">kx</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">ky</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+    <span class="n">local_vol2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">iv_surface</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nK</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nT</span><span class="p">):</span>
+            <span class="n">K</span><span class="p">,</span> <span class="n">T</span> <span class="o">=</span> <span class="n">strikes</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">expiries</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">dC_dT</span> <span class="o">=</span> <span class="n">spline</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dy</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="n">dC_dK</span> <span class="o">=</span> <span class="n">spline</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dy</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="n">d2C_dK2</span> <span class="o">=</span> <span class="n">spline</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">dy</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+            <span class="n">numerator</span> <span class="o">=</span> <span class="n">dC_dT</span> <span class="o">+</span> <span class="p">(</span><span class="n">r</span> <span class="o">-</span> <span class="n">q</span><span class="p">)</span> <span class="o">*</span> <span class="n">K</span> <span class="o">*</span> <span class="n">dC_dK</span> <span class="o">+</span> <span class="n">q</span> <span class="o">*</span> <span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+            <span class="n">denominator</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">K</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">d2C_dK2</span>
+
+            <span class="k">if</span> <span class="n">denominator</span> <span class="o">&gt;</span> <span class="mf">1e-15</span><span class="p">:</span>
+                <span class="n">local_vol2</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">local_vol2</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">iv_surface</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>
+
+    <span class="c1"># Clamp to avoid negative values (numerical noise)</span>
+    <span class="n">local_vol2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">local_vol2</span><span class="p">,</span> <span class="mf">1e-8</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">local_vol2</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="local_vol_mc">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.local_vol.local_vol_mc">[docs]</a>
+<span class="k">def</span> <span class="nf">local_vol_mc</span><span class="p">(</span><span class="n">S</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">K</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                 <span class="n">strikes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">expiries</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                 <span class="n">local_vol_surface</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                 <span class="n">option_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;call&quot;</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+                 <span class="n">n_paths</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100_000</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">252</span><span class="p">,</span>
+                 <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Price an option using local vol MC simulation.</span>
+
+<span class="sd">    Simulates paths under dS = (r-q)*S*dt + sigma_loc(S,t)*S*dW.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    S : float</span>
+<span class="sd">        Spot price.</span>
+<span class="sd">    K : float</span>
+<span class="sd">        Strike.</span>
+<span class="sd">    T : float</span>
+<span class="sd">        Expiry.</span>
+<span class="sd">    r : float</span>
+<span class="sd">        Risk-free rate.</span>
+<span class="sd">    strikes : array</span>
+<span class="sd">        Strike grid for local vol interpolation.</span>
+<span class="sd">    expiries : array</span>
+<span class="sd">        Time grid for local vol interpolation.</span>
+<span class="sd">    local_vol_surface : array, shape (nK, nT)</span>
+<span class="sd">        Local volatility surface.</span>
+<span class="sd">    option_type : str</span>
+<span class="sd">        ``&#39;call&#39;`` or ``&#39;put&#39;``.</span>
+<span class="sd">    q : float</span>
+<span class="sd">        Dividend yield.</span>
+<span class="sd">    n_paths : int</span>
+<span class="sd">        MC paths.</span>
+<span class="sd">    n_steps : int</span>
+<span class="sd">        Time steps.</span>
+<span class="sd">    seed : int, optional</span>
+<span class="sd">        Random seed.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        MC price.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">T</span> <span class="o">/</span> <span class="n">n_steps</span>
+    <span class="n">spline</span> <span class="o">=</span> <span class="n">RectBivariateSpline</span><span class="p">(</span><span class="n">strikes</span><span class="p">,</span> <span class="n">expiries</span><span class="p">,</span> <span class="n">local_vol_surface</span><span class="p">,</span> <span class="n">kx</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">ky</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+    <span class="n">S_paths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_paths</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">):</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">step</span> <span class="o">*</span> <span class="n">dt</span>
+        <span class="c1"># Evaluate local vol for each path&#39;s current S</span>
+        <span class="c1"># Clamp S to grid bounds for interpolation</span>
+        <span class="n">S_clamped</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">S_paths</span><span class="p">,</span> <span class="n">strikes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">strikes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">t_clamped</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">expiries</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">expiries</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">sigma_loc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">spline</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">t_clamped</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">S_clamped</span><span class="p">])</span>
+        <span class="n">sigma_loc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">sigma_loc</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">)</span>
+
+        <span class="n">z</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">n_paths</span><span class="p">)</span>
+        <span class="n">S_paths</span> <span class="o">=</span> <span class="n">S_paths</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">((</span><span class="n">r</span> <span class="o">-</span> <span class="n">q</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">sigma_loc</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">dt</span>
+                                   <span class="o">+</span> <span class="n">sigma_loc</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span> <span class="o">*</span> <span class="n">z</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">option_type</span> <span class="o">==</span> <span class="s2">&quot;call&quot;</span><span class="p">:</span>
+        <span class="n">payoff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">S_paths</span> <span class="o">-</span> <span class="n">K</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">payoff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">K</span> <span class="o">-</span> <span class="n">S_paths</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">r</span> <span class="o">*</span> <span class="n">T</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">payoff</span><span class="p">))</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &#169;2024, TensorQuantLib Contributors.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.0.4</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+    <a href="https://github.com/raswanthmalai19/TensorQuantLib" class="github">
+        <img src="../../../_static/github-banner.svg" alt="Fork me on GitHub" class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

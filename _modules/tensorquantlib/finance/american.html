@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tensorquantlib.finance.american &#8212; TensorQuantLib 0.3.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=f6a572b4" />
+    <script src="../../../_static/documentation_options.js?v=e259d695"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">TensorQuantLib</a></h1>
+
+
+
+<p class="blurb">Comprehensive quant finance library with TT compression & autodiff</p>
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=raswanthmalai19&repo=TensorQuantLib&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../theory.html">Theory &amp; Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../limitations.html">Known Limitations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for tensorquantlib.finance.american</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">American option pricing via the Longstaff-Schwartz (2001) Least-Squares Monte Carlo (LSM) algorithm.</span>
+
+<span class="sd">American options grant the holder the right to exercise early. LSM approximates</span>
+<span class="sd">the continuation value at each time step using polynomial regression on simulated</span>
+<span class="sd">paths, then decides whether early exercise is optimal.</span>
+
+<span class="sd">This module provides:</span>
+<span class="sd">    american_option_lsm  -- Single-asset American option price</span>
+<span class="sd">    american_option_grid -- Price a grid of (S, K) or (S, T) combinations</span>
+<span class="sd">    american_greeks      -- Delta, Gamma, Theta via finite-difference bumps on LSM</span>
+
+<span class="sd">References:</span>
+<span class="sd">    Longstaff, F.A. &amp; Schwartz, E.S. (2001). Valuing American Options by Simulation:</span>
+<span class="sd">    A Simple Least-Squares Approach. RFS 14(1), 113-147.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<span class="c1"># ------------------------------------------------------------------ #</span>
+<span class="c1"># Core LSM pricer</span>
+<span class="c1"># ------------------------------------------------------------------ #</span>
+
+<div class="viewcode-block" id="american_option_lsm">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.american.american_option_lsm">[docs]</a>
+<span class="k">def</span> <span class="nf">american_option_lsm</span><span class="p">(</span>
+    <span class="n">S</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">K</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">r</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">q</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">option_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;put&quot;</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">n_paths</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100_000</span><span class="p">,</span>
+    <span class="n">n_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">252</span><span class="p">,</span>
+    <span class="n">basis_degree</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">return_stderr</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Price an American option via Longstaff-Schwartz LSM.</span>
+
+<span class="sd">    Simulates GBM paths and uses polynomial regression to estimate the</span>
+<span class="sd">    continuation value at each exercise date, then takes the maximum of</span>
+<span class="sd">    early exercise and continuation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        S: Current spot price.</span>
+<span class="sd">        K: Strike price.</span>
+<span class="sd">        T: Time to expiry (years).</span>
+<span class="sd">        r: Risk-free rate.</span>
+<span class="sd">        sigma: Volatility (constant).</span>
+<span class="sd">        q: Continuous dividend yield (default 0).</span>
+<span class="sd">        option_type: &#39;put&#39; or &#39;call&#39;.</span>
+<span class="sd">        n_paths: Number of Monte Carlo paths (default 100k).</span>
+<span class="sd">        n_steps: Number of exercise dates (default 252 = daily).</span>
+<span class="sd">        basis_degree: Degree of Laguerre polynomial basis (default 3).</span>
+<span class="sd">        seed: Random seed for reproducibility.</span>
+<span class="sd">        return_stderr: If True, returns (price, stderr).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        American option price, or (price, stderr) if return_stderr=True.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; price = american_option_lsm(100.0, 100.0, 1.0, 0.05, 0.2, seed=42)</span>
+<span class="sd">        &gt;&gt;&gt; 3.0 &lt; price &lt; 8.0</span>
+<span class="sd">        True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">T</span> <span class="o">/</span> <span class="n">n_steps</span>
+    <span class="n">discount</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">r</span> <span class="o">*</span> <span class="n">dt</span><span class="p">)</span>
+
+    <span class="c1"># Simulate all paths using antithetic variates for variance reduction</span>
+    <span class="n">half_paths</span> <span class="o">=</span> <span class="n">n_paths</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">((</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">half_paths</span><span class="p">))</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">z</span><span class="p">,</span> <span class="o">-</span><span class="n">z</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># antithetic</span>
+
+    <span class="c1"># Build path matrix (shape: n_steps+1, n_paths)</span>
+    <span class="n">log_S</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">r</span> <span class="o">-</span> <span class="n">q</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">sigma</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">dt</span> <span class="o">+</span> <span class="n">sigma</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span> <span class="o">*</span> <span class="n">z</span><span class="p">,</span>
+        <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">S_paths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_paths</span><span class="p">,</span> <span class="n">S</span><span class="p">),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_S</span><span class="p">),</span>
+    <span class="p">])</span>  <span class="c1"># shape: (n_steps+1, n_paths)</span>
+
+    <span class="c1"># Payoff at each step</span>
+    <span class="k">if</span> <span class="n">option_type</span> <span class="o">==</span> <span class="s2">&quot;put&quot;</span><span class="p">:</span>
+        <span class="n">payoffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">K</span> <span class="o">-</span> <span class="n">S_paths</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">option_type</span> <span class="o">==</span> <span class="s2">&quot;call&quot;</span><span class="p">:</span>
+        <span class="n">payoffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">S_paths</span> <span class="o">-</span> <span class="n">K</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;option_type must be &#39;put&#39; or &#39;call&#39;, got </span><span class="si">{</span><span class="n">option_type</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Cash flows: start with terminal payoff</span>
+    <span class="n">cash_flows</span> <span class="o">=</span> <span class="n">payoffs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>  <span class="c1"># shape: (n_paths,)</span>
+
+    <span class="c1"># Backward induction</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="c1"># Only consider paths where early exercise is worthwhile (ITM paths)</span>
+        <span class="n">immediate</span> <span class="o">=</span> <span class="n">payoffs</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+        <span class="n">itm</span> <span class="o">=</span> <span class="n">immediate</span> <span class="o">&gt;</span> <span class="mf">0.0</span>
+        <span class="n">n_itm</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">itm</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">n_itm</span> <span class="o">&lt;</span> <span class="n">basis_degree</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># Not enough ITM paths to regress — just discount</span>
+            <span class="n">cash_flows</span> <span class="o">=</span> <span class="n">cash_flows</span> <span class="o">*</span> <span class="n">discount</span>
+            <span class="k">continue</span>
+
+        <span class="n">S_itm</span> <span class="o">=</span> <span class="n">S_paths</span><span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="n">itm</span><span class="p">]</span>
+        <span class="n">cf_itm</span> <span class="o">=</span> <span class="n">cash_flows</span><span class="p">[</span><span class="n">itm</span><span class="p">]</span> <span class="o">*</span> <span class="n">discount</span>
+
+        <span class="c1"># Laguerre polynomial basis: [1, L0(S), L1(S), ..., L_{d-1}(S)]</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">_laguerre_basis</span><span class="p">(</span><span class="n">S_itm</span><span class="p">,</span> <span class="n">basis_degree</span><span class="p">)</span>
+
+        <span class="c1"># Regress continuation value</span>
+        <span class="n">coeffs</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">lstsq</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">cf_itm</span><span class="p">,</span> <span class="n">rcond</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">continuation</span> <span class="o">=</span> <span class="n">X</span> <span class="o">@</span> <span class="n">coeffs</span>
+
+        <span class="c1"># Optimal stopping: exercise where immediate &gt; continuation</span>
+        <span class="n">exercise</span> <span class="o">=</span> <span class="n">immediate</span><span class="p">[</span><span class="n">itm</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">continuation</span>
+
+        <span class="c1"># Update cash flows</span>
+        <span class="n">cash_flows</span> <span class="o">=</span> <span class="n">cash_flows</span> <span class="o">*</span> <span class="n">discount</span>
+        <span class="n">cash_flows</span><span class="p">[</span><span class="n">itm</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">exercise</span><span class="p">,</span> <span class="n">immediate</span><span class="p">[</span><span class="n">itm</span><span class="p">],</span> <span class="n">cash_flows</span><span class="p">[</span><span class="n">itm</span><span class="p">])</span>
+
+    <span class="c1"># Discount back one more step</span>
+    <span class="n">cash_flows</span> <span class="o">=</span> <span class="n">cash_flows</span> <span class="o">*</span> <span class="n">discount</span>
+
+    <span class="n">price</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cash_flows</span><span class="p">))</span>
+    <span class="n">stderr</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">cash_flows</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n_paths</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">return_stderr</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">price</span><span class="p">,</span> <span class="n">stderr</span>
+    <span class="k">return</span> <span class="n">price</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_laguerre_basis</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">degree</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute generalised Laguerre polynomial basis up to given degree.</span>
+
+<span class="sd">    Uses the normalised form as suggested by Longstaff &amp; Schwartz (2001).</span>
+<span class="sd">    Shape of output: (len(x), degree + 1).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">degree</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">degree</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">X</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">x</span>
+    <span class="k">if</span> <span class="n">degree</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">X</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">x</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="k">if</span> <span class="n">degree</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">X</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="mf">3.0</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">x</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">x</span> <span class="o">**</span> <span class="mi">3</span> <span class="o">/</span> <span class="mf">6.0</span>
+    <span class="k">if</span> <span class="n">degree</span> <span class="o">&gt;=</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="n">X</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="mf">4.0</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="mf">3.0</span> <span class="o">*</span> <span class="n">x</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">-</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">x</span> <span class="o">**</span> <span class="mi">3</span> <span class="o">+</span> <span class="n">x</span> <span class="o">**</span> <span class="mi">4</span> <span class="o">/</span> <span class="mf">24.0</span>
+    <span class="k">if</span> <span class="n">degree</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="c1"># Fall back to Vandermonde (polynomial) basis for higher degrees</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">degree</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">X</span><span class="p">[:,</span> <span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span> <span class="o">**</span> <span class="n">d</span>
+    <span class="k">return</span> <span class="n">X</span>
+
+
+<span class="c1"># ------------------------------------------------------------------ #</span>
+<span class="c1"># Vectorized grid pricer</span>
+<span class="c1"># ------------------------------------------------------------------ #</span>
+
+<div class="viewcode-block" id="american_option_grid">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.american.american_option_grid">[docs]</a>
+<span class="k">def</span> <span class="nf">american_option_grid</span><span class="p">(</span>
+    <span class="n">S_grid</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">K</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">r</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">q</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">option_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;put&quot;</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">n_paths</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50_000</span><span class="p">,</span>
+    <span class="n">n_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Price American options over a grid of spot prices.</span>
+
+<span class="sd">    Uses the same path set (bumped spot) to reduce variance across prices.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        S_grid: 1-D array of spot prices.</span>
+<span class="sd">        K, T, r, sigma, q, option_type: Option parameters.</span>
+<span class="sd">        n_paths, n_steps, seed: Simulation parameters.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        1-D array of prices, same length as S_grid.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; S_grid = np.linspace(80, 120, 5)</span>
+<span class="sd">        &gt;&gt;&gt; prices = american_option_grid(S_grid, K=100, T=1.0, r=0.05, sigma=0.2, seed=0)</span>
+<span class="sd">        &gt;&gt;&gt; prices.shape[0] == 5</span>
+<span class="sd">        True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">prices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="nb">float</span><span class="p">(</span><span class="n">american_option_lsm</span><span class="p">(</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">q</span><span class="p">,</span> <span class="n">option_type</span><span class="o">=</span><span class="n">option_type</span><span class="p">,</span>
+            <span class="n">n_paths</span><span class="o">=</span><span class="n">n_paths</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+        <span class="p">))</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">S_grid</span>
+    <span class="p">])</span>
+    <span class="k">return</span> <span class="n">prices</span></div>
+
+
+
+<span class="c1"># ------------------------------------------------------------------ #</span>
+<span class="c1"># Greeks via finite differences</span>
+<span class="c1"># ------------------------------------------------------------------ #</span>
+
+<div class="viewcode-block" id="american_greeks">
+<a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.american.american_greeks">[docs]</a>
+<span class="k">def</span> <span class="nf">american_greeks</span><span class="p">(</span>
+    <span class="n">S</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">K</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">r</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">q</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">option_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;put&quot;</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">n_paths</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50_000</span><span class="p">,</span>
+    <span class="n">n_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dS</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">dT</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mf">365.0</span><span class="p">,</span>
+    <span class="n">dsigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.01</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute American option Greeks via finite differences on LSM prices.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        S, K, T, r, sigma, q, option_type: Option parameters.</span>
+<span class="sd">        n_paths, n_steps, seed: Simulation settings.</span>
+<span class="sd">        dS: Bump size for Delta/Gamma (default 0.5).</span>
+<span class="sd">        dT: Bump size for Theta (default 1/365 year).</span>
+<span class="sd">        dsigma: Bump size for Vega (default 0.01).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary with keys: &#39;delta&#39;, &#39;gamma&#39;, &#39;theta&#39;, &#39;vega&#39;.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; g = american_greeks(100.0, 100.0, 1.0, 0.05, 0.2, seed=0)</span>
+<span class="sd">        &gt;&gt;&gt; 0.0 &lt; abs(g[&#39;delta&#39;]) &lt; 1.0</span>
+<span class="sd">        True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">kw</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">q</span><span class="o">=</span><span class="n">q</span><span class="p">,</span> <span class="n">option_type</span><span class="o">=</span><span class="n">option_type</span><span class="p">,</span> <span class="n">n_paths</span><span class="o">=</span><span class="n">n_paths</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+
+    <span class="n">p0</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">american_option_lsm</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">))</span>  <span class="c1"># type: ignore[call-arg, arg-type]</span>
+    <span class="n">pu</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">american_option_lsm</span><span class="p">(</span><span class="n">S</span> <span class="o">+</span> <span class="n">dS</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">))</span>  <span class="c1"># type: ignore[call-arg, arg-type]</span>
+    <span class="n">pd</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">american_option_lsm</span><span class="p">(</span><span class="n">S</span> <span class="o">-</span> <span class="n">dS</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">))</span>  <span class="c1"># type: ignore[call-arg, arg-type]</span>
+
+    <span class="n">delta</span> <span class="o">=</span> <span class="p">(</span><span class="n">pu</span> <span class="o">-</span> <span class="n">pd</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">dS</span><span class="p">)</span>
+    <span class="n">gamma</span> <span class="o">=</span> <span class="p">(</span><span class="n">pu</span> <span class="o">-</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">p0</span> <span class="o">+</span> <span class="n">pd</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">dS</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">pt</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">american_option_lsm</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">T</span> <span class="o">-</span> <span class="n">dT</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">))</span>  <span class="c1"># type: ignore[call-arg, arg-type]</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="p">(</span><span class="n">pt</span> <span class="o">-</span> <span class="n">p0</span><span class="p">)</span> <span class="o">/</span> <span class="n">dT</span>
+
+    <span class="n">pv</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">american_option_lsm</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">+</span> <span class="n">dsigma</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">))</span>  <span class="c1"># type: ignore[call-arg, arg-type]</span>
+    <span class="n">vega</span> <span class="o">=</span> <span class="p">(</span><span class="n">pv</span> <span class="o">-</span> <span class="n">p0</span><span class="p">)</span> <span class="o">/</span> <span class="n">dsigma</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;delta&quot;</span><span class="p">:</span> <span class="n">delta</span><span class="p">,</span> <span class="s2">&quot;gamma&quot;</span><span class="p">:</span> <span class="n">gamma</span><span class="p">,</span> <span class="s2">&quot;theta&quot;</span><span class="p">:</span> <span class="n">theta</span><span class="p">,</span> <span class="s2">&quot;vega&quot;</span><span class="p">:</span> <span class="n">vega</span><span class="p">}</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &#169;2024, TensorQuantLib Contributors.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.0.4</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+    <a href="https://github.com/raswanthmalai19/TensorQuantLib" class="github">
+        <img src="../../../_static/github-banner.svg" alt="Fork me on GitHub" class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>
