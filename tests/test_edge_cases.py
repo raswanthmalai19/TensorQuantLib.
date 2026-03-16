@@ -99,10 +99,22 @@ class TestTensorEdgeCases:
         assert len(a) == 3
 
     def test_getitem(self):
-        """Line 211: __getitem__."""
-        a = Tensor(np.array([10.0, 20.0, 30.0]))
-        assert a[1] == 20.0
-        np.testing.assert_array_equal(a[0:2], np.array([10.0, 20.0]))
+        """__getitem__ returns a Tensor that participates in autograd."""
+        a = Tensor(np.array([10.0, 20.0, 30.0]), requires_grad=True)
+        # Scalar index returns a 0-d Tensor
+        elem = a[1]
+        assert isinstance(elem, Tensor)
+        assert float(elem.data) == 20.0
+
+        # Slice index returns a Tensor
+        sl = a[0:2]
+        assert isinstance(sl, Tensor)
+        np.testing.assert_array_equal(sl.data, np.array([10.0, 20.0]))
+
+        # Gradient flows back correctly
+        y = a[0] ** 2 + a[2] ** 2  # 100 + 900 = 1000
+        y.backward()
+        np.testing.assert_allclose(a.grad, np.array([20.0, 0.0, 60.0]))
 
     def test_mean_with_axis(self):
         """Lines 472-473, 493-495: tensor_mean with axis."""

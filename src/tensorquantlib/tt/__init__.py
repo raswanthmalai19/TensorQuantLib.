@@ -1,6 +1,6 @@
-"""Tensor-Train compression engine — TT-SVD, evaluation, surrogate pricing."""
+"""Tensor-Train compression engine — TT-SVD, TT-Cross, evaluation, surrogate pricing."""
 
-from .decompose import tt_round, tt_svd
+from .decompose import tt_round, tt_svd, tt_cross
 from .ops import (
     tt_add,
     tt_compression_ratio,
@@ -27,6 +27,7 @@ __all__ = [
     "TTSurrogate",
     "tt_add",
     "tt_compression_ratio",
+    "tt_cross",
     "tt_dot",
     "tt_error",
     "tt_eval",
