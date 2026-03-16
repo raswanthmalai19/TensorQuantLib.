@@ -15,6 +15,19 @@ from tensorquantlib.core.tensor import (
     tensor_softmax,
 )
 
+# ── Second-order autodiff ───────────────────────────────────────────
+from tensorquantlib.core.second_order import (
+    hvp,
+    hessian,
+    hessian_diag,
+    vhp,
+    mixed_partial,
+    gamma_autograd,
+    vanna_autograd,
+    volga_autograd,
+    second_order_greeks,
+)
+
 # ── Finance — Black-Scholes ─────────────────────────────────────────
 from tensorquantlib.finance.black_scholes import (
     bs_delta,
@@ -164,7 +177,7 @@ from tensorquantlib.finance.basket import (
 from tensorquantlib.finance.greeks import compute_greeks, compute_greeks_vectorized
 
 # ── TT Compression ──────────────────────────────────────────────────
-from tensorquantlib.tt.decompose import tt_round, tt_svd
+from tensorquantlib.tt.decompose import tt_round, tt_svd, tt_cross
 from tensorquantlib.tt.ops import (
     tt_add,
     tt_compression_ratio,
@@ -241,9 +254,12 @@ __all__ = [
     # Basket & Greeks
     "simulate_basket", "build_pricing_grid", "build_pricing_grid_analytic",
     "compute_greeks", "compute_greeks_vectorized",
+    # Second-order autodiff
+    "hvp", "hessian", "hessian_diag", "vhp", "mixed_partial",
+    "gamma_autograd", "vanna_autograd", "volga_autograd", "second_order_greeks",
     # TT compression
     "TTSurrogate",
-    "tt_svd", "tt_round",
+    "tt_svd", "tt_round", "tt_cross",
     "tt_eval", "tt_eval_batch", "tt_to_full",
     "tt_ranks", "tt_memory", "tt_error", "tt_compression_ratio",
     "tt_add", "tt_scale", "tt_hadamard", "tt_dot", "tt_frobenius_norm",

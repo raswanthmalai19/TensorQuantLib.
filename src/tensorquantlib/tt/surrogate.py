@@ -7,16 +7,28 @@ The TTSurrogate class wraps the full pipeline:
     3. Evaluate prices at arbitrary points via TT interpolation
     4. Compute Greeks via autograd through the surrogate
 
+For 6+ assets, use from_function() which applies TT-Cross and never
+builds the full grid.
+
 Typical usage::
 
     from tensorquantlib.tt.surrogate import TTSurrogate
 
+    # ≤5 assets — TT-SVD on full grid
     surr = TTSurrogate.from_basket(
         S0_ranges=[(80, 120)] * 3,
         K=100, T=1.0, r=0.05, sigma=[0.2]*3,
         corr=np.eye(3), weights=[1/3]*3,
         n_points=30, eps=1e-4,
     )
+
+    # 6+ assets — TT-Cross (no full grid)
+    surr6 = TTSurrogate.from_function(
+        fn=my_pricer,       # fn(*integer_indices) -> float
+        axes=[np.linspace(80, 120, 15)] * 6,
+        max_rank=15, eps=1e-4, n_sweeps=6,
+    )
+
     price = surr.evaluate([100, 105, 95])
     greeks = surr.greeks([100, 105, 95])
 """
@@ -30,7 +42,7 @@ import numpy as np
 
 from ..core.tensor import Tensor
 from ..finance.basket import build_pricing_grid, build_pricing_grid_analytic
-from .decompose import tt_svd
+from .decompose import tt_svd, tt_cross
 from .ops import (
     tt_eval,
     tt_eval_batch,
@@ -225,7 +237,95 @@ class TTSurrogate:
             original_nbytes=original_nbytes,
         )
 
+    @classmethod
+    def from_function(
+        cls,
+        fn: object,
+        axes: list[np.ndarray],
+        eps: float = 1e-4,
+        max_rank: int = 20,
+        n_sweeps: int = 6,
+        seed: int = 42,
+    ) -> "TTSurrogate":
+        """Build surrogate via TT-Cross — **no full grid needed**.
+
+        This is the recommended constructor for **6+ asset** problems.
+        TT-Cross samples the pricing function at O(d · r² · n) selected
+        index combinations instead of the full n^d grid, making
+        high-dimensional problems feasible.
+
+        Parameters
+        ----------
+        fn : callable
+            Function accepting ``d`` integer grid-index arguments and
+            returning a float price::
+
+                fn(i_0, i_1, ..., i_{d-1}) -> float
+
+            The simplest way to build this is to pre-compute an axis
+            array for continuous spots and index into it inside ``fn``.
+            Example::
+
+                axes = [np.linspace(80, 120, 15)] * 6
+
+                def my_pricer(*indices):
+                    spots = [axes[k][i] for k, i in enumerate(indices)]
+                    return basket_mc(spots, K, T, r, sigma, corr)
+
+                surr = TTSurrogate.from_function(my_pricer, axes)
+
+        axes : list of np.ndarray
+            1D grid arrays, one per asset.  ``len(axes)`` is the number
+            of assets.  ``axes[k][i]`` gives the spot price at index ``i``
+            for asset ``k``.
+        eps : float
+            Relative accuracy target passed to TT-Cross.
+        max_rank : int
+            Hard upper bound on TT-ranks.  Increase if accuracy is
+            insufficient; decrease if speed is the priority.
+        n_sweeps : int
+            Number of left-to-right + right-to-left alternating sweeps.
+            Default 6 is sufficient for smooth option pricing surfaces.
+        seed : int
+            Random seed for TT-Cross initialisation.
+
+        Returns
+        -------
+        TTSurrogate
+        """
+        from collections.abc import Callable as _Callable
+        if not callable(fn):
+            raise TypeError(f"fn must be callable, got {type(fn)}")
+        if len(axes) < 2:
+            raise ValueError("from_function requires at least 2 axes (2 assets)")
+
+        shape = tuple(len(a) for a in axes)
+        # Total function evaluations (approximate)
+        _n_evals = len(axes) * max_rank ** 2 * max(shape)
+
+        t0 = time.perf_counter()
+        cores = tt_cross(
+            fn=fn,  # type: ignore[arg-type]
+            shape=shape,
+            eps=eps,
+            max_rank=max_rank,
+            n_sweeps=n_sweeps,
+            seed=seed,
+        )
+        compress_time = time.perf_counter() - t0
+
+        return cls(
+            cores=cores,
+            axes=axes,
+            eps=eps,
+            build_time=0.0,       # No separate grid build step
+            compress_time=compress_time,
+            original_shape=None,  # Full grid was never formed
+            original_nbytes=None,
+        )
+
     # ── evaluation ──────────────────────────────────────────────────────
+
 
     def _spot_to_indices(self, spots: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Map continuous spot prices to fractional grid indices.
@@ -397,6 +497,92 @@ class TTSurrogate:
             gamma[k] = (p_up - 2 * price + p_dn) / (h_abs**2)
 
         return {"price": price, "delta": delta, "gamma": gamma}
+
+    # ── visualization ────────────────────────────────────────────────────
+
+    def plot_surface(
+        self,
+        dims: tuple[int, int] = (0, 1),
+        fixed_indices: dict[int, int] | None = None,
+        title: str = "Pricing Surface",
+        mode: str = "heatmap",
+        **kwargs: object,
+    ) -> object:
+        """Plot a 2D pricing surface slice.
+
+        Evaluates the full pricing grid from TT-cores and plots a 2D
+        heatmap or 3D surface.  Any extra keyword arguments are forwarded
+        to ``plot_pricing_surface``.
+
+        Args:
+            dims: Which two asset axes to plot (default: first two).
+            fixed_indices: Override slice indices for remaining axes.
+            title: Plot title.
+            mode: ``"heatmap"`` (default) or ``"surface"`` (3D).
+
+        Returns:
+            ``(fig, ax)`` matplotlib tuple.
+        """
+        from tensorquantlib.viz.plots import plot_pricing_surface
+        from tensorquantlib.tt.ops import tt_to_full
+
+        grid = tt_to_full(self.cores)
+        return plot_pricing_surface(
+            grid, self.axes, dims=dims,
+            fixed_indices=fixed_indices, title=title, mode=mode,
+            **kwargs,  # type: ignore[arg-type]
+        )
+
+    def plot_greeks(
+        self,
+        dims: tuple[int, int] = (0, 1),
+        fixed_indices: dict[int, int] | None = None,
+        h: float = 1e-2,
+        **kwargs: object,
+    ) -> object:
+        """Plot Delta and Gamma surfaces as side-by-side heatmaps.
+
+        Computes Greek grids via finite differences on the TT surrogate
+        and plots them using ``plot_greeks_surface``.
+
+        Args:
+            dims: Which two axes to plot.
+            fixed_indices: Override slice indices for remaining axes.
+            h: Relative bump for finite-difference Greeks (h_abs = S * h).
+
+        Returns:
+            ``(fig, axes)`` matplotlib tuple.
+        """
+        from tensorquantlib.viz.plots import plot_greeks_surface
+        from tensorquantlib.tt.ops import tt_to_full
+
+        grid = tt_to_full(self.cores)
+        d = grid.ndim
+
+        # Build delta grids for each asset axis via finite differences
+        delta_grids: dict[str, np.ndarray] = {}
+        for k in range(min(d, len(dims))):
+            axis_k = self.axes[dims[k]]
+            # Numerical derivative along axis dims[k]
+            delta_k = np.gradient(grid, axis_k, axis=dims[k])
+            label = f"Delta (axis {dims[k]})"
+            delta_grids[label] = delta_k
+
+        return plot_greeks_surface(
+            delta_grids, self.axes, dims=dims,
+            fixed_indices=fixed_indices,
+            **kwargs,  # type: ignore[arg-type]
+        )
+
+    def plot_ranks(self, **kwargs: object) -> object:
+        """Bar chart of TT-ranks across bonds.
+
+        Returns:
+            ``(fig, ax)`` matplotlib tuple.
+        """
+        from tensorquantlib.viz.plots import plot_tt_ranks
+
+        return plot_tt_ranks(self.cores, **kwargs)  # type: ignore[arg-type]
 
     # ── diagnostics ─────────────────────────────────────────────────────
 

@@ -9,17 +9,7 @@ from tensorquantlib.core.tensor import (
     tensor_sin, tensor_cos, tensor_tanh, tensor_abs, tensor_clip,
     tensor_where, tensor_softmax,
 )
-
-
-def numerical_grad(f, x: np.ndarray, eps: float = 1e-5) -> np.ndarray:
-    """Compute numerical gradient via central differences."""
-    grad = np.zeros_like(x)
-    for idx in np.ndindex(x.shape):
-        x_p, x_m = x.copy(), x.copy()
-        x_p[idx] += eps
-        x_m[idx] -= eps
-        grad[idx] = (f(x_p) - f(x_m)) / (2 * eps)
-    return grad
+from tensorquantlib.utils.validation import check_grad
 
 
 class TestSin:
@@ -152,19 +142,15 @@ class TestSoftmax:
         assert abs(float(out.data.sum()) - 1.0) < 1e-10
 
     def test_backward_numerical(self):
-        """Check backward against numerical gradient for scalar sum loss."""
+        """Check backward against check_grad (central-difference validation)."""
         x_data = np.array([1.0, 2.0, 0.5])
         t = Tensor(x_data.copy(), requires_grad=True)
-        out = tensor_softmax(t, axis=0)
-        out.sum().backward()  # gradient of sum(softmax(x)) w.r.t. x
-
-        # Numerical gradient
-        def f(x: np.ndarray) -> float:
-            ex = np.exp(x - x.max())
-            return float((ex / ex.sum()).sum())
-
-        ng = numerical_grad(f, x_data)
-        np.testing.assert_allclose(t.grad, ng, atol=1e-5)
+        result = check_grad(
+            lambda inp: tensor_softmax(inp, axis=0).sum(), [t], tol=1e-5
+        )
+        assert result["passed"], (
+            f"Softmax gradient check failed: max_error={result['max_error']:.2e}"
+        )
 
     def test_batch_softmax(self):
         """Softmax over axis 1 of a 2D tensor."""

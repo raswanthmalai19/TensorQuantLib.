@@ -213,19 +213,63 @@ class Tensor:
         """Return scalar value (only works for size-1 tensors)."""
         return float(self.data.item())
 
+    def detach(self) -> Tensor:
+        """Return a new Tensor with the same data but detached from the graph.
+
+        The returned tensor has ``requires_grad=False`` and no ``_children``,
+        so gradients will not flow through it. Use this to treat an
+        intermediate result as a constant:
+
+            y = x * x
+            y_const = y.detach()  # gradients stop here
+        """
+        return Tensor(self.data.copy(), requires_grad=False)
+
+    def free_graph(self) -> None:
+        """Release all references to the computational graph.
+
+        Clears ``_children`` and the ``_backward`` closure for this node
+        and all ancestors, breaking reference cycles and allowing GC to
+        reclaim memory.  Call after ``backward()`` in long-running loops
+        to prevent unbounded memory growth.
+        """
+        visited: set[int] = set()
+
+        def _free(v: Tensor) -> None:
+            vid = id(v)
+            if vid in visited:
+                return
+            visited.add(vid)
+            for child in v._children:
+                _free(child)
+            v._children = set()
+            v._backward = lambda: None
+
+        _free(self)
+
     # ------------------------------------------------------------------ #
     # Representation
     # ------------------------------------------------------------------ #
     def __repr__(self) -> str:
+        shape = self.data.shape
+        if self.data.size <= 4:
+            data_str = str(self.data.tolist())
+        else:
+            data_str = f"shape={shape}"
         grad_str = ", requires_grad=True" if self.requires_grad else ""
-        return f"Tensor({self.data}{grad_str})"
+        op_str = f", op='{self._op}'" if self._op else ""
+        return f"Tensor({data_str}{grad_str}{op_str})"
 
     def __len__(self) -> int:
         return len(self.data)
 
-    def __getitem__(self, idx: Any) -> Any:
-        """Basic indexing — no gradient support (for inspection only)."""
-        return self.data[idx]
+    def __getitem__(self, idx: Any) -> "Tensor":
+        """Index into the tensor, returning a Tensor that participates in autograd.
+
+        Supports any NumPy-compatible index (int, slice, tuple, boolean mask).
+        Gradients flow back to the indexed positions of the original tensor.
+        """
+        return tensor_getitem(self, idx)
 
 
 # ====================================================================== #
@@ -741,6 +785,35 @@ def tensor_softmax(a: Tensor, axis: int = -1) -> Tensor:
             s = out_data
             dot = (out.grad * s).sum(axis=axis, keepdims=True)
             a.grad += s * (out.grad - dot)
+
+    if out.requires_grad:
+        out._backward = _backward
+    return out
+
+
+def tensor_getitem(a: Tensor, idx: Any) -> Tensor:
+    """Index into a Tensor, preserving gradient flow.
+
+    Supports any NumPy-compatible index (int, slice, array, bool mask).
+    Gradient is scattered back to the original positions.
+
+    Example::
+
+        x = Tensor([1.0, 2.0, 3.0], requires_grad=True)
+        y = x[1] ** 2   # y = 4.0; x.grad[1] = 4.0 after backward
+    """
+    out_data = a.data[idx]
+    # Ensure out_data is an ndarray even when index yields a scalar
+    out_data = np.asarray(out_data, dtype=np.float64)
+    out = Tensor(out_data, _children=(a,), _op="[]")
+    out.requires_grad = a.requires_grad
+
+    def _backward() -> None:
+        assert out.grad is not None
+        if a.requires_grad:
+            if a.grad is None:
+                a.grad = np.zeros_like(a.data)
+            np.add.at(a.grad, idx, out.grad)
 
     if out.requires_grad:
         out._backward = _backward
