@@ -203,6 +203,36 @@ from tensorquantlib.tt.pricing import (
 # ── Visualization ────────────────────────────────────────────────────
 from tensorquantlib.viz import plot_greeks_surface, plot_pricing_surface, plot_tt_ranks
 
+# ── Backtesting ──────────────────────────────────────────────────────
+from tensorquantlib.backtest import (
+    BacktestEngine,
+    BacktestResult,
+    SlippageModel,
+    CommissionModel,
+    ZERO_COST,
+    EQUITY_COMM,
+    FX_COMM,
+    EQUITY_SLIP,
+    ILLIQUID_SLIP,
+    Strategy,
+    Trade,
+    DeltaHedgeStrategy,
+    GammaScalpingStrategy,
+    DeltaGammaHedgeStrategy,
+    StraddleStrategy,
+    sharpe_ratio,
+    max_drawdown,
+    sortino_ratio,
+    win_rate,
+    profit_factor,
+    annualized_return,
+    calmar_ratio,
+    information_ratio,
+    turnover,
+    hedge_pnl_attribution,
+    hedge_efficiency,
+)
+
 __all__ = [
     # Core
     "Tensor",
@@ -268,4 +298,16 @@ __all__ = [
     "exotic_surrogate", "jump_diffusion_surrogate",
     # Visualization
     "plot_pricing_surface", "plot_greeks_surface", "plot_tt_ranks",
+    # Backtesting — engine
+    "BacktestEngine", "BacktestResult",
+    "SlippageModel", "CommissionModel",
+    "ZERO_COST", "EQUITY_COMM", "FX_COMM", "EQUITY_SLIP", "ILLIQUID_SLIP",
+    # Backtesting — strategies
+    "Strategy", "Trade",
+    "DeltaHedgeStrategy", "GammaScalpingStrategy",
+    "DeltaGammaHedgeStrategy", "StraddleStrategy",
+    # Backtesting — metrics
+    "sharpe_ratio", "max_drawdown", "sortino_ratio", "win_rate", "profit_factor",
+    "annualized_return", "calmar_ratio", "information_ratio", "turnover",
+    "hedge_pnl_attribution", "hedge_efficiency",
 ]

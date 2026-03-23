@@ -393,7 +393,20 @@ def tensor_div(a: Tensor, b: Tensor) -> Tensor:
 
 
 def tensor_neg(a: Tensor) -> Tensor:
-    """Negation: z = -a."""
+    """Element-wise negation: z = -a.
+
+    Args:
+        a: Input tensor.
+
+    Returns:
+        New tensor with negated values. Gradient: dz/da = -1.
+
+    Example:
+        >>> x = Tensor(np.array([3.0, -2.0]), requires_grad=True)
+        >>> y = tensor_neg(x)
+        >>> y.data
+        array([-3.,  2.])
+    """
     out = Tensor(-a.data, _children=(a,), _op="neg")
     out.requires_grad = a.requires_grad
 
@@ -457,7 +470,20 @@ def tensor_pow(a: Tensor, exponent: Union[int, float]) -> Tensor:
 
 
 def tensor_exp(a: Tensor) -> Tensor:
-    """Exponential: z = exp(a)."""
+    """Element-wise exponential: z = exp(a).
+
+    Args:
+        a: Input tensor.
+
+    Returns:
+        New tensor with exp(a). Gradient: dz/da = exp(a).
+
+    Example:
+        >>> x = Tensor(np.array([0.0, 1.0]), requires_grad=True)
+        >>> y = tensor_exp(x)
+        >>> np.allclose(y.data, [1.0, np.e])
+        True
+    """
     out_data = np.exp(a.data)
     out = Tensor(out_data, _children=(a,), _op="exp")
     out.requires_grad = a.requires_grad
@@ -475,7 +501,22 @@ def tensor_exp(a: Tensor) -> Tensor:
 
 
 def tensor_log(a: Tensor) -> Tensor:
-    """Natural logarithm: z = log(a). Clamps input to avoid log(0)."""
+    """Element-wise natural logarithm: z = log(a).
+
+    Input is clamped to a minimum of 1e-12 to avoid log(0).
+
+    Args:
+        a: Input tensor (values should be positive).
+
+    Returns:
+        New tensor with log(a). Gradient: dz/da = 1/a.
+
+    Example:
+        >>> x = Tensor(np.array([1.0, np.e]), requires_grad=True)
+        >>> y = tensor_log(x)
+        >>> np.allclose(y.data, [0.0, 1.0])
+        True
+    """
     safe_data = np.maximum(a.data, 1e-12)
     out = Tensor(np.log(safe_data), _children=(a,), _op="log")
     out.requires_grad = a.requires_grad
@@ -493,7 +534,20 @@ def tensor_log(a: Tensor) -> Tensor:
 
 
 def tensor_sqrt(a: Tensor) -> Tensor:
-    """Square root: z = sqrt(a)."""
+    """Element-wise square root: z = sqrt(a).
+
+    Args:
+        a: Input tensor (values should be non-negative).
+
+    Returns:
+        New tensor with sqrt(a). Gradient: dz/da = 1 / (2 * sqrt(a)).
+
+    Example:
+        >>> x = Tensor(np.array([4.0, 9.0]), requires_grad=True)
+        >>> y = tensor_sqrt(x)
+        >>> np.allclose(y.data, [2.0, 3.0])
+        True
+    """
     out_data = np.sqrt(a.data)
     out = Tensor(out_data, _children=(a,), _op="sqrt")
     out.requires_grad = a.requires_grad
@@ -647,7 +701,20 @@ def tensor_norm_cdf(a: Tensor) -> Tensor:
 
 
 def tensor_sin(a: Tensor) -> Tensor:
-    """Element-wise sine: z = sin(a)."""
+    """Element-wise sine: z = sin(a).
+
+    Args:
+        a: Input tensor (in radians).
+
+    Returns:
+        New tensor with sin(a). Gradient: dz/da = cos(a).
+
+    Example:
+        >>> x = Tensor(np.array([0.0, np.pi / 2]), requires_grad=True)
+        >>> y = tensor_sin(x)
+        >>> np.allclose(y.data, [0.0, 1.0], atol=1e-10)
+        True
+    """
     out = Tensor(np.sin(a.data), _children=(a,), _op="sin")
     out.requires_grad = a.requires_grad
 
@@ -664,7 +731,20 @@ def tensor_sin(a: Tensor) -> Tensor:
 
 
 def tensor_cos(a: Tensor) -> Tensor:
-    """Element-wise cosine: z = cos(a)."""
+    """Element-wise cosine: z = cos(a).
+
+    Args:
+        a: Input tensor (in radians).
+
+    Returns:
+        New tensor with cos(a). Gradient: dz/da = -sin(a).
+
+    Example:
+        >>> x = Tensor(np.array([0.0, np.pi]), requires_grad=True)
+        >>> y = tensor_cos(x)
+        >>> np.allclose(y.data, [1.0, -1.0], atol=1e-10)
+        True
+    """
     out = Tensor(np.cos(a.data), _children=(a,), _op="cos")
     out.requires_grad = a.requires_grad
 
@@ -681,7 +761,20 @@ def tensor_cos(a: Tensor) -> Tensor:
 
 
 def tensor_tanh(a: Tensor) -> Tensor:
-    """Element-wise hyperbolic tangent: z = tanh(a)."""
+    """Element-wise hyperbolic tangent: z = tanh(a).
+
+    Args:
+        a: Input tensor.
+
+    Returns:
+        New tensor with tanh(a). Gradient: dz/da = 1 - tanh(a)^2.
+
+    Example:
+        >>> x = Tensor(np.array([0.0, 1.0]), requires_grad=True)
+        >>> y = tensor_tanh(x)
+        >>> abs(y.data[0]) < 1e-10  # tanh(0) = 0
+        True
+    """
     out_data = np.tanh(a.data)
     out = Tensor(out_data, _children=(a,), _op="tanh")
     out.requires_grad = a.requires_grad
@@ -700,7 +793,22 @@ def tensor_tanh(a: Tensor) -> Tensor:
 
 
 def tensor_abs(a: Tensor) -> Tensor:
-    """Element-wise absolute value: z = abs(a). Subgradient at 0 is 0."""
+    """Element-wise absolute value: z = |a|.
+
+    Uses sign(a) as the subgradient, with subgradient 0 at a=0.
+
+    Args:
+        a: Input tensor.
+
+    Returns:
+        New tensor with |a|. Gradient: dz/da = sign(a).
+
+    Example:
+        >>> x = Tensor(np.array([-3.0, 0.0, 5.0]), requires_grad=True)
+        >>> y = tensor_abs(x)
+        >>> y.data
+        array([3., 0., 5.])
+    """
     out = Tensor(np.abs(a.data), _children=(a,), _op="abs")
     out.requires_grad = a.requires_grad
 

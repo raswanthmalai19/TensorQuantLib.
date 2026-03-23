@@ -25,12 +25,14 @@ python3 -m pytest
 
 ```
 src/tensorquantlib/
-├── core/          # Tensor class, reverse-mode autodiff, ops
-├── finance/       # Black-Scholes, basket pricing, Greeks
-├── tt/            # TT-SVD decomposition, TT ops, TTSurrogate
+├── core/          # Tensor class, reverse-mode autodiff, second-order AD
+├── finance/       # BS, Heston, American, exotics, SABR/SVI, rates, FX, credit, risk
+├── tt/            # TT-SVD decomposition, TT ops, TTSurrogate, TT pricing
+├── backtest/      # Backtesting engine, strategies, performance metrics
+├── data/          # Market data integration (Yahoo Finance)
 ├── utils/         # Numerical gradient checking
 └── viz/           # Matplotlib plotting utilities
-tests/             # pytest test suite
+tests/             # pytest test suite (588 tests)
 examples/          # Runnable demo scripts
 benchmarks/        # Performance benchmarks
 docs/              # Sphinx documentation source

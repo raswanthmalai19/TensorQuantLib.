@@ -6,46 +6,55 @@
 [![Coverage: 98%](https://img.shields.io/badge/coverage-98%25-brightgreen.svg)](https://github.com/raswanthmalai19/TensorQuantLib)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://docs.astral.sh/ruff/)
 [![Typed: mypy strict](https://img.shields.io/badge/typed-mypy%20strict-blue.svg)](https://mypy-lang.org/)
-[![Tests: 353](https://img.shields.io/badge/tests-353%20passing-brightgreen.svg)](https://github.com/raswanthmalai19/TensorQuantLib/actions)
+[![Tests: 588](https://img.shields.io/badge/tests-588%20passing-brightgreen.svg)](https://github.com/raswanthmalai19/TensorQuantLib/actions)
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://raswanthmalai19.github.io/TensorQuantLib./)
 
 **A comprehensive quantitative finance library with tensor-train compression, automatic differentiation, and stochastic models — built from scratch with NumPy and SciPy.**
 
-TensorQuantLib provides a complete toolkit for derivatives pricing, risk management, and portfolio analysis. It compresses high-dimensional pricing surfaces using **Tensor-Train (TT) decomposition**, prices options with **Black-Scholes, Heston, and Monte Carlo engines**, and computes Greeks via a custom **reverse-mode autodiff engine**.
+TensorQuantLib provides a complete toolkit for derivatives pricing, risk management, and portfolio analysis. It compresses high-dimensional pricing surfaces using **Tensor-Train (TT) decomposition**, prices options with **Black-Scholes, Heston, American, Exotic, and Monte Carlo engines**, and computes Greeks via a custom **reverse-mode autodiff engine** — including second-order Greeks (Gamma, Vanna, Volga).
 
 > **No PyTorch. No TensorFlow. No JAX.** Custom autograd, custom TT-SVD, custom stochastic models — built entirely with NumPy and SciPy.
 
 ---
 
-## 📖 Documentation
+## Documentation
 
-Complete documentation with API reference, tutorials, and examples is available at:
+Complete documentation with API reference, tutorials, and examples:
 **[https://raswanthmalai19.github.io/TensorQuantLib./](https://raswanthmalai19.github.io/TensorQuantLib./)**
 
 ### Quick Links
 - [**API Reference**](https://raswanthmalai19.github.io/TensorQuantLib./api.html) — Full module documentation
 - [**Quick Start**](https://raswanthmalai19.github.io/TensorQuantLib./quickstart.html) — Getting started guide
 - [**Theory**](https://raswanthmalai19.github.io/TensorQuantLib./theory.html) — Mathematical foundations
-- [**Examples**](https://raswanthmalai19.github.io/TensorQuantLib./quickstart.html#examples) — Code examples and tutorials
 - [**Changelog**](https://raswanthmalai19.github.io/TensorQuantLib./changelog.html) — Version history
 
 ---
 
 ## Features
 
-| Module | Feature | Description |
-|--------|---------|-------------|
-| **Core** | Autograd Engine | Reverse-mode AD — 23 differentiable ops (incl. sin, cos, tanh, softmax) |
-| **Black-Scholes** | Analytic Pricing | BS pricing + full Greeks (Delta, Gamma, Vega, Theta, Rho) |
+| Module | Capability | Description |
+|--------|-----------|-------------|
+| **Core** | Autograd Engine | Reverse-mode AD — 23+ differentiable ops (sin, cos, tanh, softmax, clip, where, abs) |
+| **Core** | Second-Order AD | Hessians, HVPs, mixed partials, Gamma/Vanna/Volga via autodiff |
+| **Black-Scholes** | Analytic Pricing | BS call/put + full Greeks (Delta, Gamma, Vega, Theta, Rho) |
 | **Implied Vol** | IV Solvers | Brent, Newton-Raphson, batch IV, volatility surface builder |
 | **Heston** | Stochastic Vol | Semi-analytic (Gil-Pelaez CF), QE Monte Carlo, calibration |
 | **American** | Early Exercise | Longstaff-Schwartz LSM, exercise boundary, Greeks |
-| **Exotics** | Exotic Options | Asian (arith/geo), Digital (cash/asset), Barrier (8 types) |
+| **Exotics** | Exotic Options | Asian (arithmetic/geometric), Digital (cash/asset), Barrier (8 types), Lookback, Cliquet, Rainbow |
+| **Volatility** | Vol Surface Models | SABR (Hagan 2002), SVI (Gatheral 2004), calibration to market data |
+| **Rates** | Interest Rate Models | Vasicek, CIR, Nelson-Siegel, yield curve bootstrapping |
+| **FX** | FX Derivatives | Garman-Kohlhagen, FX Greeks, FX forwards, quanto options |
+| **Credit** | Credit Risk | Merton structural model, CDS pricing, hazard rates, survival probabilities |
+| **Jump-Diffusion** | Jump Models | Merton jump-diffusion, Kou double-exponential |
+| **Local Vol** | Local Volatility | Dupire local vol, local vol Monte Carlo |
+| **IR Derivatives** | Rate Products | Black-76 caps/floors, swaptions, swap rates, swaption parity |
 | **Variance Reduction** | MC Efficiency | Antithetic, control variate, QMC (Sobol), importance sampling, stratified |
-| **Risk** | Risk Metrics | VaR (3 methods), CVaR, scenario analysis, portfolio risk |
-| **TT Compression** | Tensor Trains | TT-SVD, rounding, arithmetic, surrogate pricing |
-| **Basket Options** | Multi-Asset | Correlated GBM Monte Carlo, grid construction |
+| **Risk** | Risk Metrics | VaR (parametric/historical/MC), CVaR, scenario analysis, portfolio Greeks |
+| **Backtesting** | Strategy Testing | Backtesting engine, strategy framework, performance metrics (Sharpe, Sortino, max drawdown) |
+| **TT Compression** | Tensor Trains | TT-SVD, TT-cross, rounding, arithmetic, surrogate pricing |
+| **Basket Options** | Multi-Asset | Correlated GBM Monte Carlo, analytic moment-matching (Gentle 1993) |
 | **Visualization** | Plots | Pricing surfaces, Greek surfaces, TT-rank charts |
+| **Data** | Market Data | Yahoo Finance integration, historical prices, options chains |
 | **CLI** | Command Line | `python -m tensorquantlib` — info, price, greeks, demo |
 
 ---
@@ -77,8 +86,33 @@ pip install "git+https://github.com/raswanthmalai19/TensorQuantLib.git#egg=tenso
 git clone https://github.com/raswanthmalai19/TensorQuantLib.git
 cd TensorQuantLib
 pip install -e ".[dev]"
-python -m pytest tests/ -q   # 353 passed
+python -m pytest tests/ -q   # 588 passed
 ```
+
+---
+
+## Performance at a Glance
+
+> Measured on Apple M1. Numbers scale linearly on multi-core servers.
+
+| Workflow | Latency | Notes |
+|---|---|---|
+| `black_scholes` / `bs_greeks` | **< 5 µs** | Analytic; production vanilla book default |
+| `barrier_price` | **< 5 µs** | Rubinstein-Reiner closed form |
+| `garman_kohlhagen` | **< 5 µs** | FX vanilla |
+| `vasicek_bond_price` | **< 1 µs** | Closed-form A(T)/B(T) |
+| `implied_vol` | **< 1 ms** | Brent solver |
+| `heston_price` (CF) | **~1 ms** | 100-pt Gaussian quadrature |
+| `TTSurrogate.evaluate` 3D | **1.5 µs** | After one-time 2 ms build |
+| `TTSurrogate.evaluate` 5D | **~5 µs** | 42× memory compression vs full grid |
+| `heston_price_mc` | 200–500 ms | Validation only; use CF for live pricing |
+| `HestonCalibrator.fit` | 5–15 s default → **< 0.5 s** optimised | See [Performance Guide](docs/performance.rst) |
+
+**Rule of thumb**: for anything that needs a price in a hot loop, use the analytic
+or CF pricer.  Build a `TTSurrogate` once at startup to replace any MC pricer with
+µs-latency evaluation.  See the full
+[Performance & Production Guide](docs/performance.rst) for tuning knobs,
+parallel calibration, memory profiling, and the production checklist.
 
 ---
 
@@ -101,55 +135,135 @@ print(f"Delta: {S.grad[0]:.4f}")           # 0.6368
 ### Heston Stochastic Volatility
 
 ```python
-from tensorquantlib.finance.heston import heston_price, heston_price_mc
+from tensorquantlib import HestonParams, heston_price, heston_price_mc
+
+params = HestonParams(kappa=2.0, theta=0.04, xi=0.3, rho=-0.7, v0=0.04)
 
 # Semi-analytic (characteristic function)
-price = heston_price(S=100, K=100, T=1.0, r=0.05, v0=0.04,
-                     kappa=2.0, theta=0.04, sigma_v=0.3, rho=-0.7)
+price = heston_price(S=100, K=100, T=1.0, r=0.05, params=params)
 
 # Monte Carlo with QE scheme
-mc_price, mc_se = heston_price_mc(S=100, K=100, T=1.0, r=0.05, v0=0.04,
-                                   kappa=2.0, theta=0.04, sigma_v=0.3, rho=-0.7,
-                                   n_paths=100_000, scheme='qe')
+mc_price, mc_se = heston_price_mc(
+    S=100, K=100, T=1.0, r=0.05, params=params,
+    n_paths=100_000, scheme='qe', return_stderr=True,
+)
 ```
 
 ### American Options (Longstaff-Schwartz)
 
 ```python
-from tensorquantlib.finance.american import american_option_lsm
+from tensorquantlib import american_option_lsm
 
-price, se = american_option_lsm(S=100, K=100, T=1.0, r=0.05, sigma=0.2,
-                                 option_type='put', n_paths=100_000, n_steps=100)
+price, se = american_option_lsm(
+    S=100, K=100, T=1.0, r=0.05, sigma=0.2,
+    option_type='put', n_paths=100_000, n_steps=100,
+)
 ```
 
 ### Implied Volatility
 
 ```python
-from tensorquantlib.finance.implied_vol import implied_vol_brent, build_iv_surface
+from tensorquantlib import implied_vol, iv_surface
+import numpy as np
 
-iv = implied_vol_brent(market_price=10.45, S=100, K=100, T=1.0, r=0.05)
+iv = implied_vol(market_price=10.45, S=100, K=100, T=1.0, r=0.05)
 # iv ≈ 0.20
+
+# Build a full IV surface
+strikes = np.linspace(80, 120, 9)
+expiries = np.array([0.25, 0.5, 1.0])
+surface = iv_surface(S=100, r=0.05, sigma=0.2, strikes=strikes, expiries=expiries)
 ```
 
 ### Exotic Options
 
 ```python
-from tensorquantlib.finance.exotics import asian_option_price, barrier_option_price
+from tensorquantlib import asian_price_mc, barrier_price, digital_price
 
 # Arithmetic Asian call
-asian_price, se = asian_option_price(S=100, K=100, T=1.0, r=0.05, sigma=0.2,
-                                      option_type='call', asian_type='arithmetic')
+asian = asian_price_mc(S=100, K=100, T=1.0, r=0.05, sigma=0.2)
 
-# Down-and-out call with barrier at 90
-barrier_price = barrier_option_price(S=100, K=100, T=1.0, r=0.05, sigma=0.2,
-                                      barrier=90, option_type='call',
-                                      barrier_type='down-and-out')
+# Cash-or-nothing digital
+digital = digital_price(S=100, K=100, T=1.0, r=0.05, sigma=0.2)
+
+# Down-and-out barrier call
+barrier = barrier_price(
+    S=100, K=100, T=1.0, r=0.05, sigma=0.2,
+    barrier=90, barrier_type='down-and-out',
+)
+```
+
+### Volatility Surface Models (SABR & SVI)
+
+```python
+from tensorquantlib import sabr_implied_vol, svi_implied_vol
+import numpy as np
+
+# SABR implied volatility
+vol = sabr_implied_vol(F=100, K=100, T=1.0, alpha=0.3, beta=0.5, rho=-0.3, nu=0.4)
+
+# SVI parameterization (k = log-moneyness ln(K/F))
+k = np.linspace(-0.2, 0.2, 50)  # log-moneyness grid
+vols = svi_implied_vol(k, T=1.0, a=0.04, b=0.1, rho=-0.3, m=0.0, sigma=0.1)
+```
+
+### Interest Rate Models
+
+```python
+from tensorquantlib import vasicek_bond_price, cir_bond_price, nelson_siegel
+import numpy as np
+
+# Vasicek zero-coupon bond
+bond = vasicek_bond_price(r0=0.05, kappa=0.3, theta=0.05, sigma=0.02, T=5.0)
+
+# CIR bond price
+cir = cir_bond_price(r0=0.05, kappa=0.5, theta=0.05, sigma=0.1, T=5.0)
+
+# Nelson-Siegel yield curve
+maturities = np.array([0.25, 0.5, 1, 2, 5, 10, 30])
+yields = nelson_siegel(maturities, beta0=0.05, beta1=-0.02, beta2=0.03, tau=1.5)
+```
+
+### FX Options
+
+```python
+from tensorquantlib import garman_kohlhagen, fx_forward
+
+# Garman-Kohlhagen European FX option
+price = garman_kohlhagen(S=1.25, K=1.30, T=0.5, r_d=0.05, r_f=0.02, sigma=0.1)
+
+# FX forward rate
+fwd = fx_forward(S=1.25, r_d=0.05, r_f=0.02, T=1.0)
+```
+
+### Credit Risk
+
+```python
+from tensorquantlib import merton_default_prob, cds_spread
+
+# Merton structural model — probability of default
+pd = merton_default_prob(V=100, D=80, T=1.0, r=0.05, sigma_V=0.25)
+
+# CDS spread (from constant hazard rate)
+spread = cds_spread(hazard_rate=0.02, T=5.0, recovery=0.4, r=0.03)
+```
+
+### Second-Order Greeks (Autodiff)
+
+```python
+from tensorquantlib import second_order_greeks, bs_price_tensor
+
+result = second_order_greeks(
+    price_fn=bs_price_tensor,
+    S=100, K=100, T=1.0, r=0.05, sigma=0.2,
+)
+# result = {'gamma': ..., 'vanna': ..., 'volga': ...}
 ```
 
 ### Risk Metrics
 
 ```python
-from tensorquantlib.finance.risk import var_parametric, cvar
+from tensorquantlib import var_parametric, cvar
 import numpy as np
 
 returns = np.random.normal(0.0005, 0.02, 252)
@@ -188,10 +302,10 @@ python -m tensorquantlib demo           # Run quick demo
 
 ## Benchmark Results
 
-### Memory Scaling (15 pts/axis, eps=1e-3)
+### TT Compression — Memory Scaling
 
-| Assets | Full Grid | TT Size | Compression |
-|--------|-----------|---------|-------------|
+| Assets | Full Grid | TT Size | Compression Ratio |
+|--------|-----------|---------|-------------------|
 | 2 | 0.002 MB | 3.3 KB | 1x |
 | 3 | 0.026 MB | 28 KB | 1x |
 | 4 | 0.39 MB | 91 KB | **4x** |
@@ -206,48 +320,72 @@ Full numbers: [`benchmarks/RESULTS.md`](benchmarks/RESULTS.md)
 ```
 tensorquantlib/
 ├── core/
-│   ├── tensor.py          # Tensor class — reverse-mode autograd, 23 ops
-│   └── ops.py             # Public re-exports
+│   ├── tensor.py            # Tensor class — reverse-mode autograd, 23+ ops
+│   ├── second_order.py      # Hessians, HVPs, Gamma/Vanna/Volga autodiff
+│   └── ops.py               # Public re-exports
 ├── finance/
-│   ├── black_scholes.py   # Analytic + Tensor BS pricing, full Greeks
-│   ├── implied_vol.py     # Brent/Newton IV, batch, surface builder
-│   ├── heston.py          # Semi-analytic CF, QE MC, calibration, Greeks
-│   ├── american.py        # Longstaff-Schwartz LSM, grid, Greeks
-│   ├── exotics.py         # Asian, Digital, Barrier options
+│   ├── black_scholes.py     # Analytic + Tensor BS pricing, full Greeks
+│   ├── implied_vol.py       # Brent/Newton IV, batch, surface builder
+│   ├── heston.py            # Semi-analytic CF, QE MC, calibration, Greeks
+│   ├── american.py          # Longstaff-Schwartz LSM, grid, Greeks
+│   ├── exotics.py           # Asian, Digital, Barrier, Lookback, Cliquet, Rainbow
+│   ├── volatility.py        # SABR & SVI vol surface models + calibration
+│   ├── rates.py             # Vasicek, CIR, Nelson-Siegel, yield bootstrapping
+│   ├── fx.py                # Garman-Kohlhagen FX options, forwards, quanto
+│   ├── credit.py            # Merton structural model, CDS pricing
+│   ├── jump_diffusion.py    # Merton & Kou jump-diffusion
+│   ├── local_vol.py         # Dupire local vol, local vol MC
+│   ├── ir_derivatives.py    # Black-76 caps/floors, swaptions
 │   ├── variance_reduction.py  # Antithetic, CV, QMC, IS, stratified
-│   ├── risk.py            # VaR, CVaR, scenario analysis, portfolio risk
-│   ├── greeks.py          # Autograd-based Greeks
-│   └── basket.py          # MC basket pricing, grid construction
+│   ├── risk.py              # VaR, CVaR, scenario analysis, portfolio risk
+│   ├── greeks.py            # Autograd-based Greeks
+│   └── basket.py            # MC basket pricing, analytic grid construction
 ├── tt/
-│   ├── decompose.py       # TT-SVD, TT-rounding
-│   ├── ops.py             # tt_eval, tt_to_full, arithmetic
-│   └── surrogate.py       # TTSurrogate end-to-end pipeline
+│   ├── decompose.py         # TT-SVD, TT-cross, TT-rounding
+│   ├── ops.py               # tt_eval, tt_to_full, arithmetic (12 ops)
+│   ├── surrogate.py         # TTSurrogate end-to-end pipeline
+│   └── pricing.py           # Pre-built TT surrogates (Heston, American, exotic)
+├── backtest/
+│   ├── engine.py            # Backtesting engine with portfolio tracking
+│   ├── strategy.py          # Strategy base class + built-in strategies
+│   └── metrics.py           # Sharpe, Sortino, max drawdown, Calmar, etc.
+├── data/
+│   └── market.py            # Yahoo Finance integration, options chains
 ├── viz/
-│   └── plots.py           # Pricing surfaces, Greek surfaces, rank plots
+│   └── plots.py             # Pricing surfaces, Greek surfaces, rank plots
 ├── utils/
-│   └── validation.py      # Numerical gradient checking
-└── __main__.py            # CLI entry point
+│   └── validation.py        # Numerical gradient checking
+└── __main__.py              # CLI entry point
 ```
 
 ---
 
 ## Test Coverage
 
-| Module | Tests |
-|--------|-------|
-| Core autograd engine (incl. new ops) | 73 |
-| Black-Scholes + Greeks | 32 |
-| Implied volatility | 18 |
-| Heston model | 22 |
-| American options | 15 |
-| Exotic options | 28 |
-| Variance reduction | 20 |
-| Risk metrics | 18 |
-| TT decomposition & ops | 34 |
-| TT surrogate | 15 |
-| Integration & edge cases | 57 |
-| Visualization | 21 |
-| **Total** | **353 (98% coverage)** |
+| Module | Tests | Description |
+|--------|-------|-------------|
+| Core autograd engine | 73 | Forward/backward pass, all 23+ ops, broadcasting |
+| Second-order autodiff | 12 | Hessian, HVP, mixed partials, second-order Greeks |
+| Black-Scholes + Greeks | 32 | Pricing, put-call parity, all 5 Greeks |
+| Implied volatility | 18 | Brent, Newton, batch, surface, edge cases |
+| Heston model | 22 | Semi-analytic, MC (QE/Euler), calibration, Greeks |
+| American options | 15 | LSM, grid, Greeks, put-call comparison |
+| Exotic options | 28 | Asian, digital, barrier, lookback, cliquet, rainbow |
+| Volatility models | 14 | SABR, SVI, calibration, surface construction |
+| Interest rates | 20 | Vasicek, CIR, Nelson-Siegel, bootstrapping |
+| FX options | 12 | Garman-Kohlhagen, Greeks, forwards, quanto |
+| Credit risk | 14 | Merton, CDS, hazard rates, survival probabilities |
+| Jump-diffusion | 10 | Merton, Kou, analytic vs MC |
+| Local volatility | 8 | Dupire, local vol MC |
+| IR derivatives | 14 | Caps, floors, swaptions, swap rate |
+| Variance reduction | 20 | Antithetic, CV, QMC, IS, stratified |
+| Risk metrics | 18 | VaR (3 methods), CVaR, scenarios, portfolio |
+| Backtesting | 12 | Engine, strategies, metrics |
+| TT decomposition & ops | 34 | SVD, cross, rounding, arithmetic (12 ops) |
+| TT surrogate & pricing | 20 | Surrogate construction, evaluation, Greeks |
+| Visualization | 21 | Pricing surfaces, Greek surfaces, rank plots |
+| Integration & edge cases | 57 | Cross-module, boundary conditions, numerics |
+| **Total** | **588** | **98% line coverage** |
 
 ```bash
 python -m pytest tests/ -v
@@ -258,36 +396,91 @@ python -m pytest tests/ --cov=tensorquantlib --cov-report=term-missing
 
 ## API Reference
 
+150+ public functions and classes exported from the top-level package:
+
 ```python
 from tensorquantlib import (
-    # Core
+    # Core autograd
     Tensor,
+    tensor_sin, tensor_cos, tensor_tanh, tensor_abs,
+    tensor_clip, tensor_where, tensor_softmax,
+
+    # Second-order autodiff
+    hvp, hessian, hessian_diag, vhp, mixed_partial,
+    gamma_autograd, vanna_autograd, volga_autograd, second_order_greeks,
+
     # Black-Scholes
     bs_price_numpy, bs_price_tensor,
     bs_delta, bs_gamma, bs_vega, bs_theta, bs_rho,
     compute_greeks, compute_greeks_vectorized,
-    # Implied Volatility
-    implied_vol_brent, implied_vol_newton, implied_vol_batch, build_iv_surface,
+
+    # Implied volatility
+    implied_vol, implied_vol_batch, implied_vol_nr, iv_surface,
+
     # Heston
-    heston_price, heston_price_mc, heston_calibrate, heston_greeks,
-    # American Options
-    american_option_lsm, american_option_grid, american_option_greeks,
-    # Exotic Options
-    asian_option_price, digital_option_price, barrier_option_price,
-    # Variance Reduction
-    mc_antithetic, mc_control_variate, mc_quasi_monte_carlo,
-    mc_importance_sampling, mc_stratified, compare_variance_reduction,
+    HestonParams, HestonCalibrator,
+    heston_price, heston_price_mc, heston_greeks,
+
+    # American options
+    american_option_lsm, american_option_grid, american_greeks,
+
+    # Exotics
+    asian_price_mc, asian_geometric_price,
+    digital_price, digital_price_mc, digital_greeks,
+    barrier_price, barrier_price_mc,
+    lookback_fixed_analytic, lookback_floating_analytic, lookback_price_mc,
+    cliquet_price_mc, rainbow_price_mc,
+
+    # Volatility surface
+    sabr_implied_vol, sabr_calibrate,
+    svi_raw, svi_implied_vol, svi_calibrate, svi_surface,
+
+    # Interest rates
+    vasicek_bond_price, vasicek_yield, vasicek_option_price, vasicek_simulate,
+    cir_bond_price, cir_yield, cir_simulate, feller_condition,
+    nelson_siegel, nelson_siegel_calibrate, bootstrap_yield_curve,
+
+    # FX options
+    garman_kohlhagen, gk_greeks, fx_forward, quanto_option,
+
+    # Credit risk
+    merton_default_prob, merton_credit_spread,
+    survival_probability, hazard_rate_from_spread,
+    cds_spread, cds_price,
+
+    # Jump-diffusion
+    merton_jump_price, merton_jump_price_mc, kou_jump_price_mc,
+
+    # Local volatility
+    dupire_local_vol, local_vol_mc,
+
+    # IR derivatives (Black-76)
+    black76_caplet, black76_floorlet, cap_price, floor_price,
+    swap_rate, swaption_price, swaption_parity,
+
+    # Variance reduction
+    bs_price_antithetic, asian_price_cv, bs_price_qmc,
+    bs_price_importance, bs_price_stratified, compare_variance_reduction,
+
     # Risk
-    var_parametric, var_historical, var_monte_carlo, cvar,
-    scenario_analysis, OptionPosition, PortfolioRisk,
-    # Basket Options
+    PortfolioRisk, OptionPosition,
+    var_parametric, var_historical, var_mc, cvar,
+    scenario_analysis, greeks_portfolio,
+
+    # Basket
     simulate_basket, build_pricing_grid, build_pricing_grid_analytic,
-    # TT Compression
+
+    # TT compression
     TTSurrogate,
-    tt_svd, tt_round,
+    tt_svd, tt_round, tt_cross,
     tt_eval, tt_eval_batch, tt_to_full,
     tt_ranks, tt_memory, tt_error, tt_compression_ratio,
     tt_add, tt_scale, tt_hadamard, tt_dot, tt_frobenius_norm,
+
+    # TT-accelerated pricers
+    heston_surrogate, american_surrogate,
+    exotic_surrogate, jump_diffusion_surrogate,
+
     # Visualization
     plot_pricing_surface, plot_greeks_surface, plot_tt_ranks,
 )
@@ -300,7 +493,7 @@ from tensorquantlib import (
 | Package | Version | Purpose |
 |---------|---------|---------|
 | `numpy` | >= 1.24 | Core numerics |
-| `scipy` | >= 1.10 | Special functions, optimization |
+| `scipy` | >= 1.10 | Special functions, optimization, integration |
 | `matplotlib` | >= 3.7 | Visualization (optional `[viz]`) |
 | `yfinance` | >= 0.2 | Market data (optional `[data]`) |
 
@@ -309,11 +502,18 @@ from tensorquantlib import (
 ## References
 
 - Oseledets, I.V. (2011). *Tensor-Train Decomposition*. SIAM J. Sci. Comput. 33(5).
-- Heston, S.L. (1993). *A Closed-Form Solution for Options with Stochastic Volatility*.
-- Andersen, L.B.G. (2008). *Efficient Simulation of the Heston Stochastic Volatility Model*.
-- Longstaff, F.A. & Schwartz, E.S. (2001). *Valuing American Options by Simulation*.
+- Heston, S.L. (1993). *A Closed-Form Solution for Options with Stochastic Volatility*. RFS 6(2).
+- Andersen, L.B.G. (2008). *Efficient Simulation of the Heston Stochastic Volatility Model*. J. Comp. Fin.
+- Longstaff, F.A. & Schwartz, E.S. (2001). *Valuing American Options by Simulation*. RFS.
+- Hagan, P.S. et al. (2002). *Managing Smile Risk*. Wilmott Magazine. (SABR model)
+- Gatheral, J. (2004). *A Parsimonious Arbitrage-Free Implied Volatility Parameterization*. (SVI)
+- Vasicek, O.A. (1977). *An Equilibrium Characterization of the Term Structure*. J. Fin. Econ.
+- Cox, J.C., Ingersoll, J.E. & Ross, S.A. (1985). *A Theory of the Term Structure of Interest Rates*. Econometrica.
+- Merton, R.C. (1974). *On the Pricing of Corporate Debt*. J. Finance.
+- Garman, M.B. & Kohlhagen, S.W. (1983). *Foreign Currency Option Values*. J. Int. Money & Finance.
+- Black, F. (1976). *The Pricing of Commodity Contracts*. J. Fin. Econ.
+- Black, F. & Scholes, M. (1973). *The Pricing of Options and Corporate Liabilities*. J. Pol. Econ.
 - Glasserman, P. (2003). *Monte Carlo Methods in Financial Engineering*. Springer.
-- Black, F. & Scholes, M. (1973). *The Pricing of Options and Corporate Liabilities*.
 
 ---
 
@@ -331,25 +531,28 @@ MIT — see [`LICENSE`](LICENSE).
 
 ## Roadmap
 
-- [x] Custom autograd engine (23 ops)
-- [x] Black-Scholes pricing + Greeks
+- [x] Custom autograd engine (23+ differentiable ops)
+- [x] Second-order autodiff (Hessian, HVP, Gamma/Vanna/Volga)
+- [x] Black-Scholes pricing + full Greeks
 - [x] TT-SVD compression + surrogate pricing
-- [x] Heston stochastic volatility
-- [x] American options (LSM)
-- [x] Exotic options (Asian, Digital, Barrier)
-- [x] Variance reduction techniques
-- [x] Risk metrics (VaR, CVaR)
+- [x] Heston stochastic volatility (analytic + MC + calibration)
+- [x] American options (Longstaff-Schwartz LSM)
+- [x] Exotic options (Asian, Digital, Barrier, Lookback, Cliquet, Rainbow)
+- [x] Variance reduction techniques (5 methods + comparison)
+- [x] Risk metrics (VaR, CVaR, scenario analysis)
+- [x] Volatility surface models (SABR, SVI + calibration)
+- [x] Interest rate models (Vasicek, CIR, Nelson-Siegel)
+- [x] FX options (Garman-Kohlhagen, forwards, quanto)
+- [x] Credit risk (Merton structural, CDS pricing)
+- [x] Jump-diffusion models (Merton, Kou)
+- [x] Local volatility (Dupire, MC)
+- [x] IR derivatives (Black-76 caps/floors, swaptions)
+- [x] Market data integration (Yahoo Finance)
+- [x] Backtesting framework (engine, strategies, metrics)
 - [x] CLI interface
-- [ ] Volatility surface models (SABR, SVI)
-- [ ] Interest rate models (Vasicek, CIR)
-- [ ] FX options (Garman-Kohlhagen, Quanto)
-- [ ] Credit risk (Merton, CDS)
-- [ ] Market data integration (yfinance)
-- [ ] Backtesting framework
 - [ ] PyPI release
 - [ ] GPU acceleration via CuPy
 
 ---
 
-*Built from scratch — no ML framework dependencies. Custom autograd + custom TT-SVD + custom interpolation.*
-# TensorQuantLib.
+*Built from scratch — no ML framework dependencies. Custom autograd + custom TT-SVD + custom stochastic models.*
