@@ -16,6 +16,7 @@ from tensorquantlib.tt.ops import (
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
+
 def _smooth_tensor(shape, seed=42):
     np.random.default_rng(seed)
     vecs = [np.sin(np.linspace(0, np.pi, n)) + 0.1 for n in shape]
@@ -31,6 +32,7 @@ def _random_tensor(shape, seed=42):
 
 
 # ── tt_eval ──────────────────────────────────────────────────────────────────
+
 
 class TestTTEval:
     """Tests for single-element TT evaluation."""
@@ -71,6 +73,7 @@ class TestTTEval:
 
 # ── tt_eval_batch ────────────────────────────────────────────────────────────
 
+
 class TestTTEvalBatch:
     """Tests for batch TT evaluation."""
 
@@ -80,12 +83,14 @@ class TestTTEvalBatch:
         A = _random_tensor(shape)
         cores = tt_svd(A, eps=1e-14)
 
-        indices = np.array([
-            [0, 0, 0],
-            [1, 2, 3],
-            [4, 5, 6],
-            [2, 3, 4],
-        ])
+        indices = np.array(
+            [
+                [0, 0, 0],
+                [1, 2, 3],
+                [4, 5, 6],
+                [2, 3, 4],
+            ]
+        )
 
         batch_vals = tt_eval_batch(cores, indices)
         single_vals = np.array([tt_eval(cores, tuple(idx)) for idx in indices])
@@ -99,9 +104,11 @@ class TestTTEvalBatch:
         cores = tt_svd(A, eps=1e-14)
 
         # Evaluate all elements
-        all_indices = np.array(np.meshgrid(
-            *[np.arange(n) for n in shape], indexing="ij"
-        )).reshape(len(shape), -1).T
+        all_indices = (
+            np.array(np.meshgrid(*[np.arange(n) for n in shape], indexing="ij"))
+            .reshape(len(shape), -1)
+            .T
+        )
 
         batch_vals = tt_eval_batch(cores, all_indices)
         np.testing.assert_allclose(batch_vals, A.ravel(), atol=1e-10)
@@ -123,6 +130,7 @@ class TestTTEvalBatch:
 
 
 # ── tt_to_full ───────────────────────────────────────────────────────────────
+
 
 class TestTTToFull:
     """Tests for full reconstruction."""
@@ -147,6 +155,7 @@ class TestTTToFull:
 
 
 # ── tt_ranks ─────────────────────────────────────────────────────────────────
+
 
 class TestTTRanks:
     """Tests for TT-rank extraction."""
@@ -173,6 +182,7 @@ class TestTTRanks:
 
 # ── tt_memory ────────────────────────────────────────────────────────────────
 
+
 class TestTTMemory:
     """Tests for TT memory computation."""
 
@@ -198,6 +208,7 @@ class TestTTMemory:
 
 
 # ── tt_error ─────────────────────────────────────────────────────────────────
+
 
 class TestTTError:
     """Tests for reconstruction error computation."""
@@ -231,6 +242,7 @@ class TestTTError:
 
 
 # ── tt_compression_ratio ─────────────────────────────────────────────────────
+
 
 class TestTTCompressionRatio:
     """Tests for compression ratio computation."""

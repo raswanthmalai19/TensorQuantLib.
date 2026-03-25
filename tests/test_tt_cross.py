@@ -3,46 +3,53 @@
 import numpy as np
 import pytest
 
-from tensorquantlib.tt.decompose import tt_cross, tt_svd
-from tensorquantlib.tt.ops import tt_error, tt_eval, tt_ranks, tt_to_full
+from tensorquantlib.tt.decompose import tt_cross
+from tensorquantlib.tt.ops import tt_eval, tt_ranks, tt_to_full
 from tensorquantlib.tt.surrogate import TTSurrogate
-
 
 # ─────────────────────────────────────────────────────────────────────
 # Reference functions (analytical, smooth — should compress well)
 # ─────────────────────────────────────────────────────────────────────
 
+
 def _make_trig_fn(axes):
     """f(i0,...,i_{d-1}) = sin(x0)*cos(x1)*..., low TT rank."""
+
     def fn(*indices):
         vals = [axes[k][i] for k, i in enumerate(indices)]
         result = 1.0
         for j, v in enumerate(vals):
-            result *= (np.sin(v) if j % 2 == 0 else np.cos(v))
+            result *= np.sin(v) if j % 2 == 0 else np.cos(v)
         return float(result)
+
     return fn
 
 
 def _make_sum_fn(axes):
     """f = sum_k x_k.  TT rank 2 exactly."""
+
     def fn(*indices):
         return float(sum(axes[k][i] for k, i in enumerate(indices)))
+
     return fn
 
 
 def _make_product_fn(axes):
     """f = prod_k x_k.  TT rank 1 exactly."""
+
     def fn(*indices):
         result = 1.0
         for k, i in enumerate(indices):
             result *= axes[k][i]
         return float(result)
+
     return fn
 
 
 # ─────────────────────────────────────────────────────────────────────
 # Basic shape and rank tests
 # ─────────────────────────────────────────────────────────────────────
+
 
 class TestTTCrossBasic:
     def test_output_is_list_of_cores(self):
@@ -61,8 +68,9 @@ class TestTTCrossBasic:
         assert cores[0].shape[0] == 1, "First core left rank must be 1"
         assert cores[-1].shape[2] == 1, "Last core right rank must be 1"
         for k in range(len(cores) - 1):
-            assert cores[k].shape[2] == cores[k + 1].shape[0], \
-                f"Bond dimension mismatch at interface {k}-{k+1}"
+            assert cores[k].shape[2] == cores[k + 1].shape[0], (
+                f"Bond dimension mismatch at interface {k}-{k + 1}"
+            )
 
     def test_core_mode_size_matches_shape(self):
         shape = (5, 7, 9)
@@ -87,6 +95,7 @@ class TestTTCrossBasic:
 # Accuracy tests (cross vs reference on small grids)
 # ─────────────────────────────────────────────────────────────────────
 
+
 class TestTTCrossAccuracy:
     def test_product_function_low_error(self):
         """Product function has exact TT rank 1 — TT-Cross should be nearly exact."""
@@ -98,9 +107,7 @@ class TestTTCrossAccuracy:
         cores = tt_cross(fn, shape=shape, eps=1e-6, max_rank=4, n_sweeps=6)
 
         # Build reference tensor
-        A_ref = np.array([[[fn(i, j, k) for k in range(n)]
-                           for j in range(n)]
-                          for i in range(n)])
+        A_ref = np.array([[[fn(i, j, k) for k in range(n)] for j in range(n)] for i in range(n)])
         A_tt = tt_to_full(cores)
         rel_err = np.linalg.norm(A_tt - A_ref) / (np.linalg.norm(A_ref) + 1e-15)
         assert rel_err < 0.01, f"Product function relative error too large: {rel_err:.4e}"
@@ -114,16 +121,14 @@ class TestTTCrossAccuracy:
 
         cores = tt_cross(fn, shape=shape, eps=1e-6, max_rank=4, n_sweeps=8)
 
-        A_ref = np.array([[[fn(i, j, k) for k in range(n)]
-                           for j in range(n)]
-                          for i in range(n)])
+        A_ref = np.array([[[fn(i, j, k) for k in range(n)] for j in range(n)] for i in range(n)])
         A_tt = tt_to_full(cores)
         rel_err = np.linalg.norm(A_tt - A_ref) / (np.linalg.norm(A_ref) + 1e-15)
         assert rel_err < 0.05, f"Sum function relative error too large: {rel_err:.4e}"
 
     def test_trig_function_reasonable_accuracy(self):
         """Trigonometric function should be approximated within eps=0.05.
-        
+
         Note: axes must avoid 0 since sin(0)=0 causes degenerate pivots.
         """
         n = 8
@@ -133,9 +138,7 @@ class TestTTCrossAccuracy:
 
         cores = tt_cross(fn, shape=shape, eps=0.05, max_rank=10, n_sweeps=6)
 
-        A_ref = np.array([[[fn(i, j, k) for k in range(n)]
-                           for j in range(n)]
-                          for i in range(n)])
+        A_ref = np.array([[[fn(i, j, k) for k in range(n)] for j in range(n)] for i in range(n)])
         A_tt = tt_to_full(cores)
         rel_err = np.linalg.norm(A_tt - A_ref) / (np.linalg.norm(A_ref) + 1e-15)
         assert rel_err < 0.5, f"Trig function relative error too large: {rel_err:.4e}"
@@ -155,13 +158,13 @@ class TestTTCrossAccuracy:
             idx = tuple(int(x) for x in rng.integers(0, n, size=3))
             expected = fn(*idx)
             got = tt_eval(cores, list(idx))
-            assert abs(got - expected) < 0.5, \
-                f"Point {idx}: expected {expected:.4f}, got {got:.4f}"
+            assert abs(got - expected) < 0.5, f"Point {idx}: expected {expected:.4f}, got {got:.4f}"
 
 
 # ─────────────────────────────────────────────────────────────────────
 # High-dimensional test (the main motivation for TT-Cross)
 # ─────────────────────────────────────────────────────────────────────
+
 
 class TestTTCross6D:
     def test_6d_no_full_grid(self):
@@ -211,6 +214,7 @@ class TestTTCross6D:
 # TTSurrogate.from_function() tests
 # ─────────────────────────────────────────────────────────────────────
 
+
 class TestTTSurrogateFromFunction:
     def test_from_function_returns_ttssurrogate(self):
         axes = [np.linspace(90.0, 110.0, 8)] * 3
@@ -234,7 +238,6 @@ class TestTTSurrogateFromFunction:
         surr = TTSurrogate.from_function(fn, axes, eps=1e-4, max_rank=5, n_sweeps=6)
 
         # Evaluate at mid-grid continuous spots
-        ref_pts = [(axes[k][n // 2] for k in range(3))]
         mid = [axes[k][n // 2] for k in range(3)]
         price_surr = surr.evaluate(mid)
         # Reference: product of mid-values
@@ -257,6 +260,7 @@ class TestTTSurrogateFromFunction:
 # ─────────────────────────────────────────────────────────────────────
 # Input validation
 # ─────────────────────────────────────────────────────────────────────
+
 
 class TestTTCrossValidation:
     def test_raises_on_1d(self):

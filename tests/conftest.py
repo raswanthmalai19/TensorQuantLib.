@@ -8,6 +8,7 @@ from tensorquantlib.tt.decompose import tt_svd
 
 # ── Random number generator (reproducible) ───────────────────────────────
 
+
 @pytest.fixture
 def rng():
     """Seeded NumPy random generator."""
@@ -15,6 +16,7 @@ def rng():
 
 
 # ── Tensor fixtures ──────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def scalar_tensor():
@@ -35,6 +37,7 @@ def matrix_tensor():
 
 
 # ── Market parameter fixtures ───────────────────────────────────────────
+
 
 @pytest.fixture
 def market_params():
@@ -63,6 +66,7 @@ def basket_params():
 
 
 # ── TT-core fixtures ────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def random_3d_tensor(rng):

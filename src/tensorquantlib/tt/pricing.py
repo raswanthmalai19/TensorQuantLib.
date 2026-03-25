@@ -115,7 +115,7 @@ def heston_surrogate(
     Returns:
         TTSurrogate with axes [S, K, T].
     """
-    from ..finance.heston import heston_price_mc, HestonParams
+    from ..finance.heston import HestonParams, heston_price_mc
 
     params = HestonParams(v0=v0, kappa=kappa, theta=theta, xi=xi, rho=rho)
 
@@ -174,8 +174,9 @@ def american_surrogate(
     ]
 
     def pricer(S, K, T):
-        return american_option_lsm(S, K, T, r, sigma, n_paths=n_paths,
-                                   n_steps=n_steps, option_type=option_type)
+        return american_option_lsm(
+            S, K, T, r, sigma, n_paths=n_paths, n_steps=n_steps, option_type=option_type
+        )
 
     return _make_surrogate(axes, pricer, eps, max_rank)
 
@@ -228,22 +229,33 @@ def exotic_surrogate(
     ]
 
     if exotic_type == "asian":
+
         def pricer(S, K, T):
             return asian_price_mc(S, K, T, r, sigma, n_paths=n_paths, **pricer_kwargs)
     elif exotic_type.startswith("barrier"):
         barrier = pricer_kwargs.pop("barrier", 130.0)
         # Convert "barrier_up_out" → "up-and-out"
         bt = exotic_type.replace("barrier_", "").replace("_", "-and-")
+
         def pricer(S, K, T):
-            return barrier_price_mc(S, K, T, r, sigma, barrier=barrier,
-                                    barrier_type=bt, n_paths=n_paths,
-                                    **pricer_kwargs)
+            return barrier_price_mc(
+                S,
+                K,
+                T,
+                r,
+                sigma,
+                barrier=barrier,
+                barrier_type=bt,
+                n_paths=n_paths,
+                **pricer_kwargs,
+            )
     elif exotic_type.startswith("lookback"):
         strike_type = "fixed" if "fixed" in exotic_type else "floating"
+
         def pricer(S, K, T):
-            result = lookback_price_mc(S, K, T, r, sigma,
-                                       strike_type=strike_type, n_paths=n_paths,
-                                       **pricer_kwargs)
+            result = lookback_price_mc(
+                S, K, T, r, sigma, strike_type=strike_type, n_paths=n_paths, **pricer_kwargs
+            )
             return result[0] if isinstance(result, tuple) else result
     else:
         raise ValueError(f"Unknown exotic_type: {exotic_type!r}")
@@ -298,7 +310,6 @@ def jump_diffusion_surrogate(
     ]
 
     def pricer(S, K, T):
-        return merton_jump_price(S, K, T, r, sigma, lam, mu_j, sigma_j,
-                                 option_type=option_type)
+        return merton_jump_price(S, K, T, r, sigma, lam, mu_j, sigma_j, option_type=option_type)
 
     return _make_surrogate(axes, pricer, eps, max_rank)

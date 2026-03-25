@@ -1,16 +1,16 @@
 """Tests for credit risk models (Merton structural + CDS pricing)."""
+
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from tensorquantlib.finance.credit import (
-    merton_default_prob,
-    merton_credit_spread,
-    survival_probability,
-    hazard_rate_from_spread,
-    cds_spread,
     cds_price,
+    cds_spread,
+    hazard_rate_from_spread,
+    merton_credit_spread,
+    merton_default_prob,
+    survival_probability,
 )
 
 
@@ -95,23 +95,20 @@ class TestCDS:
     def test_cds_mtm_zero_at_par(self):
         """At inception (spread = par), MTM = 0."""
         par = cds_spread(hazard_rate=0.02, T=5.0, recovery=0.4, r=0.05)
-        mtm = cds_price(hazard_rate=0.02, T=5.0, recovery=0.4, r=0.05,
-                        spread=par, notional=1e6)
+        mtm = cds_price(hazard_rate=0.02, T=5.0, recovery=0.4, r=0.05, spread=par, notional=1e6)
         assert abs(mtm) < 1.0  # <$1 on 1M notional
 
     def test_cds_mtm_positive_when_spread_widens(self):
         """Protection buyer profits when credit deteriorates."""
         par = cds_spread(hazard_rate=0.02, T=5.0, recovery=0.4, r=0.05)
         # Now hazard rate doubles → protection more valuable
-        mtm = cds_price(hazard_rate=0.04, T=5.0, recovery=0.4, r=0.05,
-                        spread=par, notional=1e6)
+        mtm = cds_price(hazard_rate=0.04, T=5.0, recovery=0.4, r=0.05, spread=par, notional=1e6)
         assert mtm > 0
 
     def test_cds_mtm_negative_when_spread_tightens(self):
         """Protection buyer loses when credit improves."""
         par = cds_spread(hazard_rate=0.04, T=5.0, recovery=0.4, r=0.05)
-        mtm = cds_price(hazard_rate=0.02, T=5.0, recovery=0.4, r=0.05,
-                        spread=par, notional=1e6)
+        mtm = cds_price(hazard_rate=0.02, T=5.0, recovery=0.4, r=0.05, spread=par, notional=1e6)
         assert mtm < 0
 
     def test_spread_roundtrip_via_hazard(self):

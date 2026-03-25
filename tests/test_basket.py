@@ -20,32 +20,55 @@ class TestSimulateBasket:
         self.T = 1.0
         self.r = 0.05
         self.sigma = np.array([0.2, 0.2, 0.2])
-        self.corr = np.array([
-            [1.0, 0.3, 0.3],
-            [0.3, 1.0, 0.3],
-            [0.3, 0.3, 1.0],
-        ])
-        self.weights = np.array([1/3, 1/3, 1/3])
+        self.corr = np.array(
+            [
+                [1.0, 0.3, 0.3],
+                [0.3, 1.0, 0.3],
+                [0.3, 0.3, 1.0],
+            ]
+        )
+        self.weights = np.array([1 / 3, 1 / 3, 1 / 3])
 
     def test_price_positive(self):
         price, _stderr = simulate_basket(
-            self.S0, self.K, self.T, self.r, self.sigma,
-            self.corr, self.weights, n_paths=50_000, seed=42,
+            self.S0,
+            self.K,
+            self.T,
+            self.r,
+            self.sigma,
+            self.corr,
+            self.weights,
+            n_paths=50_000,
+            seed=42,
         )
         assert price > 0
 
     def test_stderr_small(self):
         """Standard error should be < 1% of price with 100K paths."""
         price, stderr = simulate_basket(
-            self.S0, self.K, self.T, self.r, self.sigma,
-            self.corr, self.weights, n_paths=100_000, seed=42,
+            self.S0,
+            self.K,
+            self.T,
+            self.r,
+            self.sigma,
+            self.corr,
+            self.weights,
+            n_paths=100_000,
+            seed=42,
         )
         assert stderr / price < 0.01
 
     def test_put_price_positive(self):
         price, _ = simulate_basket(
-            self.S0, self.K, self.T, self.r, self.sigma,
-            self.corr, self.weights, n_paths=50_000, seed=42,
+            self.S0,
+            self.K,
+            self.T,
+            self.r,
+            self.sigma,
+            self.corr,
+            self.weights,
+            n_paths=50_000,
+            seed=42,
             option_type="put",
         )
         assert price > 0
@@ -53,12 +76,26 @@ class TestSimulateBasket:
     def test_reproducibility(self):
         """Same seed → same price."""
         p1, _ = simulate_basket(
-            self.S0, self.K, self.T, self.r, self.sigma,
-            self.corr, self.weights, n_paths=10_000, seed=123,
+            self.S0,
+            self.K,
+            self.T,
+            self.r,
+            self.sigma,
+            self.corr,
+            self.weights,
+            n_paths=10_000,
+            seed=123,
         )
         p2, _ = simulate_basket(
-            self.S0, self.K, self.T, self.r, self.sigma,
-            self.corr, self.weights, n_paths=10_000, seed=123,
+            self.S0,
+            self.K,
+            self.T,
+            self.r,
+            self.sigma,
+            self.corr,
+            self.weights,
+            n_paths=10_000,
+            seed=123,
         )
         assert p1 == p2
 
@@ -66,8 +103,15 @@ class TestSimulateBasket:
         """Deep ITM basket call ≈ forward - K (discounted)."""
         S0_high = np.array([200.0, 200.0, 200.0])
         price, _ = simulate_basket(
-            S0_high, self.K, self.T, self.r, self.sigma,
-            self.corr, self.weights, n_paths=50_000, seed=42,
+            S0_high,
+            self.K,
+            self.T,
+            self.r,
+            self.sigma,
+            self.corr,
+            self.weights,
+            n_paths=50_000,
+            seed=42,
         )
         # Forward ≈ 200 * exp(rT), basket = same since equal weights
         forward_approx = 200.0 * np.exp(self.r * self.T)
@@ -82,8 +126,15 @@ class TestSimulateBasket:
         corr = np.array([[1.0, 0.5], [0.5, 1.0]])
         weights = np.array([0.5, 0.5])
         price, stderr = simulate_basket(
-            S0, 100.0, 1.0, 0.05, sigma, corr, weights,
-            n_paths=50_000, seed=42,
+            S0,
+            100.0,
+            1.0,
+            0.05,
+            sigma,
+            corr,
+            weights,
+            n_paths=50_000,
+            seed=42,
         )
         assert price > 0
         assert stderr > 0
@@ -100,9 +151,16 @@ class TestBuildPricingGrid:
         weights = np.array([0.5, 0.5])
 
         grid, axes = build_pricing_grid(
-            S0_ranges, K=100.0, T=1.0, r=0.05,
-            sigma=sigma, corr=corr, weights=weights,
-            n_points=5, n_mc_paths=500, seed=42,
+            S0_ranges,
+            K=100.0,
+            T=1.0,
+            r=0.05,
+            sigma=sigma,
+            corr=corr,
+            weights=weights,
+            n_points=5,
+            n_mc_paths=500,
+            seed=42,
         )
         assert grid.shape == (5, 5)
         assert len(axes) == 2
@@ -116,9 +174,16 @@ class TestBuildPricingGrid:
         weights = np.array([0.5, 0.5])
 
         grid, _ = build_pricing_grid(
-            S0_ranges, K=100.0, T=1.0, r=0.05,
-            sigma=sigma, corr=corr, weights=weights,
-            n_points=3, n_mc_paths=1000, seed=42,
+            S0_ranges,
+            K=100.0,
+            T=1.0,
+            r=0.05,
+            sigma=sigma,
+            corr=corr,
+            weights=weights,
+            n_points=3,
+            n_mc_paths=1000,
+            seed=42,
         )
         assert np.all(grid >= 0)
 
@@ -129,11 +194,16 @@ class TestBuildPricingGridAnalytic:
     def test_3d_grid_shape(self):
         S0_ranges = [(80.0, 120.0)] * 3
         sigma = np.array([0.2, 0.2, 0.2])
-        weights = np.array([1/3, 1/3, 1/3])
+        weights = np.array([1 / 3, 1 / 3, 1 / 3])
 
         grid, axes = build_pricing_grid_analytic(
-            S0_ranges, K=100.0, T=1.0, r=0.05,
-            sigma=sigma, weights=weights, n_points=10,
+            S0_ranges,
+            K=100.0,
+            T=1.0,
+            r=0.05,
+            sigma=sigma,
+            weights=weights,
+            n_points=10,
         )
         assert grid.shape == (10, 10, 10)
         assert len(axes) == 3
@@ -141,11 +211,16 @@ class TestBuildPricingGridAnalytic:
     def test_values_non_negative(self):
         S0_ranges = [(80.0, 120.0)] * 3
         sigma = np.array([0.2, 0.2, 0.2])
-        weights = np.array([1/3, 1/3, 1/3])
+        weights = np.array([1 / 3, 1 / 3, 1 / 3])
 
         grid, _ = build_pricing_grid_analytic(
-            S0_ranges, K=100.0, T=1.0, r=0.05,
-            sigma=sigma, weights=weights, n_points=10,
+            S0_ranges,
+            K=100.0,
+            T=1.0,
+            r=0.05,
+            sigma=sigma,
+            weights=weights,
+            n_points=10,
         )
         assert np.all(grid >= 0)
 
@@ -156,8 +231,13 @@ class TestBuildPricingGridAnalytic:
         weights = np.array([0.5, 0.5])
 
         grid, _ = build_pricing_grid_analytic(
-            S0_ranges, K=100.0, T=1.0, r=0.05,
-            sigma=sigma, weights=weights, n_points=20,
+            S0_ranges,
+            K=100.0,
+            T=1.0,
+            r=0.05,
+            sigma=sigma,
+            weights=weights,
+            n_points=20,
         )
         # Holding asset 2 fixed at midpoint, price should increase with asset 1
         mid = 10

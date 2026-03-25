@@ -14,7 +14,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 import numpy as np
-from scipy.linalg import qr, solve
+from scipy.linalg import qr
 
 
 def tt_svd(
@@ -78,13 +78,13 @@ def tt_svd(
         # Rank selection: find smallest r_k such that
         # sqrt(sum(S[r_k:]^2)) <= delta
         # Use reverse cumsum for numerical stability
-        S_sq = S ** 2
+        S_sq = S**2
         tail_norms_sq = np.cumsum(S_sq[::-1])[::-1]  # tail_norms_sq[i] = sum(S[i:]^2)
 
         # Find rank: smallest r such that tail_norms_sq[r] <= delta^2
         # tail_norms_sq has length len(S), and we want the smallest r >= 1
         # such that tail_norms_sq[r] <= delta^2 (where tail_norms_sq[len(S)] = 0)
-        delta_sq = delta ** 2
+        delta_sq = delta**2
         r_k = len(S)  # default: keep all
         for i in range(1, len(S)):
             if tail_norms_sq[i] <= delta_sq:
@@ -179,9 +179,9 @@ def tt_round(
         U, S, Vt = np.linalg.svd(M, full_matrices=False)
 
         # Rank truncation
-        S_sq = S ** 2
+        S_sq = S**2
         tail_norms_sq = np.cumsum(S_sq[::-1])[::-1]
-        delta_sq = delta ** 2
+        delta_sq = delta**2
 
         r_new = len(S)
         for i in range(1, len(S)):
@@ -245,6 +245,7 @@ def _tt_norm(cores: list[np.ndarray]) -> float:
 # TT-Cross (black-box approximation — no full tensor needed)
 # ======================================================================
 
+
 def _maxvol_greedy(A: np.ndarray, r: int, rng: np.random.Generator) -> np.ndarray:
     """Approximate maximum-volume row subset of A (n × k, n ≥ k).
 
@@ -269,7 +270,7 @@ def _maxvol_greedy(A: np.ndarray, r: int, rng: np.random.Generator) -> np.ndarra
     # Iterative improvement: swap rows to increase abs(det)
     # B = A @ inv(A[idx, :]) — each row B[i] represents how much
     # row i is "outside" the current selection
-    sub = A[idx, :]           # (r, k_cols)
+    sub = A[idx, :]  # (r, k_cols)
     try:
         B = np.linalg.lstsq(sub.T, A.T, rcond=None)[0].T  # (n, r)
     except np.linalg.LinAlgError:
@@ -294,9 +295,9 @@ def _maxvol_greedy(A: np.ndarray, r: int, rng: np.random.Generator) -> np.ndarra
 
 def _eval_fiber(
     fn: Callable[..., float],
-    left_idx: np.ndarray,   # shape (r_l, k)  — left multi-indices
-    k: int,                  # current mode position (0-based)
-    n_k: int,                # size of mode k
+    left_idx: np.ndarray,  # shape (r_l, k)  — left multi-indices
+    k: int,  # current mode position (0-based)
+    n_k: int,  # size of mode k
     right_idx: np.ndarray,  # shape (r_r, d-k-1)  — right multi-indices
     d: int,
 ) -> np.ndarray:
@@ -326,7 +327,7 @@ def _eval_fiber(
 
 def _eval_interface(
     fn: Callable[..., float],
-    left_idx: np.ndarray,   # shape (r_l, k+1) — left pivots at next boundary
+    left_idx: np.ndarray,  # shape (r_l, k+1) — left pivots at next boundary
     right_idx: np.ndarray,  # shape (r_r, d-k-1) — right pivots at current boundary
     d: int,
 ) -> np.ndarray:
@@ -546,13 +547,12 @@ def tt_cross(
             C = _eval_fiber(fn, I[k], k, n_k, J[k], d)
 
             # Interface matrix Z: (|I[k+1]|, r_r)
-            r_next = I[k + 1].shape[0]
             Z = _eval_interface(fn, I[k + 1], J[k], d)
 
             # Core = C @ pinv(Z): shape (r_l * n_k, r_next)
             # pinv handles rank-deficient Z gracefully
-            Z_pinv = np.linalg.pinv(Z)           # (r_r, r_next)
-            core_mat = C @ Z_pinv                  # (r_l * n_k, r_next)
+            Z_pinv = np.linalg.pinv(Z)  # (r_r, r_next)
+            core_mat = C @ Z_pinv  # (r_l * n_k, r_next)
 
             # Truncate numerical noise via SVD
             U, s, Vt = np.linalg.svd(core_mat, full_matrices=False)
@@ -573,4 +573,3 @@ def tt_cross(
             cores.append(C.reshape(r_l, n_k, 1))
 
     return cores
-

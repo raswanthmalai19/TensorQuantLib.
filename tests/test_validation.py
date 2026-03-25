@@ -35,44 +35,74 @@ class TestBasketValidation:
     def test_invalid_option_type(self):
         with pytest.raises(ValueError, match="option_type"):
             simulate_basket(
-                np.array([100.0]), 100, 1.0, 0.05,
-                np.array([0.2]), np.eye(1), np.array([1.0]),
+                np.array([100.0]),
+                100,
+                1.0,
+                0.05,
+                np.array([0.2]),
+                np.eye(1),
+                np.array([1.0]),
                 option_type="butterfly",
             )
 
     def test_negative_spot(self):
         with pytest.raises(ValueError, match="spot prices"):
             simulate_basket(
-                np.array([-100.0]), 100, 1.0, 0.05,
-                np.array([0.2]), np.eye(1), np.array([1.0]),
+                np.array([-100.0]),
+                100,
+                1.0,
+                0.05,
+                np.array([0.2]),
+                np.eye(1),
+                np.array([1.0]),
             )
 
     def test_zero_strike(self):
         with pytest.raises(ValueError, match="Strike"):
             simulate_basket(
-                np.array([100.0]), 0, 1.0, 0.05,
-                np.array([0.2]), np.eye(1), np.array([1.0]),
+                np.array([100.0]),
+                0,
+                1.0,
+                0.05,
+                np.array([0.2]),
+                np.eye(1),
+                np.array([1.0]),
             )
 
     def test_shape_mismatch_sigma(self):
         with pytest.raises(ValueError, match="sigma shape"):
             simulate_basket(
-                np.array([100.0, 100.0]), 100, 1.0, 0.05,
-                np.array([0.2]), np.eye(2), np.array([0.5, 0.5]),
+                np.array([100.0, 100.0]),
+                100,
+                1.0,
+                0.05,
+                np.array([0.2]),
+                np.eye(2),
+                np.array([0.5, 0.5]),
             )
 
     def test_shape_mismatch_corr(self):
         with pytest.raises(ValueError, match="corr shape"):
             simulate_basket(
-                np.array([100.0, 100.0]), 100, 1.0, 0.05,
-                np.array([0.2, 0.2]), np.eye(3), np.array([0.5, 0.5]),
+                np.array([100.0, 100.0]),
+                100,
+                1.0,
+                0.05,
+                np.array([0.2, 0.2]),
+                np.eye(3),
+                np.array([0.5, 0.5]),
             )
 
     def test_negative_n_paths(self):
         with pytest.raises(ValueError, match="n_paths"):
             simulate_basket(
-                np.array([100.0]), 100, 1.0, 0.05,
-                np.array([0.2]), np.eye(1), np.array([1.0]),
+                np.array([100.0]),
+                100,
+                1.0,
+                0.05,
+                np.array([0.2]),
+                np.eye(1),
+                np.array([1.0]),
                 n_paths=0,
             )
 

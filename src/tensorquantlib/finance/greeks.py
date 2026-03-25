@@ -17,13 +17,10 @@ from collections.abc import Callable
 
 import numpy as np
 
-from tensorquantlib.core.tensor import Tensor
 from tensorquantlib.core.second_order import (
-    gamma_autograd,
-    vanna_autograd,
-    volga_autograd,
     second_order_greeks,
 )
+from tensorquantlib.core.tensor import Tensor
 
 
 def compute_greeks(
@@ -74,8 +71,16 @@ def compute_greeks(
     else:
         price.backward()
 
-    delta = float(S_t.grad.item()) if S_t.grad is not None and S_t.grad.size == 1 else (float(S_t.grad.sum()) if S_t.grad is not None else 0.0)
-    vega = float(sigma_t.grad.item()) if sigma_t.grad is not None and sigma_t.grad.size == 1 else (float(sigma_t.grad.sum()) if sigma_t.grad is not None else 0.0)
+    delta = (
+        float(S_t.grad.item())
+        if S_t.grad is not None and S_t.grad.size == 1
+        else (float(S_t.grad.sum()) if S_t.grad is not None else 0.0)
+    )
+    vega = (
+        float(sigma_t.grad.item())
+        if sigma_t.grad is not None and sigma_t.grad.size == 1
+        else (float(sigma_t.grad.sum()) if sigma_t.grad is not None else 0.0)
+    )
 
     result: dict[str, float] = {
         "price": price_val,
@@ -90,7 +95,6 @@ def compute_greeks(
         result["volga"] = so["volga"]
 
     return result
-
 
 
 def compute_greeks_vectorized(

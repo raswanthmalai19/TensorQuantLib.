@@ -3,9 +3,8 @@
 All functions require the ``yfinance`` package, which is an optional
 dependency installable via ``pip install tensorquantlib[data]``.
 """
-from __future__ import annotations
 
-from typing import Optional
+from __future__ import annotations
 
 import numpy as np
 
@@ -14,6 +13,7 @@ def _import_yfinance():
     """Lazy import of yfinance with a helpful error message."""
     try:
         import yfinance as yf
+
         return yf
     except ImportError:
         raise ImportError(
@@ -76,7 +76,7 @@ def get_historical_prices(ticker: str, start: str, end: str) -> dict:
     }
 
 
-def get_options_chain(ticker: str, expiry: Optional[str] = None) -> dict:
+def get_options_chain(ticker: str, expiry: str | None = None) -> dict:
     """Fetch options chain data.
 
     Parameters
@@ -103,15 +103,13 @@ def get_options_chain(ticker: str, expiry: Optional[str] = None) -> dict:
     chain = t.option_chain(expiry)
 
     def _extract(df):
-        cols = ["strike", "lastPrice", "bid", "ask",
-                "impliedVolatility", "volume", "openInterest"]
+        cols = ["strike", "lastPrice", "bid", "ask", "impliedVolatility", "volume", "openInterest"]
         return {c: df[c].to_numpy() for c in cols if c in df.columns}
 
     return {"calls": _extract(chain.calls), "puts": _extract(chain.puts)}
 
 
-def historical_volatility(ticker: str, window: int = 252,
-                          annualize: bool = True) -> float:
+def historical_volatility(ticker: str, window: int = 252, annualize: bool = True) -> float:
     """Compute realised historical volatility from daily close prices.
 
     Parameters

@@ -3,18 +3,18 @@
 Merton (1974) structural model treats equity as a call option on firm assets.
 Reduced-form models price CDS using hazard rates and survival probabilities.
 """
+
 from __future__ import annotations
 
 import numpy as np
 from scipy.stats import norm
 
-
 # ---------------------------------------------------------------------------
 # Merton structural model
 # ---------------------------------------------------------------------------
 
-def merton_default_prob(V: float, D: float, T: float, r: float,
-                        sigma_V: float) -> float:
+
+def merton_default_prob(V: float, D: float, T: float, r: float, sigma_V: float) -> float:
     """Probability of default under Merton (1974) structural model.
 
     Default occurs when firm value V_T < D at maturity.
@@ -41,8 +41,7 @@ def merton_default_prob(V: float, D: float, T: float, r: float,
     return float(norm.cdf(-d2))
 
 
-def merton_credit_spread(V: float, D: float, T: float, r: float,
-                         sigma_V: float) -> float:
+def merton_credit_spread(V: float, D: float, T: float, r: float, sigma_V: float) -> float:
     """Credit spread implied by the Merton model.
 
     spread = -(1/T) * ln(B / (D * exp(-r*T)))
@@ -63,7 +62,6 @@ def merton_credit_spread(V: float, D: float, T: float, r: float,
     # Risky bond = D*exp(-rT) - put on V with strike D
     put = D * np.exp(-r * T) * norm.cdf(-d2) - V * norm.cdf(-d1)
     risky_bond = D * np.exp(-r * T) - put
-    risk_free_bond = D * np.exp(-r * T)
     # spread = yield_risky - r
     yield_risky = -np.log(risky_bond / D) / T
     return float(yield_risky - r)
@@ -72,6 +70,7 @@ def merton_credit_spread(V: float, D: float, T: float, r: float,
 # ---------------------------------------------------------------------------
 # Survival / hazard rate utilities
 # ---------------------------------------------------------------------------
+
 
 def survival_probability(hazard_rate: float, T: float) -> float:
     """Survival probability under constant hazard rate.
@@ -105,8 +104,10 @@ def hazard_rate_from_spread(spread: float, recovery: float = 0.4) -> float:
 # CDS pricing
 # ---------------------------------------------------------------------------
 
-def cds_spread(hazard_rate: float, T: float, recovery: float = 0.4,
-               r: float = 0.05, n_premium_dates: int = 4) -> float:
+
+def cds_spread(
+    hazard_rate: float, T: float, recovery: float = 0.4, r: float = 0.05, n_premium_dates: int = 4
+) -> float:
     """Par CDS spread for constant hazard rate.
 
     Premium leg = spread * sum( DF_i * Q_i * delta_i )
@@ -145,16 +146,22 @@ def cds_spread(hazard_rate: float, T: float, recovery: float = 0.4,
         risky_annuity += df * q_i * dt
         protection_leg += df * (q_prev - q_i)
 
-    protection_leg *= (1.0 - recovery)
+    protection_leg *= 1.0 - recovery
 
     if risky_annuity < 1e-15:
         return 0.0
     return float(protection_leg / risky_annuity)
 
 
-def cds_price(hazard_rate: float, T: float, recovery: float = 0.4,
-              r: float = 0.05, spread: float = 0.01,
-              notional: float = 1e6, n_premium_dates: int = 4) -> float:
+def cds_price(
+    hazard_rate: float,
+    T: float,
+    recovery: float = 0.4,
+    r: float = 0.05,
+    spread: float = 0.01,
+    notional: float = 1e6,
+    n_premium_dates: int = 4,
+) -> float:
     """Mark-to-market value of a CDS position (protection buyer).
 
     MTM = protection_leg - spread * risky_annuity
@@ -194,6 +201,6 @@ def cds_price(hazard_rate: float, T: float, recovery: float = 0.4,
         risky_annuity += df * q_i * dt
         protection_leg += df * (q_prev - q_i)
 
-    protection_leg *= (1.0 - recovery)
+    protection_leg *= 1.0 - recovery
     mtm = (protection_leg - spread * risky_annuity) * notional
     return float(mtm)

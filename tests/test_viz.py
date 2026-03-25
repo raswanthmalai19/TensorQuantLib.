@@ -90,9 +90,7 @@ class TestTTRanks:
 
 class TestCompressionVsTolerance:
     def test_without_errors(self):
-        fig, _ax = plot_compression_vs_tolerance(
-            [1e-1, 1e-3, 1e-6], [2.0, 5.0, 1.0]
-        )
+        fig, _ax = plot_compression_vs_tolerance([1e-1, 1e-3, 1e-6], [2.0, 5.0, 1.0])
         assert fig is not None
 
     def test_with_errors(self):
@@ -106,7 +104,5 @@ class TestCompressionVsTolerance:
 
 class TestConvergence:
     def test_convergence_plot(self):
-        fig, _ax = plot_convergence(
-            list(range(10)), [10 / (i + 1) for i in range(10)]
-        )
+        fig, _ax = plot_convergence(list(range(10)), [10 / (i + 1) for i in range(10)])
         assert fig is not None

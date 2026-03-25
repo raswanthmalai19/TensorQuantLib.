@@ -40,8 +40,8 @@ from tensorquantlib.core.tensor import tensor_where as where
 
 # Legacy aliases kept for backward compatibility (do NOT use in new code —
 # they shadow Python built-ins when imported with ``from ops import *``).
-pow = tpow  # noqa: A001
-sum = tsum  # noqa: A001
+pow = tpow
+sum = tsum
 
 __all__ = [
     "abs",
@@ -64,7 +64,7 @@ __all__ = [
     "sub",
     "tanh",
     "tpow",
-    "tsum",
     "transpose",
+    "tsum",
     "where",
 ]

@@ -42,7 +42,7 @@ import numpy as np
 
 from ..core.tensor import Tensor
 from ..finance.basket import build_pricing_grid, build_pricing_grid_analytic
-from .decompose import tt_svd, tt_cross
+from .decompose import tt_cross, tt_svd
 from .ops import (
     tt_eval,
     tt_eval_batch,
@@ -117,9 +117,7 @@ class TTSurrogate:
             )
         for i, (ax, n) in enumerate(zip(axes, grid.shape)):
             if len(ax) != n:
-                raise ValueError(
-                    f"Axis {i} length ({len(ax)}) doesn't match grid size ({n})"
-                )
+                raise ValueError(f"Axis {i} length ({len(ax)}) doesn't match grid size ({n})")
         if eps <= 0:
             raise ValueError(f"eps must be positive, got {eps}")
 
@@ -170,8 +168,12 @@ class TTSurrogate:
         t0 = time.perf_counter()
         grid, axes = build_pricing_grid_analytic(
             S0_ranges=S0_ranges,
-            K=K, T=T, r=r, sigma=np.asarray(sigma),
-            weights=np.asarray(weights), n_points=n_points,
+            K=K,
+            T=T,
+            r=r,
+            sigma=np.asarray(sigma),
+            weights=np.asarray(weights),
+            n_points=n_points,
         )
         build_time = time.perf_counter() - t0
 
@@ -214,9 +216,14 @@ class TTSurrogate:
         t0 = time.perf_counter()
         grid, axes = build_pricing_grid(
             S0_ranges=S0_ranges,
-            K=K, T=T, r=r, sigma=np.asarray(sigma),
-            corr=corr, weights=np.asarray(weights),
-            n_points=n_points, n_mc_paths=n_mc_paths,
+            K=K,
+            T=T,
+            r=r,
+            sigma=np.asarray(sigma),
+            corr=corr,
+            weights=np.asarray(weights),
+            n_points=n_points,
+            n_mc_paths=n_mc_paths,
         )
         build_time = time.perf_counter() - t0
 
@@ -246,7 +253,7 @@ class TTSurrogate:
         max_rank: int = 20,
         n_sweeps: int = 6,
         seed: int = 42,
-    ) -> "TTSurrogate":
+    ) -> TTSurrogate:
         """Build surrogate via TT-Cross — **no full grid needed**.
 
         This is the recommended constructor for **6+ asset** problems.
@@ -293,7 +300,7 @@ class TTSurrogate:
         -------
         TTSurrogate
         """
-        from collections.abc import Callable as _Callable
+
         if not callable(fn):
             raise TypeError(f"fn must be callable, got {type(fn)}")
         if len(axes) < 2:
@@ -301,7 +308,7 @@ class TTSurrogate:
 
         shape = tuple(len(a) for a in axes)
         # Total function evaluations (approximate)
-        _n_evals = len(axes) * max_rank ** 2 * max(shape)
+        _n_evals = len(axes) * max_rank**2 * max(shape)
 
         t0 = time.perf_counter()
         cores = tt_cross(
@@ -318,14 +325,13 @@ class TTSurrogate:
             cores=cores,
             axes=axes,
             eps=eps,
-            build_time=0.0,       # No separate grid build step
+            build_time=0.0,  # No separate grid build step
             compress_time=compress_time,
             original_shape=None,  # Full grid was never formed
             original_nbytes=None,
         )
 
     # ── evaluation ──────────────────────────────────────────────────────
-
 
     def _spot_to_indices(self, spots: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Map continuous spot prices to fractional grid indices.
@@ -391,7 +397,7 @@ class TTSurrogate:
                     idx[:, k] = np.minimum(idx[:, k] + 1, len(self.axes[k]) - 1)
                     w *= weights[:, k]
                 else:
-                    w *= (1.0 - weights[:, k])
+                    w *= 1.0 - weights[:, k]
 
             vals = tt_eval_batch(self.cores, idx)
             result += w * vals
@@ -428,7 +434,9 @@ class TTSurrogate:
             hi_idx = min(idx + 1, len(axis) - 1)
             hi_val = axis[hi_idx]
             if hi_val > lo_val:
-                wt = (spot_tensors[k] - Tensor(np.array([lo_val]))) / Tensor(np.array([hi_val - lo_val]))
+                wt = (spot_tensors[k] - Tensor(np.array([lo_val]))) / Tensor(
+                    np.array([hi_val - lo_val])
+                )
             else:
                 wt = Tensor(np.array([0.0]))
             weight_tensors.append(wt)
@@ -523,13 +531,17 @@ class TTSurrogate:
         Returns:
             ``(fig, ax)`` matplotlib tuple.
         """
-        from tensorquantlib.viz.plots import plot_pricing_surface
         from tensorquantlib.tt.ops import tt_to_full
+        from tensorquantlib.viz.plots import plot_pricing_surface
 
         grid = tt_to_full(self.cores)
         return plot_pricing_surface(
-            grid, self.axes, dims=dims,
-            fixed_indices=fixed_indices, title=title, mode=mode,
+            grid,
+            self.axes,
+            dims=dims,
+            fixed_indices=fixed_indices,
+            title=title,
+            mode=mode,
             **kwargs,  # type: ignore[arg-type]
         )
 
@@ -553,8 +565,8 @@ class TTSurrogate:
         Returns:
             ``(fig, axes)`` matplotlib tuple.
         """
-        from tensorquantlib.viz.plots import plot_greeks_surface
         from tensorquantlib.tt.ops import tt_to_full
+        from tensorquantlib.viz.plots import plot_greeks_surface
 
         grid = tt_to_full(self.cores)
         d = grid.ndim
@@ -569,7 +581,9 @@ class TTSurrogate:
             delta_grids[label] = delta_k
 
         return plot_greeks_surface(
-            delta_grids, self.axes, dims=dims,
+            delta_grids,
+            self.axes,
+            dims=dims,
             fixed_indices=fixed_indices,
             **kwargs,  # type: ignore[arg-type]
         )
@@ -610,7 +624,9 @@ class TTSurrogate:
         if self._original_nbytes is not None:
             info["full_memory_bytes"] = self._original_nbytes
             info["full_memory_KB"] = self._original_nbytes / 1024
-            info["compression_ratio"] = self._original_nbytes / tt_mem if tt_mem > 0 else float("inf")
+            info["compression_ratio"] = (
+                self._original_nbytes / tt_mem if tt_mem > 0 else float("inf")
+            )
 
         return info
 

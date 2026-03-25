@@ -20,10 +20,10 @@ from scipy.optimize import brentq
 
 from tensorquantlib.finance.black_scholes import bs_price_numpy, bs_vega
 
-
 # ------------------------------------------------------------------ #
 # Scalar solver
 # ------------------------------------------------------------------ #
+
 
 def implied_vol(
     market_price: float,
@@ -84,9 +84,7 @@ def implied_vol(
             f"{intrinsic:.6f} — violates no-arbitrage"
         )
     if market_price > upper_bound + tol:
-        raise ValueError(
-            f"market_price={market_price:.6f} exceeds upper bound {upper_bound:.6f}"
-        )
+        raise ValueError(f"market_price={market_price:.6f} exceeds upper bound {upper_bound:.6f}")
 
     # Objective function
     def objective(sigma: float) -> float:
@@ -108,6 +106,7 @@ def implied_vol(
 # ------------------------------------------------------------------ #
 # Newton-Raphson + Halley fast approximation
 # ------------------------------------------------------------------ #
+
 
 def implied_vol_nr(
     market_price: float,
@@ -158,6 +157,7 @@ def implied_vol_nr(
 # ------------------------------------------------------------------ #
 # Batch / vectorized solver
 # ------------------------------------------------------------------ #
+
 
 def implied_vol_batch(
     market_prices: Union[list[float], np.ndarray],
@@ -224,6 +224,7 @@ def implied_vol_batch(
 # IV surface builder
 # ------------------------------------------------------------------ #
 
+
 def iv_surface(
     market_prices: np.ndarray,
     S: float,
@@ -261,16 +262,21 @@ def iv_surface(
         True
     """
     assert market_prices.shape == (len(K_grid), len(T_grid)), (
-        f"market_prices shape {market_prices.shape} must be "
-        f"({len(K_grid)}, {len(T_grid)})"
+        f"market_prices shape {market_prices.shape} must be ({len(K_grid)}, {len(T_grid)})"
     )
     surface = np.full_like(market_prices, np.nan)
     for i, K in enumerate(K_grid):
         for j, T in enumerate(T_grid):
             try:
                 surface[i, j] = implied_vol(
-                    float(market_prices[i, j]), S, float(K), float(T), r,
-                    q=q, option_type=option_type, tol=tol,
+                    float(market_prices[i, j]),
+                    S,
+                    float(K),
+                    float(T),
+                    r,
+                    q=q,
+                    option_type=option_type,
+                    tol=tol,
                 )
             except (ValueError, RuntimeError):
                 surface[i, j] = np.nan

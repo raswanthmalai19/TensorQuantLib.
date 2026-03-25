@@ -1,11 +1,12 @@
 """Tests for local volatility model (Dupire)."""
+
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from tensorquantlib.finance.local_vol import dupire_local_vol, local_vol_mc
 from tensorquantlib.finance.black_scholes import bs_price_numpy
+from tensorquantlib.finance.local_vol import dupire_local_vol, local_vol_mc
 
 
 class TestDupireLocalVol:
@@ -66,8 +67,9 @@ class TestLocalVolMC:
         expiries = np.linspace(0.05, 1.0, 10)
         lv_surface = np.full((len(strikes), len(expiries)), sigma)
 
-        mc_price = local_vol_mc(S, K, T, r, strikes, expiries, lv_surface,
-                                n_paths=100_000, n_steps=100, seed=42)
+        mc_price = local_vol_mc(
+            S, K, T, r, strikes, expiries, lv_surface, n_paths=100_000, n_steps=100, seed=42
+        )
         bs = float(bs_price_numpy(S, K, T, r, sigma))
         assert abs(mc_price - bs) / bs < 0.05  # within 5%
 
@@ -77,9 +79,11 @@ class TestLocalVolMC:
         expiries = np.linspace(0.05, 1.0, 8)
         lv_surface = np.full((len(strikes), len(expiries)), 0.2)
 
-        call = local_vol_mc(S, K, T, r, strikes, expiries, lv_surface,
-                            option_type="call", n_paths=50_000, seed=42)
-        put = local_vol_mc(S, K, T, r, strikes, expiries, lv_surface,
-                           option_type="put", n_paths=50_000, seed=42)
+        call = local_vol_mc(
+            S, K, T, r, strikes, expiries, lv_surface, option_type="call", n_paths=50_000, seed=42
+        )
+        put = local_vol_mc(
+            S, K, T, r, strikes, expiries, lv_surface, option_type="put", n_paths=50_000, seed=42
+        )
         assert call > 0
         assert put > 0

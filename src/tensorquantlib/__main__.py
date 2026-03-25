@@ -32,7 +32,6 @@ from __future__ import annotations
 
 import argparse
 import sys
-from typing import NoReturn
 
 
 def _print_table(rows: list[tuple[str, str]]) -> None:
@@ -49,38 +48,51 @@ def _print_table(rows: list[tuple[str, str]]) -> None:
 def cmd_price(args: argparse.Namespace) -> None:
     """European Black-Scholes pricing."""
     from tensorquantlib.finance.black_scholes import (
-        bs_price_numpy, bs_delta, bs_gamma, bs_vega, bs_theta, bs_rho,
+        bs_delta,
+        bs_gamma,
+        bs_price_numpy,
+        bs_rho,
+        bs_theta,
+        bs_vega,
     )
-    price = bs_price_numpy(args.S, args.K, args.T, args.r, args.sigma, q=args.q, option_type=args.type)
+
+    price = bs_price_numpy(
+        args.S, args.K, args.T, args.r, args.sigma, q=args.q, option_type=args.type
+    )
     delta = bs_delta(args.S, args.K, args.T, args.r, args.sigma, q=args.q, option_type=args.type)
     gamma = bs_gamma(args.S, args.K, args.T, args.r, args.sigma, q=args.q)
-    vega  = bs_vega(args.S, args.K, args.T, args.r, args.sigma, q=args.q)
+    vega = bs_vega(args.S, args.K, args.T, args.r, args.sigma, q=args.q)
     theta = bs_theta(args.S, args.K, args.T, args.r, args.sigma, q=args.q, option_type=args.type)
-    rho   = bs_rho(args.S, args.K, args.T, args.r, args.sigma, q=args.q, option_type=args.type)
+    rho = bs_rho(args.S, args.K, args.T, args.r, args.sigma, q=args.q, option_type=args.type)
 
     print(f"\nBlack-Scholes European {args.type.upper()}")
-    _print_table([
-        ("S",     f"{args.S:.4f}"),
-        ("K",     f"{args.K:.4f}"),
-        ("T",     f"{args.T:.4f} yr"),
-        ("r",     f"{args.r:.4%}"),
-        ("sigma", f"{args.sigma:.4%}"),
-        ("q",     f"{args.q:.4%}"),
-        ("Price", f"{float(price):.6f}"),
-        ("Delta", f"{float(delta):.6f}"),
-        ("Gamma", f"{float(gamma):.6f}"),
-        ("Vega",  f"{float(vega):.6f}"),
-        ("Theta", f"{float(theta):.6f}"),
-        ("Rho",   f"{float(rho):.6f}"),
-    ])
+    _print_table(
+        [
+            ("S", f"{args.S:.4f}"),
+            ("K", f"{args.K:.4f}"),
+            ("T", f"{args.T:.4f} yr"),
+            ("r", f"{args.r:.4%}"),
+            ("sigma", f"{args.sigma:.4%}"),
+            ("q", f"{args.q:.4%}"),
+            ("Price", f"{float(price):.6f}"),
+            ("Delta", f"{float(delta):.6f}"),
+            ("Gamma", f"{float(gamma):.6f}"),
+            ("Vega", f"{float(vega):.6f}"),
+            ("Theta", f"{float(theta):.6f}"),
+            ("Rho", f"{float(rho):.6f}"),
+        ]
+    )
 
 
 def cmd_iv(args: argparse.Namespace) -> None:
     """Implied volatility inversion."""
     from tensorquantlib.finance.implied_vol import implied_vol_nr
+
     try:
-        iv = implied_vol_nr(args.price, args.S, args.K, args.T, args.r, q=args.q, option_type=args.type)
-        print(f"\nImplied Volatility: {iv:.6f}  ({iv*100:.2f}%)")
+        iv = implied_vol_nr(
+            args.price, args.S, args.K, args.T, args.r, q=args.q, option_type=args.type
+        )
+        print(f"\nImplied Volatility: {iv:.6f}  ({iv * 100:.2f}%)")
     except ValueError as e:
         print(f"\nError: {e}", file=sys.stderr)
         sys.exit(1)
@@ -89,93 +101,149 @@ def cmd_iv(args: argparse.Namespace) -> None:
 def cmd_american(args: argparse.Namespace) -> None:
     """American option pricing via Longstaff-Schwartz LSM."""
     from tensorquantlib.finance.american import american_option_lsm
+
     price, stderr = american_option_lsm(
-        args.S, args.K, args.T, args.r, args.sigma, q=args.q,
-        option_type=args.type, n_paths=args.paths, n_steps=args.steps,
-        seed=args.seed, return_stderr=True,
+        args.S,
+        args.K,
+        args.T,
+        args.r,
+        args.sigma,
+        q=args.q,
+        option_type=args.type,
+        n_paths=args.paths,
+        n_steps=args.steps,
+        seed=args.seed,
+        return_stderr=True,
     )
     print(f"\nAmerican LSM {args.type.upper()}")
-    _print_table([
-        ("Price",   f"{price:.6f}"),
-        ("StdErr",  f"{stderr:.6f}"),
-        ("n_paths", f"{args.paths:,}"),
-        ("n_steps", f"{args.steps}"),
-    ])
+    _print_table(
+        [
+            ("Price", f"{price:.6f}"),
+            ("StdErr", f"{stderr:.6f}"),
+            ("n_paths", f"{args.paths:,}"),
+            ("n_steps", f"{args.steps}"),
+        ]
+    )
 
 
 def cmd_heston(args: argparse.Namespace) -> None:
     """Heston stochastic volatility pricing."""
-    from tensorquantlib.finance.heston import HestonParams, heston_price, heston_greeks
+    from tensorquantlib.finance.heston import HestonParams, heston_greeks, heston_price
+
     params = HestonParams(kappa=args.kappa, theta=args.theta, xi=args.xi, rho=args.rho, v0=args.v0)
     price = heston_price(args.S, args.K, args.T, args.r, params, q=args.q, option_type=args.type)
     greeks = heston_greeks(args.S, args.K, args.T, args.r, params, q=args.q, option_type=args.type)
     print(f"\nHeston Model {args.type.upper()}")
-    print(f"Feller condition: {'satisfied' if params.feller_satisfied() else 'VIOLATED (possible instability)'}")
-    _print_table([
-        ("Price",  f"{price:.6f}"),
-        ("Delta",  f"{greeks['delta']:.6f}"),
-        ("Gamma",  f"{greeks['gamma']:.6f}"),
-        ("Theta",  f"{greeks['theta']:.6f}"),
-        ("Vega",   f"{greeks['vega']:.6f}  (per unit v0)"),
-    ])
+    print(
+        f"Feller condition: {'satisfied' if params.feller_satisfied() else 'VIOLATED (possible instability)'}"
+    )
+    _print_table(
+        [
+            ("Price", f"{price:.6f}"),
+            ("Delta", f"{greeks['delta']:.6f}"),
+            ("Gamma", f"{greeks['gamma']:.6f}"),
+            ("Theta", f"{greeks['theta']:.6f}"),
+            ("Vega", f"{greeks['vega']:.6f}  (per unit v0)"),
+        ]
+    )
 
 
 def cmd_asian(args: argparse.Namespace) -> None:
     """Asian option pricing."""
-    from tensorquantlib.finance.exotics import asian_price_mc, asian_geometric_price
+    from tensorquantlib.finance.exotics import asian_geometric_price, asian_price_mc
+
     price_mc, stderr = asian_price_mc(
-        args.S, args.K, args.T, args.r, args.sigma, q=args.q,
-        option_type=args.type, average_type=args.avg,
-        n_paths=args.paths, n_steps=args.steps, seed=args.seed, return_stderr=True,
+        args.S,
+        args.K,
+        args.T,
+        args.r,
+        args.sigma,
+        q=args.q,
+        option_type=args.type,
+        average_type=args.avg,
+        n_paths=args.paths,
+        n_steps=args.steps,
+        seed=args.seed,
+        return_stderr=True,
     )
     print(f"\nAsian {args.avg.capitalize()} Average {args.type.upper()}")
-    _print_table([
-        ("MC Price",   f"{price_mc:.6f}"),
-        ("MC StdErr",  f"{stderr:.6f}"),
-    ])
+    _print_table(
+        [
+            ("MC Price", f"{price_mc:.6f}"),
+            ("MC StdErr", f"{stderr:.6f}"),
+        ]
+    )
     if args.avg == "geometric":
-        analytic = asian_geometric_price(args.S, args.K, args.T, args.r, args.sigma, q=args.q, option_type=args.type)
+        analytic = asian_geometric_price(
+            args.S, args.K, args.T, args.r, args.sigma, q=args.q, option_type=args.type
+        )
         print(f"  {'Analytic Geo:':<20}{analytic:.6f}")
 
 
 def cmd_barrier(args: argparse.Namespace) -> None:
     """Barrier option pricing."""
     from tensorquantlib.finance.exotics import barrier_price, barrier_price_mc
+
     try:
-        analytic = barrier_price(args.S, args.K, args.T, args.r, args.sigma,
-                                 args.barrier, args.barrier_type, q=args.q,
-                                 option_type=args.type)
+        analytic = barrier_price(
+            args.S,
+            args.K,
+            args.T,
+            args.r,
+            args.sigma,
+            args.barrier,
+            args.barrier_type,
+            q=args.q,
+            option_type=args.type,
+        )
     except Exception:
         analytic = float("nan")
     mc, stderr = barrier_price_mc(
-        args.S, args.K, args.T, args.r, args.sigma,
-        args.barrier, args.barrier_type, q=args.q,
-        option_type=args.type, n_paths=args.paths, n_steps=args.steps,
-        seed=args.seed, return_stderr=True,
+        args.S,
+        args.K,
+        args.T,
+        args.r,
+        args.sigma,
+        args.barrier,
+        args.barrier_type,
+        q=args.q,
+        option_type=args.type,
+        n_paths=args.paths,
+        n_steps=args.steps,
+        seed=args.seed,
+        return_stderr=True,
     )
     print(f"\nBarrier Option [{args.barrier_type}] {args.type.upper()}")
-    _print_table([
-        ("Barrier",  f"{args.barrier:.2f}"),
-        ("Analytic", f"{analytic:.6f}"),
-        ("MC Price", f"{mc:.6f}"),
-        ("MC StdErr",f"{stderr:.6f}"),
-    ])
+    _print_table(
+        [
+            ("Barrier", f"{args.barrier:.2f}"),
+            ("Analytic", f"{analytic:.6f}"),
+            ("MC Price", f"{mc:.6f}"),
+            ("MC StdErr", f"{stderr:.6f}"),
+        ]
+    )
 
 
 def cmd_risk(args: argparse.Namespace) -> None:
     """Portfolio risk metrics — VaR, CVaR, Sharpe."""
-    from tensorquantlib.finance.risk import var_parametric, var_mc, PortfolioRisk
     import numpy as np
 
-    print(f"\nRisk Metrics  (S={args.S}, sigma={args.sigma:.1%}, alpha={args.alpha:.0%}, horizon={int(args.horizon)}d)")
+    from tensorquantlib.finance.risk import PortfolioRisk, var_mc, var_parametric
+
+    print(
+        f"\nRisk Metrics  (S={args.S}, sigma={args.sigma:.1%}, alpha={args.alpha:.0%}, horizon={int(args.horizon)}d)"
+    )
     var_p = var_parametric(0.0, args.sigma, alpha=args.alpha, horizon=args.horizon / 252.0)
-    var_v, cvar_v = var_mc(args.S, args.sigma, horizon=args.horizon / 252.0, alpha=args.alpha,
-                            n_paths=100_000, seed=42)
-    _print_table([
-        ("Param VaR (1d)",   f"{var_p * args.S:.4f}  ({var_p:.4%} of S)"),
-        ("MC VaR",           f"{var_v * args.S:.4f}  ({var_v:.4%} of S)"),
-        ("MC CVaR (ES)",     f"{cvar_v * args.S:.4f}  ({cvar_v:.4%} of S)"),
-    ])
+    var_v, cvar_v = var_mc(
+        args.S, args.sigma, horizon=args.horizon / 252.0, alpha=args.alpha, n_paths=100_000, seed=42
+    )
+    _print_table(
+        [
+            ("Param VaR (1d)", f"{var_p * args.S:.4f}  ({var_p:.4%} of S)"),
+            ("MC VaR", f"{var_v * args.S:.4f}  ({var_v:.4%} of S)"),
+            ("MC CVaR (ES)", f"{cvar_v * args.S:.4f}  ({cvar_v:.4%} of S)"),
+        ]
+    )
 
     # Simulate a return history and report portfolio-level stats
     rng = np.random.default_rng(42)
@@ -189,14 +257,25 @@ def cmd_risk(args: argparse.Namespace) -> None:
 def cmd_compare_vr(args: argparse.Namespace) -> None:
     """Compare variance reduction methods."""
     from tensorquantlib.finance.variance_reduction import compare_variance_reduction
+
     results = compare_variance_reduction(
-        args.S, args.K, args.T, args.r, args.sigma, n_paths=args.paths, seed=42,
+        args.S,
+        args.K,
+        args.T,
+        args.r,
+        args.sigma,
+        n_paths=args.paths,
+        seed=42,
     )
-    print(f"\nVariance Reduction Comparison  ({args.type.upper()} S={args.S} K={args.K} T={args.T})")
+    print(
+        f"\nVariance Reduction Comparison  ({args.type.upper()} S={args.S} K={args.K} T={args.T})"
+    )
     print(f"  {'Method':<25} {'Price':>10} {'StdErr':>12} {'VR Ratio':>10}")
     print("  " + "-" * 60)
     for name, res in results.items():
-        print(f"  {name:<25} {res['price']:>10.5f} {res['stderr']:>12.6f} {res['vr_ratio']:>10.2f}x")
+        print(
+            f"  {name:<25} {res['price']:>10.5f} {res['stderr']:>12.6f} {res['vr_ratio']:>10.2f}x"
+        )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -256,9 +335,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_heston.add_argument("--type", choices=["call", "put"], default="call")
     p_heston.add_argument("--kappa", type=float, default=2.0)
     p_heston.add_argument("--theta", type=float, default=0.04)
-    p_heston.add_argument("--xi",    type=float, default=0.3)
-    p_heston.add_argument("--rho",   type=float, default=-0.7)
-    p_heston.add_argument("--v0",    type=float, default=0.04)
+    p_heston.add_argument("--xi", type=float, default=0.3)
+    p_heston.add_argument("--rho", type=float, default=-0.7)
+    p_heston.add_argument("--v0", type=float, default=0.04)
     p_heston.set_defaults(func=cmd_heston)
 
     # ---- asian ----
@@ -283,10 +362,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     # ---- risk ----
     p_risk = sub.add_parser("risk", help="Risk metrics: VaR, CVaR, Sharpe, drawdown")
-    p_risk.add_argument("--S",       type=float, default=100.0, help="Spot / position size")
-    p_risk.add_argument("--sigma",   type=float, required=True, help="Annualised volatility")
-    p_risk.add_argument("--horizon", type=float, default=1.0,   help="Horizon in trading days (default 1)")
-    p_risk.add_argument("--alpha",   type=float, default=0.95,  help="Confidence level (default 0.95)")
+    p_risk.add_argument("--S", type=float, default=100.0, help="Spot / position size")
+    p_risk.add_argument("--sigma", type=float, required=True, help="Annualised volatility")
+    p_risk.add_argument(
+        "--horizon", type=float, default=1.0, help="Horizon in trading days (default 1)"
+    )
+    p_risk.add_argument("--alpha", type=float, default=0.95, help="Confidence level (default 0.95)")
     p_risk.set_defaults(func=cmd_risk)
 
     # ---- compare-vr ----

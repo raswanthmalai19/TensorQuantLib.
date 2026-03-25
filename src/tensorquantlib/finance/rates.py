@@ -5,15 +5,15 @@ Implements short-rate models and yield curve fitting:
 - CIR (1985): mean-reverting square-root short rate
 - Nelson-Siegel (1987): parametric yield curve
 """
+
 from __future__ import annotations
 
 import numpy as np
-from scipy.optimize import brentq
-
 
 # ---------------------------------------------------------------------------
 # Vasicek model
 # ---------------------------------------------------------------------------
+
 
 def vasicek_bond_price(
     r0: float,
@@ -49,10 +49,7 @@ def vasicek_bond_price(
         return float(np.exp(-r0 * T))
 
     B = (1.0 - np.exp(-kappa * T)) / kappa
-    A = np.exp(
-        (theta - sigma ** 2 / (2.0 * kappa ** 2)) * (B - T)
-        - sigma ** 2 / (4.0 * kappa) * B ** 2
-    )
+    A = np.exp((theta - sigma**2 / (2.0 * kappa**2)) * (B - T) - sigma**2 / (4.0 * kappa) * B**2)
     return float(A * np.exp(-B * r0))
 
 
@@ -109,9 +106,7 @@ def vasicek_option_price(
     from scipy.stats import norm
 
     B_s = (1.0 - np.exp(-kappa * (T_bond - T_option))) / kappa
-    sigma_p = sigma * B_s * np.sqrt(
-        (1.0 - np.exp(-2.0 * kappa * T_option)) / (2.0 * kappa)
-    )
+    sigma_p = sigma * B_s * np.sqrt((1.0 - np.exp(-2.0 * kappa * T_option)) / (2.0 * kappa))
 
     P_T = vasicek_bond_price(r0, kappa, theta, sigma, T_bond)
     P_s = vasicek_bond_price(r0, kappa, theta, sigma, T_option)
@@ -151,11 +146,7 @@ def vasicek_simulate(
 
     for i in range(n_steps):
         Z = rng.standard_normal(n_paths)
-        rates[i + 1] = (
-            rates[i]
-            + kappa * (theta - rates[i]) * dt
-            + sigma * np.sqrt(dt) * Z
-        )
+        rates[i + 1] = rates[i] + kappa * (theta - rates[i]) * dt + sigma * np.sqrt(dt) * Z
 
     return rates
 
@@ -163,6 +154,7 @@ def vasicek_simulate(
 # ---------------------------------------------------------------------------
 # CIR model
 # ---------------------------------------------------------------------------
+
 
 def cir_bond_price(
     r0: float,
@@ -185,14 +177,14 @@ def cir_bond_price(
     float
         Bond price P(0, T).
     """
-    gamma = np.sqrt(kappa ** 2 + 2.0 * sigma ** 2)
+    gamma = np.sqrt(kappa**2 + 2.0 * sigma**2)
     eg = np.exp(gamma * T)
 
     denom = (gamma + kappa) * (eg - 1.0) + 2.0 * gamma
 
     B = 2.0 * (eg - 1.0) / denom
     A = (2.0 * gamma * np.exp((kappa + gamma) * T / 2.0) / denom) ** (
-        2.0 * kappa * theta / sigma ** 2
+        2.0 * kappa * theta / sigma**2
     )
 
     return float(A * np.exp(-B * r0))
@@ -235,11 +227,7 @@ def cir_simulate(
     for i in range(n_steps):
         Z = rng.standard_normal(n_paths)
         r_pos = np.maximum(rates[i], 0.0)
-        rates[i + 1] = (
-            rates[i]
-            + kappa * (theta - r_pos) * dt
-            + sigma * np.sqrt(r_pos * dt) * Z
-        )
+        rates[i + 1] = rates[i] + kappa * (theta - r_pos) * dt + sigma * np.sqrt(r_pos * dt) * Z
         rates[i + 1] = np.maximum(rates[i + 1], 0.0)
 
     return rates
@@ -250,12 +238,13 @@ def feller_condition(kappa: float, theta: float, sigma: float) -> bool:
 
     When satisfied, CIR process stays strictly positive.
     """
-    return 2.0 * kappa * theta >= sigma ** 2
+    return 2.0 * kappa * theta >= sigma**2
 
 
 # ---------------------------------------------------------------------------
 # Nelson-Siegel yield curve
 # ---------------------------------------------------------------------------
+
 
 def nelson_siegel(
     T: float | np.ndarray,
@@ -340,21 +329,27 @@ def nelson_siegel_calibrate(
     result = minimize(
         objective,
         x0=initial_guess,
-        method='Nelder-Mead',
-        options={'maxiter': 5000, 'xatol': 1e-12, 'fatol': 1e-12},
+        method="Nelder-Mead",
+        options={"maxiter": 5000, "xatol": 1e-12, "fatol": 1e-12},
     )
 
     b0, b1, b2, tau = result.x
     model_yields = nelson_siegel(maturities, b0, b1, b2, tau)
     rmse = float(np.sqrt(np.mean((model_yields - yields) ** 2)))
 
-    return {'beta0': float(b0), 'beta1': float(b1), 'beta2': float(b2),
-            'tau': float(tau), 'rmse': rmse}
+    return {
+        "beta0": float(b0),
+        "beta1": float(b1),
+        "beta2": float(b2),
+        "tau": float(tau),
+        "rmse": rmse,
+    }
 
 
 # ---------------------------------------------------------------------------
 # Yield curve bootstrap
 # ---------------------------------------------------------------------------
+
 
 def bootstrap_yield_curve(
     maturities: np.ndarray,

@@ -1,15 +1,15 @@
 """Tests for volatility surface models (SABR + SVI)."""
+
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from tensorquantlib.finance.volatility import (
-    sabr_implied_vol,
     sabr_calibrate,
-    svi_raw,
-    svi_implied_vol,
+    sabr_implied_vol,
     svi_calibrate,
+    svi_implied_vol,
+    svi_raw,
     svi_surface,
 )
 
@@ -76,13 +76,17 @@ class TestSABR:
         true_vols = sabr_implied_vol(F, strikes, T, true_alpha, true_beta, true_rho, true_nu)
 
         result = sabr_calibrate(
-            true_vols, F, strikes, T, beta=true_beta,
+            true_vols,
+            F,
+            strikes,
+            T,
+            beta=true_beta,
             initial_guess=(0.2, -0.2, 0.3),
         )
-        assert result['rmse'] < 0.001
-        assert abs(result['alpha'] - true_alpha) < 0.02
-        assert abs(result['rho'] - true_rho) < 0.05
-        assert abs(result['nu'] - true_nu) < 0.05
+        assert result["rmse"] < 0.001
+        assert abs(result["alpha"] - true_alpha) < 0.02
+        assert abs(result["rho"] - true_rho) < 0.05
+        assert abs(result["nu"] - true_nu) < 0.05
 
     def test_positive_vols(self):
         """All implied vols should be positive for reasonable inputs."""
@@ -101,7 +105,7 @@ class TestSVI:
         a, b, rho, m, sigma = 0.04, 0.1, 0.0, 0.0, 0.1
         # For rho=0, minimum is exactly at k=m
         w_at_m = svi_raw(m, a, b, rho, m, sigma)
-        expected_min = a + b * sigma * np.sqrt(1.0 - rho ** 2)
+        expected_min = a + b * sigma * np.sqrt(1.0 - rho**2)
         assert abs(w_at_m - expected_min) < 1e-10
 
     def test_linear_wings(self):
@@ -115,8 +119,8 @@ class TestSVI:
 
     def test_no_arbitrage_condition(self):
         """Check that a + b*sigma*sqrt(1-rho^2) >= 0 (no negative variance)."""
-        a, b, rho, m, sigma = 0.04, 0.1, -0.3, 0.0, 0.1
-        min_var = a + b * sigma * np.sqrt(1.0 - rho ** 2)
+        a, b, rho, sigma = 0.04, 0.1, -0.3, 0.1
+        min_var = a + b * sigma * np.sqrt(1.0 - rho**2)
         assert min_var >= 0
 
     def test_svi_implied_vol(self):
@@ -144,7 +148,7 @@ class TestSVI:
         true_vols = svi_implied_vol(k, T, true_a, true_b, true_rho, true_m, true_sigma)
 
         result = svi_calibrate(true_vols, strikes, F, T)
-        assert result['rmse'] < 0.001
+        assert result["rmse"] < 0.001
 
     def test_surface_shape(self):
         """SVI surface should have correct shape."""
@@ -152,9 +156,9 @@ class TestSVI:
         expiries = np.array([0.25, 0.5, 1.0])
         F = 100.0
         params = [
-            {'a': 0.04, 'b': 0.1, 'rho': -0.3, 'm': 0.0, 'sigma': 0.1},
-            {'a': 0.04, 'b': 0.08, 'rho': -0.25, 'm': 0.0, 'sigma': 0.12},
-            {'a': 0.04, 'b': 0.06, 'rho': -0.2, 'm': 0.0, 'sigma': 0.15},
+            {"a": 0.04, "b": 0.1, "rho": -0.3, "m": 0.0, "sigma": 0.1},
+            {"a": 0.04, "b": 0.08, "rho": -0.25, "m": 0.0, "sigma": 0.12},
+            {"a": 0.04, "b": 0.06, "rho": -0.2, "m": 0.0, "sigma": 0.15},
         ]
         surface = svi_surface(strikes, expiries, F, params)
         assert surface.shape == (3, 10)
@@ -167,8 +171,8 @@ class TestSVI:
         F = 100.0
         # Same total variance params
         params = [
-            {'a': 0.04, 'b': 0.1, 'rho': -0.3, 'm': 0.0, 'sigma': 0.1},
-            {'a': 0.04, 'b': 0.1, 'rho': -0.3, 'm': 0.0, 'sigma': 0.1},
+            {"a": 0.04, "b": 0.1, "rho": -0.3, "m": 0.0, "sigma": 0.1},
+            {"a": 0.04, "b": 0.1, "rho": -0.3, "m": 0.0, "sigma": 0.1},
         ]
         surface = svi_surface(strikes, expiries, F, params)
         # vol = sqrt(w/T), same w means longer T has lower vol

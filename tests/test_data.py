@@ -1,7 +1,9 @@
 """Tests for market data module (fully mocked — no real API calls)."""
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -16,13 +18,16 @@ def _make_hist_df(close, dates=None, n=None):
         n = len(close)
     if dates is None:
         dates = pd.bdate_range(end="2024-01-15", periods=n)
-    return pd.DataFrame({
-        "Open": close,
-        "High": close,
-        "Low": close,
-        "Close": close,
-        "Volume": [1_000_000] * n,
-    }, index=dates)
+    return pd.DataFrame(
+        {
+            "Open": close,
+            "High": close,
+            "Low": close,
+            "Close": close,
+            "Volume": [1_000_000] * n,
+        },
+        index=dates,
+    )
 
 
 @pytest.fixture
@@ -30,9 +35,12 @@ def mock_yf():
     """Fixture that patches yfinance and returns the mock module."""
     with patch.dict("sys.modules", {"yfinance": MagicMock()}) as _:
         import importlib
+
         import tensorquantlib.data.market as market_mod
+
         importlib.reload(market_mod)
         import sys
+
         yf_mock = sys.modules["yfinance"]
         yield yf_mock, market_mod
 
@@ -77,24 +85,28 @@ class TestOptionsChain:
         yf_mock, market = mock_yf
         ticker_mock = MagicMock()
         ticker_mock.options = ("2024-02-16",)
-        calls_df = pd.DataFrame({
-            "strike": [150.0, 155.0],
-            "lastPrice": [5.0, 3.0],
-            "bid": [4.9, 2.9],
-            "ask": [5.1, 3.1],
-            "impliedVolatility": [0.2, 0.22],
-            "volume": [100, 50],
-            "openInterest": [1000, 500],
-        })
-        puts_df = pd.DataFrame({
-            "strike": [145.0, 150.0],
-            "lastPrice": [2.0, 4.0],
-            "bid": [1.9, 3.9],
-            "ask": [2.1, 4.1],
-            "impliedVolatility": [0.21, 0.23],
-            "volume": [80, 60],
-            "openInterest": [800, 600],
-        })
+        calls_df = pd.DataFrame(
+            {
+                "strike": [150.0, 155.0],
+                "lastPrice": [5.0, 3.0],
+                "bid": [4.9, 2.9],
+                "ask": [5.1, 3.1],
+                "impliedVolatility": [0.2, 0.22],
+                "volume": [100, 50],
+                "openInterest": [1000, 500],
+            }
+        )
+        puts_df = pd.DataFrame(
+            {
+                "strike": [145.0, 150.0],
+                "lastPrice": [2.0, 4.0],
+                "bid": [1.9, 3.9],
+                "ask": [2.1, 4.1],
+                "impliedVolatility": [0.21, 0.23],
+                "volume": [80, 60],
+                "openInterest": [800, 600],
+            }
+        )
         chain_mock = MagicMock()
         chain_mock.calls = calls_df
         chain_mock.puts = puts_df

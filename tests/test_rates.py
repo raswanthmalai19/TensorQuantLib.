@@ -1,21 +1,21 @@
 """Tests for interest rate models (Vasicek, CIR, Nelson-Siegel)."""
+
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from tensorquantlib.finance.rates import (
-    vasicek_bond_price,
-    vasicek_yield,
-    vasicek_option_price,
-    vasicek_simulate,
+    bootstrap_yield_curve,
     cir_bond_price,
-    cir_yield,
     cir_simulate,
+    cir_yield,
     feller_condition,
     nelson_siegel,
     nelson_siegel_calibrate,
-    bootstrap_yield_curve,
+    vasicek_bond_price,
+    vasicek_option_price,
+    vasicek_simulate,
+    vasicek_yield,
 )
 
 
@@ -48,15 +48,15 @@ class TestVasicek:
         """Put-call parity: C - P = P(T_bond) - K * P(T_option)."""
         r0, kappa, theta, sigma = 0.05, 0.5, 0.05, 0.01
         T_opt, T_bond, K = 1.0, 2.0, 0.95
-        call = vasicek_option_price(r0, kappa, theta, sigma, T_opt, T_bond, K, 'call')
-        put = vasicek_option_price(r0, kappa, theta, sigma, T_opt, T_bond, K, 'put')
+        call = vasicek_option_price(r0, kappa, theta, sigma, T_opt, T_bond, K, "call")
+        put = vasicek_option_price(r0, kappa, theta, sigma, T_opt, T_bond, K, "put")
         P_bond = vasicek_bond_price(r0, kappa, theta, sigma, T_bond)
         P_opt = vasicek_bond_price(r0, kappa, theta, sigma, T_opt)
         parity = P_bond - K * P_opt
         assert abs((call - put) - parity) < 1e-10
 
     def test_option_positive(self):
-        call = vasicek_option_price(0.05, 0.5, 0.05, 0.01, 1.0, 2.0, 0.95, 'call')
+        call = vasicek_option_price(0.05, 0.5, 0.05, 0.01, 1.0, 2.0, 0.95, "call")
         assert call > 0
 
     def test_simulate_shape(self):
@@ -65,16 +65,14 @@ class TestVasicek:
 
     def test_simulate_mean_reversion(self):
         """Simulated mean should converge to theta."""
-        paths = vasicek_simulate(0.10, 2.0, 0.05, 0.01, 5.0,
-                                  n_steps=500, n_paths=10_000, seed=42)
+        paths = vasicek_simulate(0.10, 2.0, 0.05, 0.01, 5.0, n_steps=500, n_paths=10_000, seed=42)
         terminal_mean = np.mean(paths[-1])
         assert abs(terminal_mean - 0.05) < 0.01
 
     def test_mc_bond_vs_analytic(self):
         """MC bond price should approximate analytic."""
         r0, kappa, theta, sigma, T = 0.05, 0.5, 0.05, 0.01, 1.0
-        paths = vasicek_simulate(r0, kappa, theta, sigma, T,
-                                  n_steps=252, n_paths=50_000, seed=42)
+        paths = vasicek_simulate(r0, kappa, theta, sigma, T, n_steps=252, n_paths=50_000, seed=42)
         dt = T / 252
         # Numerical integration of rate paths
         integrals = np.sum(paths[:-1], axis=0) * dt
@@ -102,8 +100,7 @@ class TestCIR:
 
     def test_simulate_non_negative(self):
         """CIR paths should remain non-negative."""
-        paths = cir_simulate(0.05, 0.5, 0.05, 0.1, 1.0,
-                              n_steps=252, n_paths=1000, seed=42)
+        paths = cir_simulate(0.05, 0.5, 0.05, 0.1, 1.0, n_steps=252, n_paths=1000, seed=42)
         assert np.all(paths >= 0)
 
     def test_simulate_shape(self):
@@ -113,8 +110,7 @@ class TestCIR:
     def test_mc_bond_vs_analytic(self):
         """MC bond price should approximate analytic for CIR."""
         r0, kappa, theta, sigma, T = 0.05, 0.5, 0.05, 0.1, 1.0
-        paths = cir_simulate(r0, kappa, theta, sigma, T,
-                              n_steps=252, n_paths=50_000, seed=42)
+        paths = cir_simulate(r0, kappa, theta, sigma, T, n_steps=252, n_paths=50_000, seed=42)
         dt = T / 252
         integrals = np.sum(paths[:-1], axis=0) * dt
         mc_price = float(np.mean(np.exp(-integrals)))
@@ -159,7 +155,7 @@ class TestNelsonSiegel:
         T = np.array([0.25, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0])
         true_yields = nelson_siegel(T, 0.05, -0.02, 0.01, 2.0)
         result = nelson_siegel_calibrate(T, true_yields)
-        assert result['rmse'] < 0.0001
+        assert result["rmse"] < 0.0001
 
     def test_scalar_input(self):
         y = nelson_siegel(1.0, 0.05, -0.02, 0.01, 1.0)

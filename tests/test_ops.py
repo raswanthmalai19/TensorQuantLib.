@@ -18,8 +18,7 @@ def _check(fn, *shapes, tol=TOL):
     inputs = [Tensor(np.random.randn(*s) * 2 + 0.5, requires_grad=True) for s in shapes]
     result = check_grad(fn, inputs, tol=tol)
     assert result["passed"], (
-        f"Gradient check failed: max_error={result['max_error']:.2e}, "
-        f"errors={result['errors']}"
+        f"Gradient check failed: max_error={result['max_error']:.2e}, errors={result['errors']}"
     )
     return result
 
@@ -71,6 +70,7 @@ class TestDivGrad:
     def test_same_shape(self):
         def fn(a, b):
             return a / b
+
         # Avoid near-zero denominators
         np.random.seed(42)
         a = Tensor(np.random.randn(3, 4), requires_grad=True)
@@ -132,15 +132,15 @@ class TestSqrtGrad:
 
 class TestPowGrad:
     def test_square(self):
-        _check(lambda a: a ** 2, (3, 4))
+        _check(lambda a: a**2, (3, 4))
 
     def test_cube(self):
-        _check(lambda a: a ** 3, (3, 4))
+        _check(lambda a: a**3, (3, 4))
 
     def test_sqrt_via_pow(self):
         np.random.seed(42)
         a = Tensor(np.abs(np.random.randn(3, 4)) + 0.5, requires_grad=True)
-        result = check_grad(lambda a: a ** 0.5, [a], tol=TOL)
+        result = check_grad(lambda a: a**0.5, [a], tol=TOL)
         assert result["passed"]
 
 
@@ -238,7 +238,7 @@ class TestCompositeExpressions:
     def test_polynomial(self):
         """z = 3*x^2 + 2*x + 1, dz/dx = 6*x + 2."""
         x = Tensor(np.array([2.0]), requires_grad=True)
-        z = Tensor(3.0) * x ** 2 + Tensor(2.0) * x + Tensor(1.0)
+        z = Tensor(3.0) * x**2 + Tensor(2.0) * x + Tensor(1.0)
         z.sum().backward()
         expected = 6.0 * 2.0 + 2.0  # 14.0
         np.testing.assert_almost_equal(x.grad[0], expected, decimal=5)
@@ -255,7 +255,7 @@ class TestCompositeExpressions:
         """z = sum(sqrt(x^2 + 1)), dz/dx_i = x_i / sqrt(x_i^2 + 1)."""
         np.random.seed(42)
         x = Tensor(np.random.randn(4), requires_grad=True)
-        z = (x ** 2 + Tensor(1.0)).sqrt().sum()
+        z = (x**2 + Tensor(1.0)).sqrt().sum()
         z.backward()
-        expected = x.data / np.sqrt(x.data ** 2 + 1)
+        expected = x.data / np.sqrt(x.data**2 + 1)
         np.testing.assert_array_almost_equal(x.grad, expected, decimal=5)

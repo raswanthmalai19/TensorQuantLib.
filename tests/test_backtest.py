@@ -1,43 +1,43 @@
 """Tests for backtesting framework (metrics, engine, strategies)."""
+
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
-from tensorquantlib.backtest.metrics import (
-    sharpe_ratio,
-    max_drawdown,
-    sortino_ratio,
-    win_rate,
-    profit_factor,
-    annualized_return,
-    calmar_ratio,
-    information_ratio,
-    turnover,
-    hedge_pnl_attribution,
-    hedge_efficiency,
-)
 from tensorquantlib.backtest.engine import (
-    BacktestEngine,
-    BacktestResult,
-    SlippageModel,
-    CommissionModel,
     EQUITY_COMM,
     EQUITY_SLIP,
+    BacktestEngine,
+    BacktestResult,
+    CommissionModel,
+    SlippageModel,
+)
+from tensorquantlib.backtest.metrics import (
+    annualized_return,
+    calmar_ratio,
+    hedge_efficiency,
+    hedge_pnl_attribution,
+    information_ratio,
+    max_drawdown,
+    profit_factor,
+    sharpe_ratio,
+    sortino_ratio,
+    turnover,
+    win_rate,
 )
 from tensorquantlib.backtest.strategy import (
-    Strategy,
-    Trade,
+    DeltaGammaHedgeStrategy,
     DeltaHedgeStrategy,
     GammaScalpingStrategy,
-    DeltaGammaHedgeStrategy,
     StraddleStrategy,
+    Strategy,
+    Trade,
 )
-
 
 # ---------------------------------------------------------------------------
 # Metrics tests
 # ---------------------------------------------------------------------------
+
 
 class TestSharpeRatio:
     def test_positive_returns(self):
@@ -122,9 +122,11 @@ class TestProfitFactor:
 # Engine tests
 # ---------------------------------------------------------------------------
 
+
 class TestBacktestEngine:
     def test_buy_and_hold(self):
         """Simple buy-and-hold: buy at step 0, hold."""
+
         class BuyAndHold(Strategy):
             def on_data(self, step, price, **kw):
                 return 1.0  # hold 1 unit always
@@ -135,13 +137,13 @@ class TestBacktestEngine:
 
         assert isinstance(result, BacktestResult)
         # At each step equity = cash + 1*price; cash = 1000 - 100 = 900
-        np.testing.assert_allclose(result.equity_curve,
-                                   [1000.0, 1005.0, 1010.0, 1008.0])
+        np.testing.assert_allclose(result.equity_curve, [1000.0, 1005.0, 1010.0, 1008.0])
         assert result.final_equity == 1008.0
         assert len(result.trades) == 1  # one buy trade
 
     def test_no_trades(self):
         """Strategy that does nothing."""
+
         class DoNothing(Strategy):
             def on_data(self, step, price, **kw):
                 return 0.0
@@ -166,6 +168,7 @@ class TestBacktestEngine:
 # Strategy tests
 # ---------------------------------------------------------------------------
 
+
 class TestDeltaHedgeStrategy:
     def test_delta_converges(self):
         """Delta hedge P&L is bounded for BS dynamics."""
@@ -177,8 +180,7 @@ class TestDeltaHedgeStrategy:
         prices[0] = S0
         for i in range(n_steps):
             z = np.random.randn()
-            prices[i + 1] = prices[i] * np.exp((r - 0.5 * sigma**2) * dt
-                                                 + sigma * np.sqrt(dt) * z)
+            prices[i + 1] = prices[i] * np.exp((r - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * z)
 
         strat = DeltaHedgeStrategy(K=K, T_total=T, r=r, sigma=sigma, n_steps=n_steps)
         result = BacktestEngine(strat, prices, initial_capital=1e6).run()
@@ -203,6 +205,7 @@ class TestStraddleStrategy:
 # ---------------------------------------------------------------------------
 # Execution cost model tests
 # ---------------------------------------------------------------------------
+
 
 class TestSlippageModel:
     def test_zero_slippage_by_default(self):
@@ -262,6 +265,7 @@ class TestCommissionModel:
 class TestBacktestWithCosts:
     def test_costs_reduce_equity(self):
         """Equity with slippage+commission < zero-cost equity."""
+
         class BuyAndHold(Strategy):
             def on_data(self, step, price, **kw):
                 return 1.0
@@ -270,7 +274,9 @@ class TestBacktestWithCosts:
 
         result_free = BacktestEngine(BuyAndHold(), prices, initial_capital=1000.0).run()
         result_cost = BacktestEngine(
-            BuyAndHold(), prices, initial_capital=1000.0,
+            BuyAndHold(),
+            prices,
+            initial_capital=1000.0,
             slippage=EQUITY_SLIP,
             commission=EQUITY_COMM,
         ).run()
@@ -284,7 +290,9 @@ class TestBacktestWithCosts:
 
         prices = np.array([100.0, 105.0, 110.0])
         result = BacktestEngine(
-            BuyAndHold(), prices, initial_capital=1000.0,
+            BuyAndHold(),
+            prices,
+            initial_capital=1000.0,
             commission=EQUITY_COMM,
         ).run()
         assert result.total_commission > 0.0
@@ -296,7 +304,9 @@ class TestBacktestWithCosts:
 
         prices = np.array([100.0, 105.0, 110.0])
         result = BacktestEngine(
-            BuyAndHold(), prices, initial_capital=1000.0,
+            BuyAndHold(),
+            prices,
+            initial_capital=1000.0,
             slippage=EQUITY_SLIP,
         ).run()
         assert result.total_slippage > 0.0
@@ -317,20 +327,21 @@ class TestBacktestWithCosts:
 
     def test_zero_cost_matches_default(self):
         """Explicitly passing cost=None gives same result as default (zero cost)."""
+
         class BuyAndHold(Strategy):
             def on_data(self, step, price, **kw):
                 return 1.0
 
         prices = np.array([100.0, 105.0, 110.0, 108.0])
         r1 = BacktestEngine(BuyAndHold(), prices, 1000.0).run()
-        r2 = BacktestEngine(BuyAndHold(), prices, 1000.0,
-                            slippage=None, commission=None).run()
+        r2 = BacktestEngine(BuyAndHold(), prices, 1000.0, slippage=None, commission=None).run()
         np.testing.assert_array_equal(r1.equity_curve, r2.equity_curve)
 
 
 # ---------------------------------------------------------------------------
 # New strategy tests
 # ---------------------------------------------------------------------------
+
 
 class TestGammaScalpingStrategy:
     def _run(self, S0=100.0, K=100.0, T=1.0, r=0.05, sigma=0.2, n_steps=50):
@@ -342,8 +353,7 @@ class TestGammaScalpingStrategy:
             prices[i + 1] = prices[i] * np.exp(
                 (r - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * np.random.randn()
             )
-        strat = GammaScalpingStrategy(K=K, T_total=T, r=r,
-                                       sigma_implied=sigma, n_steps=n_steps + 1)
+        strat = GammaScalpingStrategy(K=K, T_total=T, r=r, sigma_implied=sigma, n_steps=n_steps + 1)
         return BacktestEngine(strat, prices, initial_capital=1e6).run()
 
     def test_greeks_history_populated(self):
@@ -380,8 +390,7 @@ class TestGammaScalpingStrategy:
 
 
 class TestDeltaGammaHedgeStrategy:
-    def _run(self, S0=100.0, K1=95.0, K2=105.0, T=1.0, r=0.05, sigma=0.2,
-             n_steps=50):
+    def _run(self, S0=100.0, K1=95.0, K2=105.0, T=1.0, r=0.05, sigma=0.2, n_steps=50):
         np.random.seed(1)
         dt = T / n_steps
         prices = np.zeros(n_steps + 1)
@@ -390,8 +399,9 @@ class TestDeltaGammaHedgeStrategy:
             prices[i + 1] = prices[i] * np.exp(
                 (r - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * np.random.randn()
             )
-        strat = DeltaGammaHedgeStrategy(K1=K1, K2=K2, T_total=T, r=r,
-                                          sigma=sigma, n_steps=n_steps + 1)
+        strat = DeltaGammaHedgeStrategy(
+            K1=K1, K2=K2, T_total=T, r=r, sigma=sigma, n_steps=n_steps + 1
+        )
         return BacktestEngine(strat, prices, initial_capital=1e6).run()
 
     def test_net_gamma_near_zero(self):
@@ -423,6 +433,7 @@ class TestDeltaGammaHedgeStrategy:
 # ---------------------------------------------------------------------------
 # New metrics tests
 # ---------------------------------------------------------------------------
+
 
 class TestAnnualizedReturn:
     def test_flat_equity_returns_zero(self):
@@ -457,7 +468,7 @@ class TestCalmarRatio:
 
     def test_calmar_decreases_with_larger_drawdown(self):
         eq1 = np.array([100.0, 110.0, 105.0, 120.0])  # small dip
-        eq2 = np.array([100.0, 110.0, 80.0, 120.0])   # big dip
+        eq2 = np.array([100.0, 110.0, 80.0, 120.0])  # big dip
         c1 = calmar_ratio(eq1, periods_per_year=3)
         c2 = calmar_ratio(eq2, periods_per_year=3)
         assert c1 > c2
@@ -535,7 +546,7 @@ class TestHedgePnLAttribution:
 class TestHedgeEfficiency:
     def test_perfect_hedge_returns_one(self):
         """Hedged equity flat = perfect hedge → efficiency = 1."""
-        hedged   = np.ones(252) * 1000.0
+        hedged = np.ones(252) * 1000.0
         unhedged = 1000.0 + np.cumsum(np.random.randn(252))
         eff = hedge_efficiency(hedged, unhedged)
         assert abs(eff - 1.0) < 1e-10
@@ -551,7 +562,7 @@ class TestHedgeEfficiency:
         np.random.seed(3)
         noise = np.random.randn(100)
         unhedged = np.cumsum(noise) + 1000.0
-        hedged   = np.cumsum(noise * 0.1) + 1000.0   # 90% variance reduction
+        hedged = np.cumsum(noise * 0.1) + 1000.0  # 90% variance reduction
         eff = hedge_efficiency(hedged, unhedged)
         assert eff > 0.8
 
@@ -561,8 +572,7 @@ class TestGreeksHistoryInBacktest:
 
     def test_delta_hedge_exports_greeks(self):
         prices = np.linspace(100.0, 110.0, 30)
-        strat = DeltaHedgeStrategy(K=105.0, T_total=1.0, r=0.05,
-                                    sigma=0.2, n_steps=30)
+        strat = DeltaHedgeStrategy(K=105.0, T_total=1.0, r=0.05, sigma=0.2, n_steps=30)
         result = BacktestEngine(strat, prices).run()
         assert "delta" in result.greeks_history
         assert "gamma" in result.greeks_history
@@ -571,9 +581,7 @@ class TestGreeksHistoryInBacktest:
     def test_gamma_scalping_exports_pnl_attribution(self):
         np.random.seed(5)
         prices = 100.0 + np.cumsum(np.random.randn(30) * 0.5)
-        strat = GammaScalpingStrategy(K=100.0, T_total=1.0, r=0.05,
-                                       sigma_implied=0.2, n_steps=30)
+        strat = GammaScalpingStrategy(K=100.0, T_total=1.0, r=0.05, sigma_implied=0.2, n_steps=30)
         result = BacktestEngine(strat, prices).run()
         assert "theoretical_gamma_pnl" in result.greeks_history
         assert "theoretical_theta_pnl" in result.greeks_history
-

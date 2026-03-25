@@ -34,9 +34,7 @@ def tt_eval(cores: list[np.ndarray], indices: tuple[int, ...]) -> float:
     Returns:
         Scalar value at the given index.
     """
-    assert len(indices) == len(cores), (
-        f"Expected {len(cores)} indices, got {len(indices)}"
-    )
+    assert len(indices) == len(cores), f"Expected {len(cores)} indices, got {len(indices)}"
 
     # Start with the first core slice: shape (1, r_0) → flatten to (r_0,)
     result = cores[0][:, indices[0], :]  # shape (r_0_left, r_0_right) = (1, r_0)
@@ -206,6 +204,7 @@ def tt_compression_ratio(
 # TT Arithmetic
 # ====================================================================== #
 
+
 def tt_add(
     cores_a: list[np.ndarray],
     cores_b: list[np.ndarray],
@@ -226,9 +225,7 @@ def tt_add(
     """
     d = len(cores_a)
     if len(cores_b) != d:
-        raise ValueError(
-            f"Dimension mismatch: A has {d} cores, B has {len(cores_b)}"
-        )
+        raise ValueError(f"Dimension mismatch: A has {d} cores, B has {len(cores_b)}")
 
     result = []
     for k in range(d):
@@ -236,9 +233,7 @@ def tt_add(
         rb_l, nb, rb_r = cores_b[k].shape
 
         if na != nb:
-            raise ValueError(
-                f"Mode size mismatch at core {k}: A has {na}, B has {nb}"
-            )
+            raise ValueError(f"Mode size mismatch at core {k}: A has {na}, B has {nb}")
 
         if k == 0:
             # First core: concatenate along right rank → (1, n, ra_r + rb_r)
@@ -295,9 +290,7 @@ def tt_hadamard(
     """
     d = len(cores_a)
     if len(cores_b) != d:
-        raise ValueError(
-            f"Dimension mismatch: A has {d} cores, B has {len(cores_b)}"
-        )
+        raise ValueError(f"Dimension mismatch: A has {d} cores, B has {len(cores_b)}")
 
     result = []
     for k in range(d):
@@ -305,9 +298,7 @@ def tt_hadamard(
         rb_l, nb, rb_r = cores_b[k].shape
 
         if na != nb:
-            raise ValueError(
-                f"Mode size mismatch at core {k}: A has {na}, B has {nb}"
-            )
+            raise ValueError(f"Mode size mismatch at core {k}: A has {na}, B has {nb}")
 
         # Kronecker product along rank dimensions for each mode index
         # Result core shape: (ra_l * rb_l, n, ra_r * rb_r)
@@ -341,9 +332,7 @@ def tt_dot(
     """
     d = len(cores_a)
     if len(cores_b) != d:
-        raise ValueError(
-            f"Dimension mismatch: A has {d} cores, B has {len(cores_b)}"
-        )
+        raise ValueError(f"Dimension mismatch: A has {d} cores, B has {len(cores_b)}")
 
     # Transfer matrix: shape (ra_l * rb_l,) initially (1,1) → scalar 1
     ra_l0 = cores_a[0].shape[0]
@@ -355,9 +344,7 @@ def tt_dot(
         _rb_l, nb, rb_r = cores_b[k].shape
 
         if n_k != nb:
-            raise ValueError(
-                f"Mode size mismatch at core {k}: A has {n_k}, B has {nb}"
-            )
+            raise ValueError(f"Mode size mismatch at core {k}: A has {n_k}, B has {nb}")
 
         # Contract: Z_new[ia, ib] = sum_j sum_{ia', ib'} Z[ia', ib'] * Ga[ia',j,ia] * Gb[ib',j,ib]
         # Efficient: loop over mode index j, accumulate

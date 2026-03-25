@@ -4,9 +4,9 @@ import numpy as np
 import pytest
 
 from tensorquantlib.tt.pricing import (
-    heston_surrogate,
     american_surrogate,
     exotic_surrogate,
+    heston_surrogate,
     jump_diffusion_surrogate,
 )
 
@@ -16,16 +16,22 @@ class TestJumpDiffusionSurrogate:
 
     def test_builds_and_evaluates(self):
         surr = jump_diffusion_surrogate(
-            S_range=(90, 110), K_range=(95, 105), T_range=(0.5, 1.5),
-            n_points=10, eps=1e-3,
+            S_range=(90, 110),
+            K_range=(95, 105),
+            T_range=(0.5, 1.5),
+            n_points=10,
+            eps=1e-3,
         )
         price = surr.evaluate([100, 100, 1.0])
         assert price > 0
 
     def test_compression(self):
         surr = jump_diffusion_surrogate(
-            S_range=(90, 110), K_range=(95, 105), T_range=(0.5, 1.5),
-            n_points=12, eps=1e-3,
+            S_range=(90, 110),
+            K_range=(95, 105),
+            T_range=(0.5, 1.5),
+            n_points=12,
+            eps=1e-3,
         )
         info = surr.summary()
         assert info["compression_ratio"] > 1.0
@@ -34,8 +40,11 @@ class TestJumpDiffusionSurrogate:
         from tensorquantlib.finance.jump_diffusion import merton_jump_price
 
         surr = jump_diffusion_surrogate(
-            S_range=(90, 110), K_range=(95, 105), T_range=(0.5, 1.5),
-            n_points=15, eps=1e-5,
+            S_range=(90, 110),
+            K_range=(95, 105),
+            T_range=(0.5, 1.5),
+            n_points=15,
+            eps=1e-5,
         )
         # Evaluate at a grid point (should be very accurate)
         S, K, T = 100, 100, 1.0
@@ -45,16 +54,23 @@ class TestJumpDiffusionSurrogate:
 
     def test_put_type(self):
         surr = jump_diffusion_surrogate(
-            S_range=(90, 110), K_range=(95, 105), T_range=(0.5, 1.5),
-            n_points=10, eps=1e-3, option_type="put",
+            S_range=(90, 110),
+            K_range=(95, 105),
+            T_range=(0.5, 1.5),
+            n_points=10,
+            eps=1e-3,
+            option_type="put",
         )
         price = surr.evaluate([100, 100, 1.0])
         assert price > 0
 
     def test_batch_evaluate(self):
         surr = jump_diffusion_surrogate(
-            S_range=(90, 110), K_range=(95, 105), T_range=(0.5, 1.5),
-            n_points=10, eps=1e-3,
+            S_range=(90, 110),
+            K_range=(95, 105),
+            T_range=(0.5, 1.5),
+            n_points=10,
+            eps=1e-3,
         )
         spots = np.array([[95, 100, 0.75], [100, 100, 1.0], [105, 100, 1.25]])
         prices = surr.evaluate(spots)
@@ -63,8 +79,11 @@ class TestJumpDiffusionSurrogate:
 
     def test_greeks(self):
         surr = jump_diffusion_surrogate(
-            S_range=(85, 115), K_range=(95, 105), T_range=(0.5, 1.5),
-            n_points=12, eps=1e-4,
+            S_range=(85, 115),
+            K_range=(95, 105),
+            T_range=(0.5, 1.5),
+            n_points=12,
+            eps=1e-4,
         )
         g = surr.greeks([100, 100, 1.0])
         assert g["price"] > 0
@@ -78,8 +97,12 @@ class TestExoticSurrogate:
     def test_asian_builds(self):
         surr = exotic_surrogate(
             exotic_type="asian",
-            S_range=(90, 110), K_range=(95, 105), T_range=(0.5, 1.5),
-            n_points=6, eps=1e-3, n_paths=10_000,
+            S_range=(90, 110),
+            K_range=(95, 105),
+            T_range=(0.5, 1.5),
+            n_points=6,
+            eps=1e-3,
+            n_paths=10_000,
         )
         price = surr.evaluate([100, 100, 1.0])
         assert price > 0
@@ -87,8 +110,13 @@ class TestExoticSurrogate:
     def test_barrier_builds(self):
         surr = exotic_surrogate(
             exotic_type="barrier_up_out",
-            S_range=(90, 110), K_range=(95, 105), T_range=(0.5, 1.5),
-            n_points=6, eps=1e-3, n_paths=10_000, barrier=130.0,
+            S_range=(90, 110),
+            K_range=(95, 105),
+            T_range=(0.5, 1.5),
+            n_points=6,
+            eps=1e-3,
+            n_paths=10_000,
+            barrier=130.0,
         )
         price = surr.evaluate([100, 100, 1.0])
         assert price >= 0
@@ -96,8 +124,12 @@ class TestExoticSurrogate:
     def test_lookback_builds(self):
         surr = exotic_surrogate(
             exotic_type="lookback_fixed",
-            S_range=(90, 110), K_range=(95, 105), T_range=(0.5, 1.5),
-            n_points=6, eps=1e-3, n_paths=10_000,
+            S_range=(90, 110),
+            K_range=(95, 105),
+            T_range=(0.5, 1.5),
+            n_points=6,
+            eps=1e-3,
+            n_paths=10_000,
         )
         price = surr.evaluate([100, 100, 1.0])
         assert price > 0
@@ -112,16 +144,26 @@ class TestAmericanSurrogate:
 
     def test_builds_and_evaluates(self):
         surr = american_surrogate(
-            S_range=(90, 110), K_range=(95, 105), T_range=(0.5, 1.5),
-            n_points=6, eps=1e-3, n_paths=10_000, n_steps=50,
+            S_range=(90, 110),
+            K_range=(95, 105),
+            T_range=(0.5, 1.5),
+            n_points=6,
+            eps=1e-3,
+            n_paths=10_000,
+            n_steps=50,
         )
         price = surr.evaluate([100, 100, 1.0])
         assert price > 0
 
     def test_put_otm_low_value(self):
         surr = american_surrogate(
-            S_range=(90, 110), K_range=(95, 105), T_range=(0.5, 1.5),
-            n_points=6, eps=1e-3, n_paths=10_000, n_steps=50,
+            S_range=(90, 110),
+            K_range=(95, 105),
+            T_range=(0.5, 1.5),
+            n_points=6,
+            eps=1e-3,
+            n_paths=10_000,
+            n_steps=50,
         )
         # Deep ITM put should be more expensive
         p_itm = surr.evaluate([92, 105, 1.0])
@@ -134,16 +176,24 @@ class TestHestonSurrogate:
 
     def test_builds_and_evaluates(self):
         surr = heston_surrogate(
-            S_range=(95, 105), K_range=(95, 105), T_range=(0.5, 1.5),
-            n_points=5, eps=1e-3, n_mc_paths=5_000,
+            S_range=(95, 105),
+            K_range=(95, 105),
+            T_range=(0.5, 1.5),
+            n_points=5,
+            eps=1e-3,
+            n_mc_paths=5_000,
         )
         price = surr.evaluate([100, 100, 1.0])
         assert price > 0
 
     def test_higher_spot_higher_call(self):
         surr = heston_surrogate(
-            S_range=(90, 110), K_range=(95, 105), T_range=(0.5, 1.5),
-            n_points=5, eps=1e-3, n_mc_paths=5_000,
+            S_range=(90, 110),
+            K_range=(95, 105),
+            T_range=(0.5, 1.5),
+            n_points=5,
+            eps=1e-3,
+            n_mc_paths=5_000,
         )
         p_lo = surr.evaluate([92, 100, 1.0])
         p_hi = surr.evaluate([108, 100, 1.0])

@@ -3,20 +3,30 @@
 - Merton (1976) jump-diffusion: analytic + MC
 - Kou (2002) double-exponential jump-diffusion: MC
 """
+
 from __future__ import annotations
 
 import numpy as np
-from scipy.stats import norm
 from scipy.special import factorial
-
+from scipy.stats import norm
 
 # ---------------------------------------------------------------------------
 # Merton jump-diffusion (1976)
 # ---------------------------------------------------------------------------
 
-def merton_jump_price(S: float, K: float, T: float, r: float, sigma: float,
-                      lam: float, mu_j: float, sigma_j: float,
-                      option_type: str = "call", n_terms: int = 50) -> float:
+
+def merton_jump_price(
+    S: float,
+    K: float,
+    T: float,
+    r: float,
+    sigma: float,
+    lam: float,
+    mu_j: float,
+    sigma_j: float,
+    option_type: str = "call",
+    n_terms: int = 50,
+) -> float:
     """Merton (1976) jump-diffusion price via series expansion.
 
     The stock follows dS/S = (r - lambda*k)*dt + sigma*dW + J*dN
@@ -67,16 +77,26 @@ def merton_jump_price(S: float, K: float, T: float, r: float, sigma: float,
         else:
             bs_n = K * np.exp(-r_n * T) * norm.cdf(-d2) - S * norm.cdf(-d1)
 
-        weight = np.exp(-lam_prime * T) * (lam_prime * T)**n / factorial(n, exact=True)
+        weight = np.exp(-lam_prime * T) * (lam_prime * T) ** n / factorial(n, exact=True)
         price += weight * bs_n
 
     return float(price)
 
 
-def merton_jump_price_mc(S: float, K: float, T: float, r: float, sigma: float,
-                         lam: float, mu_j: float, sigma_j: float,
-                         option_type: str = "call", n_paths: int = 100_000,
-                         n_steps: int = 252, seed: int | None = None) -> float:
+def merton_jump_price_mc(
+    S: float,
+    K: float,
+    T: float,
+    r: float,
+    sigma: float,
+    lam: float,
+    mu_j: float,
+    sigma_j: float,
+    option_type: str = "call",
+    n_paths: int = 100_000,
+    n_steps: int = 252,
+    seed: int | None = None,
+) -> float:
     """Merton jump-diffusion price via Monte Carlo.
 
     Parameters
@@ -127,10 +147,22 @@ def merton_jump_price_mc(S: float, K: float, T: float, r: float, sigma: float,
 # Kou double-exponential jump-diffusion (2002)
 # ---------------------------------------------------------------------------
 
-def kou_jump_price_mc(S: float, K: float, T: float, r: float, sigma: float,
-                      lam: float, p: float, eta1: float, eta2: float,
-                      option_type: str = "call", n_paths: int = 100_000,
-                      n_steps: int = 252, seed: int | None = None) -> float:
+
+def kou_jump_price_mc(
+    S: float,
+    K: float,
+    T: float,
+    r: float,
+    sigma: float,
+    lam: float,
+    p: float,
+    eta1: float,
+    eta2: float,
+    option_type: str = "call",
+    n_paths: int = 100_000,
+    n_steps: int = 252,
+    seed: int | None = None,
+) -> float:
     """Kou (2002) double-exponential jump-diffusion via Monte Carlo.
 
     Jump sizes J follow a double-exponential distribution:

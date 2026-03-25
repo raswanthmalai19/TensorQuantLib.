@@ -1,4 +1,5 @@
 """Tests for interest rate derivatives (caps, floors, swaptions)."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -10,8 +11,8 @@ from tensorquantlib.finance.ir_derivatives import (
     cap_price,
     floor_price,
     swap_rate,
-    swaption_price,
     swaption_parity,
+    swaption_price,
 )
 
 
@@ -19,13 +20,11 @@ class TestCapletFloorlet:
     """Tests for Black76 caplet/floorlet pricing."""
 
     def test_caplet_positive(self):
-        price = black76_caplet(forward=0.05, strike=0.04, T=1.0,
-                               sigma=0.2, df=0.95)
+        price = black76_caplet(forward=0.05, strike=0.04, T=1.0, sigma=0.2, df=0.95)
         assert price > 0
 
     def test_floorlet_positive(self):
-        price = black76_floorlet(forward=0.03, strike=0.04, T=1.0,
-                                 sigma=0.2, df=0.95)
+        price = black76_floorlet(forward=0.03, strike=0.04, T=1.0, sigma=0.2, df=0.95)
         assert price > 0
 
     def test_put_call_parity(self):
@@ -61,14 +60,12 @@ class TestCapFloor:
 
     def test_cap_positive(self, cap_params):
         forwards, expiries, dfs = cap_params
-        price = cap_price(forwards, strike=0.04, expiries=expiries,
-                          sigma=0.2, dfs=dfs)
+        price = cap_price(forwards, strike=0.04, expiries=expiries, sigma=0.2, dfs=dfs)
         assert price > 0
 
     def test_floor_positive(self, cap_params):
         forwards, expiries, dfs = cap_params
-        price = floor_price(forwards, strike=0.06, expiries=expiries,
-                            sigma=0.2, dfs=dfs)
+        price = floor_price(forwards, strike=0.06, expiries=expiries, sigma=0.2, dfs=dfs)
         assert price > 0
 
     def test_cap_floor_parity(self, cap_params):
@@ -103,13 +100,13 @@ class TestSwaption:
     """Tests for Black76 swaption pricing."""
 
     def test_payer_positive(self):
-        price = swaption_price(swap_r=0.05, strike=0.04, T_option=1.0,
-                               sigma=0.2, annuity=4.0)
+        price = swaption_price(swap_r=0.05, strike=0.04, T_option=1.0, sigma=0.2, annuity=4.0)
         assert price > 0
 
     def test_receiver_positive(self):
-        price = swaption_price(swap_r=0.04, strike=0.05, T_option=1.0,
-                               sigma=0.2, annuity=4.0, payer=False)
+        price = swaption_price(
+            swap_r=0.04, strike=0.05, T_option=1.0, sigma=0.2, annuity=4.0, payer=False
+        )
         assert price > 0
 
     def test_swaption_parity(self):

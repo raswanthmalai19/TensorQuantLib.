@@ -1,23 +1,21 @@
 """Tests for second-order automatic differentiation — tensorquantlib.core.second_order."""
 
 import numpy as np
-import pytest
 
-from tensorquantlib.core.tensor import Tensor
 from tensorquantlib.core.second_order import (
-    hvp,
+    gamma_autograd,
     hessian,
     hessian_diag,
-    vhp,
+    hvp,
     mixed_partial,
-    gamma_autograd,
     vanna_autograd,
+    vhp,
     volga_autograd,
 )
+from tensorquantlib.core.tensor import Tensor
 from tensorquantlib.finance.black_scholes import (
     bs_gamma,
     bs_price_tensor,
-    bs_vega,
 )
 
 # Standard Black-Scholes parameters for all tests
@@ -35,7 +33,7 @@ _W_QUAD = np.array([[1.0, 1.5], [1.5, 2.0]])
 
 def _quadratic(x: Tensor) -> Tensor:
     """f(x) = x^T W x  where W = [[1,1.5],[1.5,2]].  Hessian = [[2,3],[3,4]]."""
-    Wx = x @ _W_QUAD   # Tensor @ ndarray → Tensor via _ensure_tensor
+    Wx = x @ _W_QUAD  # Tensor @ ndarray → Tensor via _ensure_tensor
     return (x * Wx).sum()
 
 
@@ -47,12 +45,13 @@ def _scalar_sq(x: Tensor) -> Tensor:
 # Smooth 2D function for symmetry test: f(x) = sum(x^3) + ||x||^2
 def _smooth_2d(x: Tensor) -> Tensor:
     """f(x) = sum(x^3) + ||x||^2.  Hessian is diagonal (6*x_i on diag)."""
-    return (x ** 3).sum() + (x * x).sum()
+    return (x**3).sum() + (x * x).sum()
 
 
 # ─────────────────────────────────────────────────────────────────────
 # hvp tests
 # ─────────────────────────────────────────────────────────────────────
+
 
 class TestHVP:
     def test_quadratic_exact(self):
@@ -94,6 +93,7 @@ class TestHVP:
 # hessian_diag tests
 # ─────────────────────────────────────────────────────────────────────
 
+
 class TestHessianDiag:
     def test_quadratic_diagonal(self):
         """Diagonal of Hessian [[2,3],[3,4]] is [2, 4]."""
@@ -119,6 +119,7 @@ class TestHessianDiag:
 # hessian (full matrix) tests
 # ─────────────────────────────────────────────────────────────────────
 
+
 class TestHessian:
     def test_quadratic_full_hessian(self):
         """Hessian of quadratic is constant [[2,3],[3,4]]."""
@@ -143,6 +144,7 @@ class TestHessian:
 # vhp tests
 # ─────────────────────────────────────────────────────────────────────
 
+
 class TestVHP:
     def test_vhp_equals_hvp_for_symmetric(self):
         """For smooth functions, vhp(v) == hvp(v)."""
@@ -155,9 +157,11 @@ class TestVHP:
 # mixed_partial tests
 # ─────────────────────────────────────────────────────────────────────
 
+
 class TestMixedPartial:
     def test_cross_term_of_xy(self):
         """f(x,y) = x*y  → d²f/dxdy = 1."""
+
         def _xy(t1: Tensor, t2: Tensor) -> Tensor:
             return t1 * t2
 
@@ -168,8 +172,9 @@ class TestMixedPartial:
 
     def test_cross_term_of_x2y(self):
         """f(x,y) = x^2 * y  → d²f/dxdy = 2x."""
+
         def _x2y(t1: Tensor, t2: Tensor) -> Tensor:
-            return t1 ** 2 * t2
+            return t1**2 * t2
 
         x_val = 3.0
         x1 = Tensor(np.array(x_val))
@@ -180,8 +185,9 @@ class TestMixedPartial:
 
     def test_no_cross_term(self):
         """f(x,y) = x^2 + y^2  → d²f/dxdy = 0."""
+
         def _sum_sq(t1: Tensor, t2: Tensor) -> Tensor:
-            return t1 ** 2 + t2 ** 2
+            return t1**2 + t2**2
 
         x1 = Tensor(np.array(1.5))
         x2 = Tensor(np.array(2.5))
@@ -192,6 +198,7 @@ class TestMixedPartial:
 # ─────────────────────────────────────────────────────────────────────
 # gamma_autograd tests
 # ─────────────────────────────────────────────────────────────────────
+
 
 class TestGammaAutograd:
     def test_gamma_matches_analytic_atm(self):
@@ -226,10 +233,12 @@ class TestGammaAutograd:
 # vanna_autograd tests
 # ─────────────────────────────────────────────────────────────────────
 
+
 class TestVannaAutograd:
     def _analytic_vanna(self, S, K, T, r, sigma, q=0.0):
         """Black-Scholes analytic Vanna: -exp(-qT) * d2 * N'(d1) / sigma."""
         from scipy.stats import norm
+
         d1 = (np.log(S / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
         d2 = d1 - sigma * np.sqrt(T)
         return -np.exp(-q * T) * norm.pdf(d1) * d2 / sigma
@@ -257,10 +266,12 @@ class TestVannaAutograd:
 # volga_autograd tests
 # ─────────────────────────────────────────────────────────────────────
 
+
 class TestVolgaAutograd:
     def _analytic_volga(self, S, K, T, r, sigma, q=0.0):
         """Black-Scholes analytic Volga: Vega * d1 * d2 / sigma."""
         from scipy.stats import norm
+
         d1 = (np.log(S / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
         d2 = d1 - sigma * np.sqrt(T)
         vega = S * np.exp(-q * T) * norm.pdf(d1) * np.sqrt(T)
@@ -279,6 +290,7 @@ class TestVolgaAutograd:
     def test_volga_equals_vega_derivative(self):
         """Volga = dVega/dsigma — verify via FD on vega."""
         h = 0.001
+
         def _vega(sig):
             t_s = Tensor(np.array(S), requires_grad=False)
             t_sig = Tensor(np.array(sig), requires_grad=True)

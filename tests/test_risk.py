@@ -1,18 +1,19 @@
 """Tests for risk metrics module."""
+
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
 from tensorquantlib.finance.risk import (
-    var_parametric,
-    var_historical,
-    cvar,
-    var_mc,
-    scenario_analysis,
-    greeks_portfolio,
     OptionPosition,
     PortfolioRisk,
+    cvar,
+    greeks_portfolio,
+    scenario_analysis,
+    var_historical,
+    var_mc,
+    var_parametric,
 )
 
 
@@ -87,8 +88,8 @@ class TestScenarioAnalysis:
         results = scenario_analysis(100.0, value, {"crash": 80.0, "rally": 120.0})
         assert "crash" in results and "rally" in results
         # At S=100: value = 10; at crash S=80: value = 0 → pnl = -10
-        assert results["crash"]["pnl"] < 0   # loses value in crash
-        assert results["rally"]["pnl"] > 0   # gains value in rally
+        assert results["crash"]["pnl"] < 0  # loses value in crash
+        assert results["rally"]["pnl"] > 0  # gains value in rally
 
 
 class TestGreeksPortfolio:

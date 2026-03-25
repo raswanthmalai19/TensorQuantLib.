@@ -93,12 +93,12 @@ def simulate_basket(
 
     # Simulate terminal prices under risk-neutral measure
     # S_i(T) = S_i(0) * exp((r - q_i - sigma_i^2/2)*T + sigma_i*sqrt(T)*Z_i)
-    drift = (r - q - 0.5 * sigma ** 2) * T         # shape (d,)
-    diffusion = sigma * np.sqrt(T) * Z_corr          # shape (n_paths, d)
-    S_T = S0 * np.exp(drift + diffusion)              # shape (n_paths, d)
+    drift = (r - q - 0.5 * sigma**2) * T  # shape (d,)
+    diffusion = sigma * np.sqrt(T) * Z_corr  # shape (n_paths, d)
+    S_T = S0 * np.exp(drift + diffusion)  # shape (n_paths, d)
 
     # Basket value at maturity
-    basket = S_T @ weights                             # shape (n_paths,)
+    basket = S_T @ weights  # shape (n_paths,)
 
     # Payoff
     if option_type == "call":
@@ -129,9 +129,17 @@ def _price_at_spots(
 ) -> float:
     """Price a single basket option for given spot values."""
     price, _ = simulate_basket(
-        S0=spots, K=K, T=T, r=r, sigma=sigma, corr=corr,
-        weights=weights, n_paths=n_mc_paths, q=q,
-        option_type=option_type, seed=seed,
+        S0=spots,
+        K=K,
+        T=T,
+        r=r,
+        sigma=sigma,
+        corr=corr,
+        weights=weights,
+        n_paths=n_mc_paths,
+        q=q,
+        option_type=option_type,
+        seed=seed,
     )
     return price
 
@@ -186,15 +194,24 @@ def build_pricing_grid(
 
     # Iterate over all grid points
     # Use np.ndindex for clean iteration over d-dimensional grid
-    n_points ** d
+    n_points**d
     for flat_idx, multi_idx in enumerate(np.ndindex(*grid_shape)):
         # Construct spot vector for this grid point
         spots = np.array([axes[i][multi_idx[i]] for i in range(d)])
         # Use a deterministic seed per grid point for reproducibility
         point_seed = seed + flat_idx
         grid[multi_idx] = _price_at_spots(
-            spots, K, T, r, sigma, corr, weights,
-            n_mc_paths, q, option_type, point_seed,
+            spots,
+            K,
+            T,
+            r,
+            sigma,
+            corr,
+            weights,
+            n_mc_paths,
+            q,
+            option_type,
+            point_seed,
         )
 
     return grid, axes
@@ -257,7 +274,9 @@ def build_pricing_grid_analytic(
     for i in range(d):
         for j in range(d):
             if i == j:
-                E_B2 += weights[i] * weights[j] * forwards[i] * forwards[j] * np.exp(sigma[i] ** 2 * T)
+                E_B2 += (
+                    weights[i] * weights[j] * forwards[i] * forwards[j] * np.exp(sigma[i] ** 2 * T)
+                )
             else:
                 E_B2 += weights[i] * weights[j] * forwards[i] * forwards[j]
 

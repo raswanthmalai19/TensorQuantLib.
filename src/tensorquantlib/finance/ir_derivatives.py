@@ -2,19 +2,26 @@
 
 Pricing under the Black (1976) model for European swaptions and caplets.
 """
+
 from __future__ import annotations
 
 import numpy as np
 from scipy.stats import norm
 
-
 # ---------------------------------------------------------------------------
 # Cap / Floor pricing (Black 76)
 # ---------------------------------------------------------------------------
 
-def black76_caplet(forward: float, strike: float, T: float, sigma: float,
-                   df: float, notional: float = 1.0,
-                   tau: float = 0.25) -> float:
+
+def black76_caplet(
+    forward: float,
+    strike: float,
+    T: float,
+    sigma: float,
+    df: float,
+    notional: float = 1.0,
+    tau: float = 0.25,
+) -> float:
     """Price a single caplet using the Black (1976) model.
 
     Parameters
@@ -46,9 +53,15 @@ def black76_caplet(forward: float, strike: float, T: float, sigma: float,
     return float(df * tau * notional * (forward * norm.cdf(d1) - strike * norm.cdf(d2)))
 
 
-def black76_floorlet(forward: float, strike: float, T: float, sigma: float,
-                     df: float, notional: float = 1.0,
-                     tau: float = 0.25) -> float:
+def black76_floorlet(
+    forward: float,
+    strike: float,
+    T: float,
+    sigma: float,
+    df: float,
+    notional: float = 1.0,
+    tau: float = 0.25,
+) -> float:
     """Price a single floorlet using Black (1976).
 
     Parameters
@@ -68,9 +81,15 @@ def black76_floorlet(forward: float, strike: float, T: float, sigma: float,
     return float(df * tau * notional * (strike * norm.cdf(-d2) - forward * norm.cdf(-d1)))
 
 
-def cap_price(forwards: np.ndarray, strike: float, expiries: np.ndarray,
-              sigma: float | np.ndarray, dfs: np.ndarray,
-              notional: float = 1.0, tau: float = 0.25) -> float:
+def cap_price(
+    forwards: np.ndarray,
+    strike: float,
+    expiries: np.ndarray,
+    sigma: float | np.ndarray,
+    dfs: np.ndarray,
+    notional: float = 1.0,
+    tau: float = 0.25,
+) -> float:
     """Price an interest rate cap (sum of caplets).
 
     Parameters
@@ -98,14 +117,19 @@ def cap_price(forwards: np.ndarray, strike: float, expiries: np.ndarray,
     sigmas = np.broadcast_to(np.asarray(sigma, dtype=float), forwards.shape)
     total = 0.0
     for i in range(len(forwards)):
-        total += black76_caplet(forwards[i], strike, expiries[i],
-                                sigmas[i], dfs[i], notional, tau)
+        total += black76_caplet(forwards[i], strike, expiries[i], sigmas[i], dfs[i], notional, tau)
     return total
 
 
-def floor_price(forwards: np.ndarray, strike: float, expiries: np.ndarray,
-                sigma: float | np.ndarray, dfs: np.ndarray,
-                notional: float = 1.0, tau: float = 0.25) -> float:
+def floor_price(
+    forwards: np.ndarray,
+    strike: float,
+    expiries: np.ndarray,
+    sigma: float | np.ndarray,
+    dfs: np.ndarray,
+    notional: float = 1.0,
+    tau: float = 0.25,
+) -> float:
     """Price an interest rate floor (sum of floorlets).
 
     Parameters same as :func:`cap_price`.
@@ -113,14 +137,16 @@ def floor_price(forwards: np.ndarray, strike: float, expiries: np.ndarray,
     sigmas = np.broadcast_to(np.asarray(sigma, dtype=float), forwards.shape)
     total = 0.0
     for i in range(len(forwards)):
-        total += black76_floorlet(forwards[i], strike, expiries[i],
-                                  sigmas[i], dfs[i], notional, tau)
+        total += black76_floorlet(
+            forwards[i], strike, expiries[i], sigmas[i], dfs[i], notional, tau
+        )
     return total
 
 
 # ---------------------------------------------------------------------------
 # Swaption pricing (Black 76)
 # ---------------------------------------------------------------------------
+
 
 def swap_rate(dfs: np.ndarray, tau: float = 0.5) -> float:
     """Par swap rate from discount factors.
@@ -145,10 +171,15 @@ def swap_rate(dfs: np.ndarray, tau: float = 0.5) -> float:
     return float((dfs[0] - dfs[-1]) / annuity)
 
 
-def swaption_price(swap_r: float, strike: float, T_option: float,
-                   sigma: float, annuity: float,
-                   notional: float = 1.0,
-                   payer: bool = True) -> float:
+def swaption_price(
+    swap_r: float,
+    strike: float,
+    T_option: float,
+    sigma: float,
+    annuity: float,
+    notional: float = 1.0,
+    payer: bool = True,
+) -> float:
     """Price a European swaption using Black (1976).
 
     Parameters
@@ -190,9 +221,14 @@ def swaption_price(swap_r: float, strike: float, T_option: float,
     return float(price)
 
 
-def swaption_parity(payer: float, receiver: float, swap_r: float,
-                    strike: float, annuity: float,
-                    notional: float = 1.0) -> float:
+def swaption_parity(
+    payer: float,
+    receiver: float,
+    swap_r: float,
+    strike: float,
+    annuity: float,
+    notional: float = 1.0,
+) -> float:
     """Check put-call parity for swaptions.
 
     Payer - Receiver = (S - K) * A * N

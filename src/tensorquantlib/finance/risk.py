@@ -24,16 +24,15 @@ References:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Optional, Union
+from dataclasses import dataclass
 
 import numpy as np
 from scipy.stats import norm
 
-
 # ------------------------------------------------------------------ #
 # Scalar VaR / CVaR functions
 # ------------------------------------------------------------------ #
+
 
 def var_parametric(
     mu: float,
@@ -125,7 +124,7 @@ def var_mc(
     q: float = 0.0,
     alpha: float = 0.95,
     n_paths: int = 100_000,
-    seed: Optional[int] = None,
+    seed: int | None = None,
 ) -> tuple[float, float]:
     """Monte Carlo VaR and CVaR for a single equity position.
 
@@ -152,7 +151,7 @@ def var_mc(
     """
     rng = np.random.default_rng(seed)
     z = rng.standard_normal(n_paths)
-    S_T = S * np.exp((r - q - 0.5 * sigma ** 2) * horizon + sigma * np.sqrt(horizon) * z)
+    S_T = S * np.exp((r - q - 0.5 * sigma**2) * horizon + sigma * np.sqrt(horizon) * z)
     returns = (S_T - S) / S  # fractional P&L
     v = var_historical(returns, alpha)
     es = cvar(returns, alpha)
@@ -162,6 +161,7 @@ def var_mc(
 # ------------------------------------------------------------------ #
 # Scenario analysis
 # ------------------------------------------------------------------ #
+
 
 def scenario_analysis(
     S: float,
@@ -204,6 +204,7 @@ def scenario_analysis(
 # Aggregate portfolio Greeks
 # ------------------------------------------------------------------ #
 
+
 @dataclass
 class OptionPosition:
     """A single option position in a portfolio.
@@ -216,6 +217,7 @@ class OptionPosition:
         quantity: Number of contracts (negative = short).
         multiplier: Contract multiplier (e.g. 100 for equity options).
     """
+
     option_type: str
     K: float
     T: float
@@ -248,20 +250,39 @@ def greeks_portfolio(
         True
     """
     from tensorquantlib.finance.black_scholes import (
-        bs_price_numpy, bs_delta, bs_gamma, bs_vega, bs_theta, bs_rho,
+        bs_delta,
+        bs_gamma,
+        bs_price_numpy,
+        bs_rho,
+        bs_theta,
+        bs_vega,
     )
 
-    total: dict[str, float] = {"delta": 0.0, "gamma": 0.0, "vega": 0.0,
-                                "theta": 0.0, "rho": 0.0, "value": 0.0}
+    total: dict[str, float] = {
+        "delta": 0.0,
+        "gamma": 0.0,
+        "vega": 0.0,
+        "theta": 0.0,
+        "rho": 0.0,
+        "value": 0.0,
+    }
 
     for pos in positions:
         w = pos.quantity * pos.multiplier
-        total["value"] += w * float(bs_price_numpy(S, pos.K, pos.T, r, pos.sigma, q=q, option_type=pos.option_type))
-        total["delta"] += w * float(bs_delta(S, pos.K, pos.T, r, pos.sigma, q=q, option_type=pos.option_type))
+        total["value"] += w * float(
+            bs_price_numpy(S, pos.K, pos.T, r, pos.sigma, q=q, option_type=pos.option_type)
+        )
+        total["delta"] += w * float(
+            bs_delta(S, pos.K, pos.T, r, pos.sigma, q=q, option_type=pos.option_type)
+        )
         total["gamma"] += w * float(bs_gamma(S, pos.K, pos.T, r, pos.sigma, q=q))
         total["vega"] += w * float(bs_vega(S, pos.K, pos.T, r, pos.sigma, q=q))
-        total["theta"] += w * float(bs_theta(S, pos.K, pos.T, r, pos.sigma, q=q, option_type=pos.option_type))
-        total["rho"] += w * float(bs_rho(S, pos.K, pos.T, r, pos.sigma, q=q, option_type=pos.option_type))
+        total["theta"] += w * float(
+            bs_theta(S, pos.K, pos.T, r, pos.sigma, q=q, option_type=pos.option_type)
+        )
+        total["rho"] += w * float(
+            bs_rho(S, pos.K, pos.T, r, pos.sigma, q=q, option_type=pos.option_type)
+        )
 
     return total
 
@@ -269,6 +290,7 @@ def greeks_portfolio(
 # ------------------------------------------------------------------ #
 # Portfolio risk container
 # ------------------------------------------------------------------ #
+
 
 @dataclass
 class PortfolioRisk:
@@ -306,7 +328,11 @@ class PortfolioRisk:
     def sharpe(self, annualise: bool = True) -> float:
         """Sharpe ratio: (mean - rf) / std."""
         excess = self.returns - self.risk_free_daily
-        s = float(np.mean(excess)) / float(np.std(self.returns)) if np.std(self.returns) > 0 else 0.0
+        s = (
+            float(np.mean(excess)) / float(np.std(self.returns))
+            if np.std(self.returns) > 0
+            else 0.0
+        )
         return s * np.sqrt(252.0) if annualise else s
 
     def max_drawdown(self) -> float:
@@ -333,8 +359,8 @@ class PortfolioRisk:
             True
         """
         return {
-            f"var_{int(self.alpha*100)}": self.var(),
-            f"cvar_{int(self.alpha*100)}": self.cvar(),
+            f"var_{int(self.alpha * 100)}": self.var(),
+            f"cvar_{int(self.alpha * 100)}": self.cvar(),
             "volatility_ann": self.volatility(),
             "sharpe": self.sharpe(),
             "max_drawdown": self.max_drawdown(),

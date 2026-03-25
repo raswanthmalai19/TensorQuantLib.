@@ -6,6 +6,7 @@ from tensorquantlib.tt.surrogate import TTSurrogate
 
 # ── from_grid ────────────────────────────────────────────────────────────────
 
+
 class TestFromGrid:
     """Tests for TTSurrogate.from_grid constructor."""
 
@@ -34,6 +35,7 @@ class TestFromGrid:
 
 # ── from_basket_analytic ─────────────────────────────────────────────────────
 
+
 class TestFromBasketAnalytic:
     """Tests for the analytic basket surrogate."""
 
@@ -41,9 +43,13 @@ class TestFromBasketAnalytic:
         """Build a 2-asset analytic surrogate."""
         surr = TTSurrogate.from_basket_analytic(
             S0_ranges=[(80, 120), (80, 120)],
-            K=100, T=1.0, r=0.05,
-            sigma=[0.2, 0.2], weights=[0.5, 0.5],
-            n_points=15, eps=1e-4,
+            K=100,
+            T=1.0,
+            r=0.05,
+            sigma=[0.2, 0.2],
+            weights=[0.5, 0.5],
+            n_points=15,
+            eps=1e-4,
         )
         assert surr.n_assets == 2
         assert surr.build_time > 0
@@ -52,9 +58,13 @@ class TestFromBasketAnalytic:
         """Build a 3-asset analytic surrogate."""
         surr = TTSurrogate.from_basket_analytic(
             S0_ranges=[(80, 120)] * 3,
-            K=100, T=1.0, r=0.05,
-            sigma=[0.2] * 3, weights=[1 / 3] * 3,
-            n_points=10, eps=1e-3,
+            K=100,
+            T=1.0,
+            r=0.05,
+            sigma=[0.2] * 3,
+            weights=[1 / 3] * 3,
+            n_points=10,
+            eps=1e-3,
         )
         assert surr.n_assets == 3
 
@@ -62,9 +72,13 @@ class TestFromBasketAnalytic:
         """Price at ATM spot should be positive."""
         surr = TTSurrogate.from_basket_analytic(
             S0_ranges=[(80, 120), (80, 120)],
-            K=100, T=1.0, r=0.05,
-            sigma=[0.2, 0.2], weights=[0.5, 0.5],
-            n_points=20, eps=1e-4,
+            K=100,
+            T=1.0,
+            r=0.05,
+            sigma=[0.2, 0.2],
+            weights=[0.5, 0.5],
+            n_points=20,
+            eps=1e-4,
         )
         price = surr.evaluate([100.0, 100.0])
         assert price > 0, f"ATM price should be positive, got {price}"
@@ -73,9 +87,13 @@ class TestFromBasketAnalytic:
         """Deep ITM basket should have high price."""
         surr = TTSurrogate.from_basket_analytic(
             S0_ranges=[(80, 120), (80, 120)],
-            K=100, T=1.0, r=0.05,
-            sigma=[0.2, 0.2], weights=[0.5, 0.5],
-            n_points=20, eps=1e-4,
+            K=100,
+            T=1.0,
+            r=0.05,
+            sigma=[0.2, 0.2],
+            weights=[0.5, 0.5],
+            n_points=20,
+            eps=1e-4,
         )
         price_itm = surr.evaluate([118.0, 118.0])
         price_otm = surr.evaluate([82.0, 82.0])
@@ -86,15 +104,21 @@ class TestFromBasketAnalytic:
         """Batch evaluation matches single-point evaluation."""
         surr = TTSurrogate.from_basket_analytic(
             S0_ranges=[(80, 120), (80, 120)],
-            K=100, T=1.0, r=0.05,
-            sigma=[0.2, 0.2], weights=[0.5, 0.5],
-            n_points=15, eps=1e-4,
+            K=100,
+            T=1.0,
+            r=0.05,
+            sigma=[0.2, 0.2],
+            weights=[0.5, 0.5],
+            n_points=15,
+            eps=1e-4,
         )
-        spots = np.array([
-            [90.0, 95.0],
-            [100.0, 100.0],
-            [110.0, 115.0],
-        ])
+        spots = np.array(
+            [
+                [90.0, 95.0],
+                [100.0, 100.0],
+                [110.0, 115.0],
+            ]
+        )
         batch_prices = surr.evaluate(spots)
         single_prices = np.array([surr.evaluate(s) for s in spots])
 
@@ -103,6 +127,7 @@ class TestFromBasketAnalytic:
 
 # ── greeks ───────────────────────────────────────────────────────────────────
 
+
 class TestGreeks:
     """Tests for Greek computation through the surrogate."""
 
@@ -110,9 +135,13 @@ class TestGreeks:
         """Delta of a call basket should be positive."""
         surr = TTSurrogate.from_basket_analytic(
             S0_ranges=[(80, 120), (80, 120)],
-            K=100, T=1.0, r=0.05,
-            sigma=[0.2, 0.2], weights=[0.5, 0.5],
-            n_points=20, eps=1e-4,
+            K=100,
+            T=1.0,
+            r=0.05,
+            sigma=[0.2, 0.2],
+            weights=[0.5, 0.5],
+            n_points=20,
+            eps=1e-4,
         )
         g = surr.greeks([100.0, 100.0])
 
@@ -124,22 +153,32 @@ class TestGreeks:
         """Gamma of a call should be positive (convexity)."""
         surr = TTSurrogate.from_basket_analytic(
             S0_ranges=[(80, 120), (80, 120)],
-            K=100, T=1.0, r=0.05,
-            sigma=[0.2, 0.2], weights=[0.5, 0.5],
-            n_points=20, eps=1e-4,
+            K=100,
+            T=1.0,
+            r=0.05,
+            sigma=[0.2, 0.2],
+            weights=[0.5, 0.5],
+            n_points=20,
+            eps=1e-4,
         )
         g = surr.greeks([100.0, 100.0])
 
         for k in range(2):
-            assert g["gamma"][k] >= -1e-8, f"Gamma[{k}] should be non-negative (got {g['gamma'][k]})"
+            assert g["gamma"][k] >= -1e-8, (
+                f"Gamma[{k}] should be non-negative (got {g['gamma'][k]})"
+            )
 
     def test_delta_increases_with_spot(self):
         """Delta should increase as we go deeper ITM."""
         surr = TTSurrogate.from_basket_analytic(
             S0_ranges=[(70, 130), (70, 130)],
-            K=100, T=1.0, r=0.05,
-            sigma=[0.2, 0.2], weights=[0.5, 0.5],
-            n_points=25, eps=1e-4,
+            K=100,
+            T=1.0,
+            r=0.05,
+            sigma=[0.2, 0.2],
+            weights=[0.5, 0.5],
+            n_points=25,
+            eps=1e-4,
         )
         g_itm = surr.greeks([115.0, 115.0])
         g_otm = surr.greeks([85.0, 85.0])
@@ -150,6 +189,7 @@ class TestGreeks:
 
 # ── summary / diagnostics ───────────────────────────────────────────────────
 
+
 class TestSummary:
     """Test diagnostic output."""
 
@@ -157,17 +197,28 @@ class TestSummary:
         """Summary dict contains expected keys."""
         surr = TTSurrogate.from_basket_analytic(
             S0_ranges=[(80, 120), (80, 120)],
-            K=100, T=1.0, r=0.05,
-            sigma=[0.2, 0.2], weights=[0.5, 0.5],
-            n_points=10, eps=1e-3,
+            K=100,
+            T=1.0,
+            r=0.05,
+            sigma=[0.2, 0.2],
+            weights=[0.5, 0.5],
+            n_points=10,
+            eps=1e-3,
         )
         s = surr.summary()
 
         required_keys = [
-            "n_assets", "grid_shape", "tt_ranks", "max_rank",
-            "tt_memory_bytes", "tt_memory_KB", "eps",
-            "build_time_s", "compress_time_s",
-            "full_memory_bytes", "compression_ratio",
+            "n_assets",
+            "grid_shape",
+            "tt_ranks",
+            "max_rank",
+            "tt_memory_bytes",
+            "tt_memory_KB",
+            "eps",
+            "build_time_s",
+            "compress_time_s",
+            "full_memory_bytes",
+            "compression_ratio",
         ]
         for key in required_keys:
             assert key in s, f"Missing key: {key}"
@@ -176,9 +227,13 @@ class TestSummary:
         """Smooth pricing grid should compress well."""
         surr = TTSurrogate.from_basket_analytic(
             S0_ranges=[(80, 120)] * 3,
-            K=100, T=1.0, r=0.05,
-            sigma=[0.2] * 3, weights=[1 / 3] * 3,
-            n_points=20, eps=1e-3,
+            K=100,
+            T=1.0,
+            r=0.05,
+            sigma=[0.2] * 3,
+            weights=[1 / 3] * 3,
+            n_points=20,
+            eps=1e-3,
         )
         s = surr.summary()
         assert s["compression_ratio"] > 1.0
@@ -187,9 +242,13 @@ class TestSummary:
         """print_summary runs without error."""
         surr = TTSurrogate.from_basket_analytic(
             S0_ranges=[(80, 120), (80, 120)],
-            K=100, T=1.0, r=0.05,
-            sigma=[0.2, 0.2], weights=[0.5, 0.5],
-            n_points=10, eps=1e-3,
+            K=100,
+            T=1.0,
+            r=0.05,
+            sigma=[0.2, 0.2],
+            weights=[0.5, 0.5],
+            n_points=10,
+            eps=1e-3,
         )
         surr.print_summary()
         captured = capsys.readouterr()
@@ -199,6 +258,7 @@ class TestSummary:
 
 # ── edge cases ───────────────────────────────────────────────────────────────
 
+
 class TestEdgeCases:
     """Edge cases for surrogate evaluation."""
 
@@ -206,9 +266,13 @@ class TestEdgeCases:
         """Evaluation at grid boundary doesn't crash."""
         surr = TTSurrogate.from_basket_analytic(
             S0_ranges=[(80, 120), (80, 120)],
-            K=100, T=1.0, r=0.05,
-            sigma=[0.2, 0.2], weights=[0.5, 0.5],
-            n_points=10, eps=1e-3,
+            K=100,
+            T=1.0,
+            r=0.05,
+            sigma=[0.2, 0.2],
+            weights=[0.5, 0.5],
+            n_points=10,
+            eps=1e-3,
         )
         # Exactly at edges
         p1 = surr.evaluate([80.0, 80.0])
@@ -219,9 +283,13 @@ class TestEdgeCases:
         """Spots outside the grid are clamped (no crash)."""
         surr = TTSurrogate.from_basket_analytic(
             S0_ranges=[(80, 120), (80, 120)],
-            K=100, T=1.0, r=0.05,
-            sigma=[0.2, 0.2], weights=[0.5, 0.5],
-            n_points=10, eps=1e-3,
+            K=100,
+            T=1.0,
+            r=0.05,
+            sigma=[0.2, 0.2],
+            weights=[0.5, 0.5],
+            n_points=10,
+            eps=1e-3,
         )
         # Outside both ends
         p = surr.evaluate([50.0, 150.0])

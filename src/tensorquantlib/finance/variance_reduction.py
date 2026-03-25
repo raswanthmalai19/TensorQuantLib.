@@ -22,15 +22,15 @@ References:
 
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import Union
 
 import numpy as np
 from scipy.stats import norm, qmc
 
-
 # ------------------------------------------------------------------ #
 # Antithetic variates — European Black-Scholes
 # ------------------------------------------------------------------ #
+
 
 def bs_price_antithetic(
     S: float,
@@ -42,7 +42,7 @@ def bs_price_antithetic(
     option_type: str = "call",
     *,
     n_paths: int = 100_000,
-    seed: Optional[int] = None,
+    seed: int | None = None,
     return_stderr: bool = False,
 ) -> Union[float, tuple[float, float]]:
     """European option price via MC with antithetic variates.
@@ -69,7 +69,7 @@ def bs_price_antithetic(
     z = rng.standard_normal(half)
     z_full = np.concatenate([z, -z])
 
-    S_T = S * np.exp((r - q - 0.5 * sigma ** 2) * T + sigma * np.sqrt(T) * z_full)
+    S_T = S * np.exp((r - q - 0.5 * sigma**2) * T + sigma * np.sqrt(T) * z_full)
     if option_type == "call":
         payoffs = np.maximum(S_T - K, 0.0)
     else:
@@ -86,6 +86,7 @@ def bs_price_antithetic(
 # Control variates — Asian option (geometric as control)
 # ------------------------------------------------------------------ #
 
+
 def asian_price_cv(
     S: float,
     K: float,
@@ -97,7 +98,7 @@ def asian_price_cv(
     *,
     n_paths: int = 100_000,
     n_steps: int = 252,
-    seed: Optional[int] = None,
+    seed: int | None = None,
     return_stderr: bool = False,
 ) -> Union[float, tuple[float, float]]:
     """Asian arithmetic-average option with geometric control variate.
@@ -126,7 +127,7 @@ def asian_price_cv(
     rng = np.random.default_rng(seed)
     dt = T / n_steps
     z = rng.standard_normal((n_steps, n_paths))
-    log_increments = (r - q - 0.5 * sigma ** 2) * dt + sigma * np.sqrt(dt) * z
+    log_increments = (r - q - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * z
     S_paths = S * np.exp(np.vstack([np.zeros(n_paths), np.cumsum(log_increments, axis=0)]))
     obs = S_paths[1:]  # exclude S_0
 
@@ -161,6 +162,7 @@ def asian_price_cv(
 # Quasi-Monte Carlo — Sobol sequence
 # ------------------------------------------------------------------ #
 
+
 def bs_price_qmc(
     S: float,
     K: float,
@@ -172,7 +174,7 @@ def bs_price_qmc(
     *,
     n_paths: int = 65_536,  # power of 2 recommended for Sobol
     scramble: bool = True,
-    seed: Optional[int] = None,
+    seed: int | None = None,
     return_stderr: bool = False,
 ) -> Union[float, tuple[float, float]]:
     """European option price via Quasi-Monte Carlo (1-D Sobol sequence).
@@ -201,7 +203,7 @@ def bs_price_qmc(
     u = sampler.random(n_paths).flatten()
     z = norm.ppf(np.clip(u, 1e-10, 1 - 1e-10))
 
-    S_T = S * np.exp((r - q - 0.5 * sigma ** 2) * T + sigma * np.sqrt(T) * z)
+    S_T = S * np.exp((r - q - 0.5 * sigma**2) * T + sigma * np.sqrt(T) * z)
     if option_type == "call":
         payoffs = np.maximum(S_T - K, 0.0)
     else:
@@ -218,6 +220,7 @@ def bs_price_qmc(
 # Importance sampling — OTM options
 # ------------------------------------------------------------------ #
 
+
 def bs_price_importance(
     S: float,
     K: float,
@@ -228,7 +231,7 @@ def bs_price_importance(
     option_type: str = "call",
     *,
     n_paths: int = 100_000,
-    seed: Optional[int] = None,
+    seed: int | None = None,
     return_stderr: bool = False,
 ) -> Union[float, tuple[float, float]]:
     """European option price via importance sampling.
@@ -256,7 +259,7 @@ def bs_price_importance(
     rng = np.random.default_rng(seed)
 
     sqrt_T = np.sqrt(T)
-    drift = (r - q - 0.5 * sigma ** 2) * T
+    drift = (r - q - 0.5 * sigma**2) * T
 
     # Optimal IS shift: move the Brownian motion so that S_T = K on average.
     # Under the shifted measure Q̃, we draw  W̃ ~ N(mu_star, 1)  ↔  draw z~N(0,1),
@@ -267,12 +270,12 @@ def bs_price_importance(
     else:
         mu_star = -(np.log(K / S) - drift) / (sigma * sqrt_T)
 
-    z = rng.standard_normal(n_paths)           # z ~ N(0,1) under Q̃
-    W_tilde = z + mu_star                       # shifted Brownian increment
+    z = rng.standard_normal(n_paths)  # z ~ N(0,1) under Q̃
+    W_tilde = z + mu_star  # shifted Brownian increment
     S_T = S * np.exp(drift + sigma * sqrt_T * W_tilde)
 
     # Likelihood ratio  dP/dQ̃  (original measure / importance measure)
-    lr = np.exp(-mu_star * z - 0.5 * mu_star ** 2)
+    lr = np.exp(-mu_star * z - 0.5 * mu_star**2)
 
     if option_type == "call":
         payoffs = np.maximum(S_T - K, 0.0)
@@ -291,6 +294,7 @@ def bs_price_importance(
 # Stratified sampling
 # ------------------------------------------------------------------ #
 
+
 def bs_price_stratified(
     S: float,
     K: float,
@@ -302,7 +306,7 @@ def bs_price_stratified(
     *,
     n_paths: int = 100_000,
     n_strata: int = 100,
-    seed: Optional[int] = None,
+    seed: int | None = None,
     return_stderr: bool = False,
 ) -> Union[float, tuple[float, float]]:
     """European option price via stratified sampling over the unit interval.
@@ -332,13 +336,15 @@ def bs_price_stratified(
 
     # Stratified uniform samples
     strata_bounds = np.linspace(0.0, 1.0, n_strata + 1)
-    u = np.concatenate([
-        rng.uniform(lo, hi, paths_per_stratum)
-        for lo, hi in zip(strata_bounds[:-1], strata_bounds[1:])
-    ])
+    u = np.concatenate(
+        [
+            rng.uniform(lo, hi, paths_per_stratum)
+            for lo, hi in zip(strata_bounds[:-1], strata_bounds[1:])
+        ]
+    )
     z = norm.ppf(np.clip(u, 1e-10, 1 - 1e-10))
 
-    S_T = S * np.exp((r - q - 0.5 * sigma ** 2) * T + sigma * np.sqrt(T) * z)
+    S_T = S * np.exp((r - q - 0.5 * sigma**2) * T + sigma * np.sqrt(T) * z)
     if option_type == "call":
         payoffs = np.maximum(S_T - K, 0.0)
     else:
@@ -354,6 +360,7 @@ def bs_price_stratified(
 # ------------------------------------------------------------------ #
 # Variance reduction comparison utility
 # ------------------------------------------------------------------ #
+
 
 def compare_variance_reduction(
     S: float,
@@ -384,12 +391,11 @@ def compare_variance_reduction(
         >>> 'crude_mc' in results and 'antithetic' in results
         True
     """
-    from tensorquantlib.finance.basket import simulate_basket  # for crude MC
 
     # Crude MC reference
     rng = np.random.default_rng(seed)
     z = rng.standard_normal(n_paths)
-    S_T = S * np.exp((r - q - 0.5 * sigma ** 2) * T + sigma * np.sqrt(T) * z)
+    S_T = S * np.exp((r - q - 0.5 * sigma**2) * T + sigma * np.sqrt(T) * z)
     if option_type == "call":
         pf = np.maximum(S_T - K, 0.0)
     else:
@@ -409,12 +415,29 @@ def compare_variance_reduction(
     ]:
         try:
             price, stderr = fn(  # type: ignore[call-arg]
-                S, K, T, r, sigma, q=q, option_type=option_type,
-                n_paths=n_paths, seed=seed, return_stderr=True,
+                S,
+                K,
+                T,
+                r,
+                sigma,
+                q=q,
+                option_type=option_type,
+                n_paths=n_paths,
+                seed=seed,
+                return_stderr=True,
             )
             vr_ratio = crude_stderr / stderr if stderr > 1e-12 else float("inf")
-            methods[name] = {"price": float(price), "stderr": float(stderr), "vr_ratio": float(vr_ratio)}
+            methods[name] = {
+                "price": float(price),
+                "stderr": float(stderr),
+                "vr_ratio": float(vr_ratio),
+            }
         except Exception as e:
-            methods[name] = {"price": float("nan"), "stderr": float("nan"), "vr_ratio": float("nan"), "error": str(e)}  # type: ignore[assignment]
+            methods[name] = {
+                "price": float("nan"),
+                "stderr": float("nan"),
+                "vr_ratio": float("nan"),
+                "error": str(e),
+            }  # type: ignore[assignment]
 
     return methods

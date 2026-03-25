@@ -1,4 +1,5 @@
 """Performance metrics for backtesting."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,11 +7,10 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 if TYPE_CHECKING:
-    from tensorquantlib.backtest.strategy import Trade
+    pass
 
 
-def sharpe_ratio(returns: np.ndarray, rf: float = 0.0,
-                 periods_per_year: int = 252) -> float:
+def sharpe_ratio(returns: np.ndarray, rf: float = 0.0, periods_per_year: int = 252) -> float:
     """Annualised Sharpe ratio.
 
     Parameters
@@ -54,8 +54,7 @@ def max_drawdown(equity: np.ndarray) -> float:
     return float(np.max(dd))
 
 
-def sortino_ratio(returns: np.ndarray, rf: float = 0.0,
-                  periods_per_year: int = 252) -> float:
+def sortino_ratio(returns: np.ndarray, rf: float = 0.0, periods_per_year: int = 252) -> float:
     """Annualised Sortino ratio (downside deviation only).
 
     Parameters
@@ -126,6 +125,7 @@ def profit_factor(trades: np.ndarray) -> float:
 # ------------------------------------------------------------------ #
 # Additional metrics
 # ------------------------------------------------------------------ #
+
 
 def annualized_return(equity: np.ndarray, periods_per_year: int = 252) -> float:
     """Compound annualized growth rate (CAGR) from an equity curve.
@@ -272,10 +272,10 @@ def hedge_pnl_attribution(
 
     n = len(equity) - 1
     total_pnl = np.diff(equity)
-    dS = np.diff(prices_arr[:n + 1])
+    dS = np.diff(prices_arr[: n + 1])
 
     delta_pnl = delta_arr[:n] * dS
-    gamma_pnl = 0.5 * gamma_arr[:n] * dS ** 2
+    gamma_pnl = 0.5 * gamma_arr[:n] * dS**2
     residual_pnl = total_pnl - delta_pnl - gamma_pnl
 
     return {

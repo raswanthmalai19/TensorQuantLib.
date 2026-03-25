@@ -29,15 +29,15 @@ References:
 
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import Union
 
 import numpy as np
 from scipy.stats import norm
 
-
 # ------------------------------------------------------------------ #
 # Helper
 # ------------------------------------------------------------------ #
+
 
 def _gbm_paths(
     S: float,
@@ -52,17 +52,20 @@ def _gbm_paths(
     """Simulate GBM paths. Returns shape (n_steps+1, n_paths)."""
     dt = T / n_steps
     z = rng.standard_normal((n_steps, n_paths))
-    log_increments = (r - q - 0.5 * sigma ** 2) * dt + sigma * np.sqrt(dt) * z
-    log_S = np.vstack([
-        np.full(n_paths, np.log(S)),
-        np.log(S) + np.cumsum(log_increments, axis=0),
-    ])
+    log_increments = (r - q - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * z
+    log_S = np.vstack(
+        [
+            np.full(n_paths, np.log(S)),
+            np.log(S) + np.cumsum(log_increments, axis=0),
+        ]
+    )
     return np.exp(log_S)
 
 
 # ================================================================== #
 # ASIAN OPTIONS
 # ================================================================== #
+
 
 def asian_price_mc(
     S: float,
@@ -76,7 +79,7 @@ def asian_price_mc(
     *,
     n_paths: int = 100_000,
     n_steps: int = 252,
-    seed: Optional[int] = None,
+    seed: int | None = None,
     return_stderr: bool = False,
 ) -> Union[float, tuple[float, float]]:
     """Price an Asian average-rate option by Monte Carlo.
@@ -159,9 +162,9 @@ def asian_geometric_price(
     """
     # Adjusted parameters for geometric average
     sigma_geo = sigma / np.sqrt(3.0)
-    b = 0.5 * (r - q - sigma ** 2 / 6.0)
+    b = 0.5 * (r - q - sigma**2 / 6.0)
 
-    d1 = (np.log(S / K) + (b + 0.5 * sigma_geo ** 2) * T) / (sigma_geo * np.sqrt(T))
+    d1 = (np.log(S / K) + (b + 0.5 * sigma_geo**2) * T) / (sigma_geo * np.sqrt(T))
     d2 = d1 - sigma_geo * np.sqrt(T)
 
     if option_type == "call":
@@ -175,6 +178,7 @@ def asian_geometric_price(
 # ================================================================== #
 # DIGITAL (BINARY) OPTIONS
 # ================================================================== #
+
 
 def digital_price(
     S: float,
@@ -208,7 +212,7 @@ def digital_price(
         >>> 0.0 < p < 1.0
         True
     """
-    d1 = (np.log(S / K) + (r - q + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+    d1 = (np.log(S / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
     d2 = d1 - sigma * np.sqrt(T)
 
     if payoff_type == "cash":
@@ -249,7 +253,7 @@ def digital_greeks(
         >>> 'delta' in g and 'gamma' in g
         True
     """
-    d1 = (np.log(S / K) + (r - q + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+    d1 = (np.log(S / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
     d2 = d1 - sigma * np.sqrt(T)
     phi_d2 = float(norm.pdf(d2))
     phi_d1 = float(norm.pdf(d1))
@@ -258,23 +262,38 @@ def digital_greeks(
         sign = 1.0 if option_type == "call" else -1.0
         factor = payoff_amount * np.exp(-r * T)
         delta = sign * factor * phi_d2 / (S * sigma * np.sqrt(T))
-        gamma = -sign * factor * phi_d2 * d1 / (S ** 2 * sigma ** 2 * T)
+        gamma = -sign * factor * phi_d2 * d1 / (S**2 * sigma**2 * T)
         vega = -sign * factor * phi_d2 * d1 / sigma
-        theta = (sign * factor * r * float(norm.cdf(sign * d2)) +
-                 sign * factor * phi_d2 * (d1 / (2 * T) - r / (sigma * np.sqrt(T))))
-        rho = -T * float(digital_price(S, K, T, r, sigma, q, option_type, payoff_type, payoff_amount))
+        theta = sign * factor * r * float(norm.cdf(sign * d2)) + sign * factor * phi_d2 * (
+            d1 / (2 * T) - r / (sigma * np.sqrt(T))
+        )
+        rho = -T * float(
+            digital_price(S, K, T, r, sigma, q, option_type, payoff_type, payoff_amount)
+        )
     else:
         # Asset-or-nothing greeks
         sign = 1.0 if option_type == "call" else -1.0
         factor = S * np.exp(-q * T)
         ncdf_d1 = float(norm.cdf(sign * d1))
         delta = np.exp(-q * T) * (ncdf_d1 + sign * phi_d1 / (sigma * np.sqrt(T)))
-        gamma = sign * np.exp(-q * T) * phi_d1 * (1.0 / (S * sigma * np.sqrt(T))) * (1.0 - d2 / (sigma * np.sqrt(T)))
+        gamma = (
+            sign
+            * np.exp(-q * T)
+            * phi_d1
+            * (1.0 / (S * sigma * np.sqrt(T)))
+            * (1.0 - d2 / (sigma * np.sqrt(T)))
+        )
         vega = sign * factor * phi_d1 * (np.sqrt(T) - d1 / sigma)
         theta = float("nan")  # complex expression omitted here; use FD
         rho = float("nan")
 
-    return {"delta": float(delta), "gamma": float(gamma), "vega": float(vega), "theta": float(theta), "rho": float(rho)}
+    return {
+        "delta": float(delta),
+        "gamma": float(gamma),
+        "vega": float(vega),
+        "theta": float(theta),
+        "rho": float(rho),
+    }
 
 
 def digital_price_mc(
@@ -289,7 +308,7 @@ def digital_price_mc(
     payoff_amount: float = 1.0,
     *,
     n_paths: int = 100_000,
-    seed: Optional[int] = None,
+    seed: int | None = None,
     return_stderr: bool = False,
 ) -> Union[float, tuple[float, float]]:
     """Monte Carlo price for a digital option (validation).
@@ -301,7 +320,7 @@ def digital_price_mc(
     """
     rng = np.random.default_rng(seed)
     z = rng.standard_normal(n_paths)
-    S_T = S * np.exp((r - q - 0.5 * sigma ** 2) * T + sigma * np.sqrt(T) * z)
+    S_T = S * np.exp((r - q - 0.5 * sigma**2) * T + sigma * np.sqrt(T) * z)
 
     if option_type == "call":
         triggered = S_T > K
@@ -324,12 +343,13 @@ def digital_price_mc(
 # BARRIER OPTIONS
 # ================================================================== #
 
+
 def _bs_call(S: float, K: float, T: float, r: float, b: float, sigma: float) -> float:
     """Generalised Black-Scholes call price with cost-of-carry b = r - q."""
     if T <= 0 or K <= 0 or S <= 0:
         return max(S - K, 0.0)
     sqrt_T = np.sqrt(T)
-    d1 = (np.log(S / K) + (b + 0.5 * sigma ** 2) * T) / (sigma * sqrt_T)
+    d1 = (np.log(S / K) + (b + 0.5 * sigma**2) * T) / (sigma * sqrt_T)
     d2 = d1 - sigma * sqrt_T
     return float(S * np.exp((b - r) * T) * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2))
 
@@ -339,7 +359,7 @@ def _bs_put(S: float, K: float, T: float, r: float, b: float, sigma: float) -> f
     if T <= 0 or K <= 0 or S <= 0:
         return max(K - S, 0.0)
     sqrt_T = np.sqrt(T)
-    d1 = (np.log(S / K) + (b + 0.5 * sigma ** 2) * T) / (sigma * sqrt_T)
+    d1 = (np.log(S / K) + (b + 0.5 * sigma**2) * T) / (sigma * sqrt_T)
     d2 = d1 - sigma * sqrt_T
     return float(-S * np.exp((b - r) * T) * norm.cdf(-d1) + K * np.exp(-r * T) * norm.cdf(-d2))
 
@@ -411,29 +431,27 @@ def barrier_price(
     # y1 = log(H/S)/(sigma*sqrt(T)) + ll*sigma*sqrt(T)
     sigma_rt = v * sqrt_T
     ll = (b + 0.5 * v2) / v2
-    y  = np.log(H * H / (S * K)) / sigma_rt + ll * sigma_rt
-    x1 = np.log(S / H)           / sigma_rt + ll * sigma_rt
-    y1 = np.log(H / S)           / sigma_rt + ll * sigma_rt
+    y = np.log(H * H / (S * K)) / sigma_rt + ll * sigma_rt
+    x1 = np.log(S / H) / sigma_rt + ll * sigma_rt
+    y1 = np.log(H / S) / sigma_rt + ll * sigma_rt
 
-    dq = np.exp((b - r) * T)   # S discount factor (= exp(-q*T))
-    df = np.exp(-r * T)         # K discount factor
+    dq = np.exp((b - r) * T)  # S discount factor (= exp(-q*T))
+    df = np.exp(-r * T)  # K discount factor
     h_over_s = H / S
-    pow_ll   = h_over_s ** (2.0 * ll)
-    pow_ll2  = h_over_s ** (2.0 * ll - 2.0)
+    pow_ll = h_over_s ** (2.0 * ll)
+    pow_ll2 = h_over_s ** (2.0 * ll - 2.0)
 
     N = norm.cdf
 
     def c_di() -> float:
         """Down-and-in call, H <= K."""
-        return (
-            S * dq * pow_ll * N(y)
-            - K * df * pow_ll2 * N(y - sigma_rt)
-        )
+        return S * dq * pow_ll * N(y) - K * df * pow_ll2 * N(y - sigma_rt)
 
     def c_di_H_gt_K() -> float:
         """Down-and-in call, H > K."""
         return (
-            S * dq * N(x1) - K * df * N(x1 - sigma_rt)
+            S * dq * N(x1)
+            - K * df * N(x1 - sigma_rt)
             - S * dq * pow_ll * (N(-y) - N(-y1))
             + K * df * pow_ll2 * (N(-y + sigma_rt) - N(-y1 + sigma_rt))
         )
@@ -441,7 +459,8 @@ def barrier_price(
     def c_uo() -> float:
         """Up-and-out call, H > K (the only meaningful case for up-out call)."""
         return (
-            S * dq * N(x1) - K * df * N(x1 - sigma_rt)
+            S * dq * N(x1)
+            - K * df * N(x1 - sigma_rt)
             - S * dq * pow_ll * N(y1)
             + K * df * pow_ll2 * N(y1 - sigma_rt)
         )
@@ -449,22 +468,21 @@ def barrier_price(
     def c_ui() -> float:
         """Up-and-in call, H >= K."""
         return (
-            S * dq * N(x1) - K * df * N(x1 - sigma_rt)
+            S * dq * N(x1)
+            - K * df * N(x1 - sigma_rt)
             - S * dq * pow_ll * (N(-y) - N(-y1))
             + K * df * pow_ll2 * (N(-y + sigma_rt) - N(-y1 + sigma_rt))
         )
 
     def p_ui() -> float:
         """Up-and-in put, H >= K."""
-        return (
-            -S * dq * pow_ll * N(-y)
-            + K * df * pow_ll2 * N(-y + sigma_rt)
-        )
+        return -S * dq * pow_ll * N(-y) + K * df * pow_ll2 * N(-y + sigma_rt)
 
     def p_ui_H_lt_K() -> float:
         """Up-and-in put, H < K."""
         return (
-            -S * dq * N(-x1) + K * df * N(-x1 + sigma_rt)
+            -S * dq * N(-x1)
+            + K * df * N(-x1 + sigma_rt)
             + S * dq * pow_ll * (N(y) - N(y1))
             - K * df * pow_ll2 * (N(y - sigma_rt) - N(y1 - sigma_rt))
         )
@@ -472,7 +490,8 @@ def barrier_price(
     def p_di() -> float:
         """Down-and-in put, H < K."""
         return (
-            -S * dq * N(-x1) + K * df * N(-x1 + sigma_rt)
+            -S * dq * N(-x1)
+            + K * df * N(-x1 + sigma_rt)
             + S * dq * pow_ll * (N(y) - N(y1))
             - K * df * pow_ll2 * (N(y - sigma_rt) - N(y1 - sigma_rt))
         )
@@ -513,21 +532,29 @@ def barrier_price(
 
 
 def _d1(S: float, K: float, T: float, r: float, sigma: float, q: float) -> float:
-    return (np.log(S / K) + (r - q + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+    return (np.log(S / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
 
 
 def _d2(S: float, K: float, T: float, r: float, sigma: float, q: float) -> float:
     return _d1(S, K, T, r, sigma, q) - sigma * np.sqrt(T)
 
 
-def _indicator_hit(S: float, H: float, barrier_type: str, T: float, r: float, sigma: float, q: float) -> float:
+def _indicator_hit(
+    S: float, H: float, barrier_type: str, T: float, r: float, sigma: float, q: float
+) -> float:
     """Probability of hitting the barrier (approximation via reflection principle)."""
-    mu = (r - q - 0.5 * sigma ** 2) / (sigma ** 2)
+    mu = (r - q - 0.5 * sigma**2) / (sigma**2)
     x = np.log(H / S) / (sigma * np.sqrt(T))
     if "down" in barrier_type:
-        return float(norm.cdf(-x + mu * sigma * np.sqrt(T)) + (H / S) ** (2 * mu) * norm.cdf(-x - mu * sigma * np.sqrt(T)))
+        return float(
+            norm.cdf(-x + mu * sigma * np.sqrt(T))
+            + (H / S) ** (2 * mu) * norm.cdf(-x - mu * sigma * np.sqrt(T))
+        )
     else:
-        return float(norm.cdf(x - mu * sigma * np.sqrt(T)) + (H / S) ** (2 * mu) * norm.cdf(x + mu * sigma * np.sqrt(T)))
+        return float(
+            norm.cdf(x - mu * sigma * np.sqrt(T))
+            + (H / S) ** (2 * mu) * norm.cdf(x + mu * sigma * np.sqrt(T))
+        )
 
 
 def barrier_price_mc(
@@ -544,7 +571,7 @@ def barrier_price_mc(
     *,
     n_paths: int = 200_000,
     n_steps: int = 252,
-    seed: Optional[int] = None,
+    seed: int | None = None,
     return_stderr: bool = False,
 ) -> Union[float, tuple[float, float]]:
     """Monte Carlo price for a European single-barrier option.
@@ -600,6 +627,7 @@ def barrier_price_mc(
 # Lookback options
 # ---------------------------------------------------------------------------
 
+
 def lookback_fixed_analytic(
     S: float,
     K: float,
@@ -626,7 +654,7 @@ def lookback_fixed_analytic(
     from scipy.stats import norm
 
     b = r - q  # cost of carry
-    s2 = sigma ** 2
+    s2 = sigma**2
 
     if option_type == "call":
         d1 = (np.log(S / K) + (b + 0.5 * s2) * T) / (sigma * np.sqrt(T))
@@ -635,8 +663,11 @@ def lookback_fixed_analytic(
         price = (
             S * np.exp((b - r) * T) * norm.cdf(d1)
             - K * np.exp(-r * T) * norm.cdf(d2)
-            + S * np.exp(-r * T) * (s2 / (2.0 * b)) * (
-                -(S / K) ** (-2.0 * b / s2) * norm.cdf(d1 - 2.0 * b * np.sqrt(T) / sigma)
+            + S
+            * np.exp(-r * T)
+            * (s2 / (2.0 * b))
+            * (
+                -((S / K) ** (-2.0 * b / s2)) * norm.cdf(d1 - 2.0 * b * np.sqrt(T) / sigma)
                 + np.exp(b * T) * norm.cdf(d1)
             )
         )
@@ -647,7 +678,10 @@ def lookback_fixed_analytic(
         price = (
             K * np.exp(-r * T) * norm.cdf(-d2)
             - S * np.exp((b - r) * T) * norm.cdf(-d1)
-            + S * np.exp(-r * T) * (s2 / (2.0 * b)) * (
+            + S
+            * np.exp(-r * T)
+            * (s2 / (2.0 * b))
+            * (
                 (S / K) ** (-2.0 * b / s2) * norm.cdf(-d1 + 2.0 * b * np.sqrt(T) / sigma)
                 - np.exp(b * T) * norm.cdf(-d1)
             )
@@ -676,7 +710,7 @@ def lookback_floating_analytic(
     from scipy.stats import norm
 
     b = r - q
-    s2 = sigma ** 2
+    s2 = sigma**2
     sqT = sigma * np.sqrt(T)
     a1 = (b + 0.5 * s2) * T / sqT
     a2 = a1 - sqT
@@ -688,9 +722,10 @@ def lookback_floating_analytic(
             price = (
                 S * np.exp((b - r) * T) * norm.cdf(a1)
                 - S * np.exp(-r * T) * norm.cdf(a2)
-                + S * np.exp(-r * T) * (s2 / (2.0 * b)) * (
-                    np.exp(b * T) * norm.cdf(a1) - norm.cdf(a2)
-                )
+                + S
+                * np.exp(-r * T)
+                * (s2 / (2.0 * b))
+                * (np.exp(b * T) * norm.cdf(a1) - norm.cdf(a2))
             )
     else:
         if abs(b) < 1e-12:
@@ -699,9 +734,10 @@ def lookback_floating_analytic(
             price = (
                 -S * np.exp((b - r) * T) * norm.cdf(-a1)
                 + S * np.exp(-r * T) * norm.cdf(-a2)
-                + S * np.exp(-r * T) * (s2 / (2.0 * b)) * (
-                    -np.exp(b * T) * norm.cdf(-a1) + norm.cdf(-a2)
-                )
+                + S
+                * np.exp(-r * T)
+                * (s2 / (2.0 * b))
+                * (-np.exp(b * T) * norm.cdf(-a1) + norm.cdf(-a2))
             )
 
     return float(max(price, 0.0))
@@ -729,7 +765,7 @@ def lookback_price_mc(
     """
     rng = np.random.default_rng(seed)
     dt = T / n_steps
-    drift = (r - q - 0.5 * sigma ** 2) * dt
+    drift = (r - q - 0.5 * sigma**2) * dt
     vol = sigma * np.sqrt(dt)
 
     Z = rng.standard_normal((n_paths, n_steps))
@@ -764,6 +800,7 @@ def lookback_price_mc(
 # Cliquet (ratchet) options
 # ---------------------------------------------------------------------------
 
+
 def cliquet_price_mc(
     S: float,
     T: float,
@@ -788,7 +825,7 @@ def cliquet_price_mc(
     """
     rng = np.random.default_rng(seed)
     dt = T / (n_periods * n_steps_per_period)
-    drift = (r - q - 0.5 * sigma ** 2) * dt
+    drift = (r - q - 0.5 * sigma**2) * dt
     vol = sigma * np.sqrt(dt)
 
     total_returns = np.zeros(n_paths)
@@ -827,6 +864,7 @@ def cliquet_price_mc(
 # Rainbow options (best-of / worst-of)
 # ---------------------------------------------------------------------------
 
+
 def rainbow_price_mc(
     spots: np.ndarray,
     K: float,
@@ -863,7 +901,7 @@ def rainbow_price_mc(
     for _step in range(n_steps):
         Z = rng.standard_normal((n_paths, n_assets))
         Z_corr = Z @ L.T
-        drift = (r - q_arr - 0.5 * sigmas ** 2) * dt
+        drift = (r - q_arr - 0.5 * sigmas**2) * dt
         vol = sigmas * np.sqrt(dt) * Z_corr
         log_S += drift + vol
 

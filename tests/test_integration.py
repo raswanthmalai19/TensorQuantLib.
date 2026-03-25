@@ -52,9 +52,7 @@ class TestAutodiffToGreeksPipeline:
         S_val = 100.0
         K, r, T, sigma = 100.0, 0.05, 1.0, 0.2
 
-        greeks = compute_greeks(
-            bs_price_tensor, S_val, K, T, r, sigma, option_type="call"
-        )
+        greeks = compute_greeks(bs_price_tensor, S_val, K, T, r, sigma, option_type="call")
 
         assert "delta" in greeks
         assert "gamma" in greeks
@@ -123,9 +121,13 @@ class TestGridToSurrogatePipeline:
         """Single evaluate vs multiple evaluates should be consistent."""
         surr = TTSurrogate.from_basket_analytic(
             S0_ranges=[(80, 120), (80, 120)],
-            K=100.0, T=1.0, r=0.05,
-            sigma=[0.2, 0.2], weights=[0.5, 0.5],
-            n_points=15, eps=1e-4,
+            K=100.0,
+            T=1.0,
+            r=0.05,
+            sigma=[0.2, 0.2],
+            weights=[0.5, 0.5],
+            n_points=15,
+            eps=1e-4,
         )
 
         points = [[90.0, 95.0], [100.0, 100.0], [110.0, 115.0]]
@@ -191,9 +193,13 @@ class TestVisualizationPipeline:
     def test_pricing_surface_from_surrogate(self):
         surr = TTSurrogate.from_basket_analytic(
             S0_ranges=[(80, 120), (80, 120)],
-            K=100.0, T=1.0, r=0.05,
-            sigma=[0.2, 0.2], weights=[0.5, 0.5],
-            n_points=15, eps=1e-4,
+            K=100.0,
+            T=1.0,
+            r=0.05,
+            sigma=[0.2, 0.2],
+            weights=[0.5, 0.5],
+            n_points=15,
+            eps=1e-4,
         )
 
         # Reconstruct full grid for plotting
@@ -239,9 +245,13 @@ class TestFullPipelineRoundTrip:
         """For a call option, delta should be positive."""
         surr = TTSurrogate.from_basket_analytic(
             S0_ranges=[(80, 120), (80, 120)],
-            K=100.0, T=1.0, r=0.05,
-            sigma=[0.2, 0.2], weights=[0.5, 0.5],
-            n_points=20, eps=1e-5,
+            K=100.0,
+            T=1.0,
+            r=0.05,
+            sigma=[0.2, 0.2],
+            weights=[0.5, 0.5],
+            n_points=20,
+            eps=1e-5,
         )
 
         greeks = surr.greeks([100.0, 100.0])
@@ -259,8 +269,12 @@ class TestVectorizedGreeksPipeline:
 
         S_array = np.linspace(80, 120, 21)
         result = compute_greeks_vectorized(
-            bs_price_tensor, S_array,
-            K=100.0, T=1.0, r=0.05, sigma=0.2,
+            bs_price_tensor,
+            S_array,
+            K=100.0,
+            T=1.0,
+            r=0.05,
+            sigma=0.2,
             option_type="call",
         )
 
@@ -282,17 +296,12 @@ class TestVectorizedGreeksPipeline:
         S_pts = np.array([90.0, 100.0, 110.0])
         K, T, r, sigma = 100.0, 1.0, 0.05, 0.2
 
-        vec = compute_greeks_vectorized(
-            bs_price_tensor, S_pts, K, T, r, sigma, option_type="call"
-        )
+        vec = compute_greeks_vectorized(bs_price_tensor, S_pts, K, T, r, sigma, option_type="call")
 
         for i, S_val in enumerate(S_pts):
-            scalar = compute_greeks(
-                bs_price_tensor, S_val, K, T, r, sigma, option_type="call"
-            )
+            scalar = compute_greeks(bs_price_tensor, S_val, K, T, r, sigma, option_type="call")
             np.testing.assert_allclose(
-                vec["delta"][i], scalar["delta"], atol=1e-5,
-                err_msg=f"Delta mismatch at S={S_val}"
+                vec["delta"][i], scalar["delta"], atol=1e-5, err_msg=f"Delta mismatch at S={S_val}"
             )
 
 
@@ -319,9 +328,7 @@ class TestValidationIntegration:
         sigma_input = Tensor(np.array([0.2]), requires_grad=True)
 
         result = check_grad(
-            lambda sig: bs_price_tensor(
-                Tensor(np.array([S])), K, T, r, sig, option_type="call"
-            ),
+            lambda sig: bs_price_tensor(Tensor(np.array([S])), K, T, r, sig, option_type="call"),
             [sigma_input],
             tol=1e-4,
         )
@@ -354,6 +361,7 @@ class TestTopLevelImports:
 
     def test_version_defined(self):
         import tensorquantlib as tql
+
         assert hasattr(tql, "__version__")
         assert isinstance(tql.__version__, str)
         assert len(tql.__version__) > 0
@@ -381,9 +389,7 @@ class TestPutCallParity:
         put = bs_price_tensor(S2, K, T, r, sigma, option_type="put")
 
         parity = S_val - K * np.exp(-r * T)
-        np.testing.assert_allclose(
-            call.item() - put.item(), parity, atol=1e-8
-        )
+        np.testing.assert_allclose(call.item() - put.item(), parity, atol=1e-8)
 
 
 class TestTTSurrogateEdgeCases:
@@ -393,9 +399,13 @@ class TestTTSurrogateEdgeCases:
         """Evaluate surrogate at the boundary of the grid."""
         surr = TTSurrogate.from_basket_analytic(
             S0_ranges=[(80, 120), (80, 120)],
-            K=100.0, T=1.0, r=0.05,
-            sigma=[0.2, 0.2], weights=[0.5, 0.5],
-            n_points=15, eps=1e-4,
+            K=100.0,
+            T=1.0,
+            r=0.05,
+            sigma=[0.2, 0.2],
+            weights=[0.5, 0.5],
+            n_points=15,
+            eps=1e-4,
         )
         # Low boundary → deep OTM call ≈ 0
         price_low = surr.evaluate([80.0, 80.0])
@@ -409,19 +419,22 @@ class TestTTSurrogateEdgeCases:
         """Build → recompress with tighter tolerance → verify accuracy."""
         surr = TTSurrogate.from_basket_analytic(
             S0_ranges=[(80, 120), (80, 120)],
-            K=100.0, T=1.0, r=0.05,
-            sigma=[0.2, 0.2], weights=[0.5, 0.5],
-            n_points=20, eps=1e-8,
+            K=100.0,
+            T=1.0,
+            r=0.05,
+            sigma=[0.2, 0.2],
+            weights=[0.5, 0.5],
+            n_points=20,
+            eps=1e-8,
         )
 
         original_price = surr.evaluate([100.0, 100.0])
 
         # Recompress
         from tensorquantlib.tt.decompose import tt_round
+
         rounded_cores = tt_round(surr.cores, eps=1e-4)
-        rounded_surr = TTSurrogate.from_grid(
-            tt_to_full(rounded_cores), surr.axes, eps=1e-4
-        )
+        rounded_surr = TTSurrogate.from_grid(tt_to_full(rounded_cores), surr.axes, eps=1e-4)
         rounded_price = rounded_surr.evaluate([100.0, 100.0])
 
         np.testing.assert_allclose(rounded_price, original_price, atol=0.1)

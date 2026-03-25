@@ -34,6 +34,7 @@ def _import_mpl() -> tuple[Any, Any]:
 # Pricing Surface
 # ====================================================================== #
 
+
 def plot_pricing_surface(
     grid: np.ndarray,
     axis_values: Sequence[np.ndarray],
@@ -119,6 +120,7 @@ def plot_pricing_surface(
 # Greeks Surface
 # ====================================================================== #
 
+
 def plot_greeks_surface(
     greek_grids: dict[str, np.ndarray],
     axis_values: Sequence[np.ndarray],
@@ -183,6 +185,7 @@ def plot_greeks_surface(
 # TT Rank Profile
 # ====================================================================== #
 
+
 def plot_tt_ranks(
     cores: list[np.ndarray],
     title: str = "TT-Rank Profile",
@@ -246,6 +249,7 @@ def plot_rank_profile(
 # Compression vs Tolerance
 # ====================================================================== #
 
+
 def plot_compression_vs_tolerance(
     epsilons: Sequence[float],
     compression_ratios: Sequence[float],
@@ -295,6 +299,7 @@ def plot_compression_vs_tolerance(
 # ====================================================================== #
 # Convergence
 # ====================================================================== #
+
 
 def plot_convergence(
     iterations: Sequence[int],

@@ -1,4 +1,5 @@
 """Tests for Heston stochastic volatility model."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -6,9 +7,9 @@ import pytest
 
 from tensorquantlib.finance.heston import (
     HestonParams,
+    heston_greeks,
     heston_price,
     heston_price_mc,
-    heston_greeks,
 )
 
 
@@ -47,16 +48,24 @@ class TestHestonPrice:
         """C - P = S*exp(-qT) - K*exp(-rT)"""
         S, K, T, r, q = 100.0, 100.0, 1.0, 0.05, 0.0
         call = heston_price(S, K, T, r, default_params, q=q, option_type="call")
-        put  = heston_price(S, K, T, r, default_params, q=q, option_type="put")
+        put = heston_price(S, K, T, r, default_params, q=q, option_type="put")
         parity = S * np.exp(-q * T) - K * np.exp(-r * T)
         assert abs((call - put) - parity) < 0.5  # loose tolerance due to quad
 
     def test_mc_vs_analytic_atm(self, default_params):
         """MC and analytic price should agree within reasonable tolerance for ATM."""
         price_analytic = heston_price(100, 100, 1.0, 0.05, default_params)
-        price_mc, stderr = heston_price_mc(100, 100, 1.0, 0.05, default_params,
-                                           n_paths=300_000, n_steps=100, seed=42,
-                                           return_stderr=True)
+        price_mc, stderr = heston_price_mc(
+            100,
+            100,
+            1.0,
+            0.05,
+            default_params,
+            n_paths=300_000,
+            n_steps=100,
+            seed=42,
+            return_stderr=True,
+        )
         # Allow up to 10*stderr + 1.5 to account for Euler discretisation bias
         assert abs(price_analytic - price_mc) < 10 * float(stderr) + 1.5
 

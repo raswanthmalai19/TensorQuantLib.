@@ -1,4 +1,5 @@
 """Tests for implied volatility solver."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -16,21 +17,27 @@ from tensorquantlib.finance.implied_vol import (
 class TestImpliedVol:
     """Test Brent-method implied volatility solver."""
 
-    @pytest.mark.parametrize("S,K,T,r,sigma", [
-        (100, 100, 1.0, 0.05, 0.20),
-        (100,  90, 0.5, 0.03, 0.15),
-        (100, 110, 2.0, 0.01, 0.30),
-        (80,  80, 0.25, 0.05, 0.40),  # ATM short-dated
-    ])
+    @pytest.mark.parametrize(
+        "S,K,T,r,sigma",
+        [
+            (100, 100, 1.0, 0.05, 0.20),
+            (100, 90, 0.5, 0.03, 0.15),
+            (100, 110, 2.0, 0.01, 0.30),
+            (80, 80, 0.25, 0.05, 0.40),  # ATM short-dated
+        ],
+    )
     def test_round_trip_call(self, S, K, T, r, sigma):
         price = float(bs_price_numpy(S, K, T, r, sigma))
         iv = implied_vol(price, S, K, T, r)
         assert abs(iv - sigma) < 1e-6
 
-    @pytest.mark.parametrize("S,K,T,r,sigma", [
-        (100, 100, 1.0, 0.05, 0.20),
-        (100, 110, 0.5, 0.03, 0.25),
-    ])
+    @pytest.mark.parametrize(
+        "S,K,T,r,sigma",
+        [
+            (100, 100, 1.0, 0.05, 0.20),
+            (100, 110, 0.5, 0.03, 0.25),
+        ],
+    )
     def test_round_trip_put(self, S, K, T, r, sigma):
         price = float(bs_price_numpy(S, K, T, r, sigma, option_type="put"))
         iv = implied_vol(price, S, K, T, r, option_type="put")

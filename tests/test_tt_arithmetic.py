@@ -15,6 +15,7 @@ from tensorquantlib.tt.ops import (
 
 # ── helpers ──────────────────────────────────────────────────────────────
 
+
 def _random_tensor(*shape: int, seed: int = 42) -> np.ndarray:
     rng = np.random.default_rng(seed)
     return rng.standard_normal(shape)
@@ -28,6 +29,7 @@ def _make_tt(*shape: int, eps: float = 1e-12, seed: int = 42):
 
 
 # ── tt_add ───────────────────────────────────────────────────────────────
+
 
 class TestTTAdd:
     def test_basic_2d(self):
@@ -68,6 +70,7 @@ class TestTTAdd:
 
 # ── tt_scale ─────────────────────────────────────────────────────────────
 
+
 class TestTTScale:
     def test_scale_positive(self):
         A, ca = _make_tt(5, 6, 7, seed=0)
@@ -98,6 +101,7 @@ class TestTTScale:
 
 # ── tt_hadamard ──────────────────────────────────────────────────────────
 
+
 class TestTTHadamard:
     def test_basic_2d(self):
         A, ca = _make_tt(6, 8, seed=0)
@@ -114,7 +118,7 @@ class TestTTHadamard:
     def test_hadamard_with_self(self):
         A, ca = _make_tt(5, 6, seed=20)
         result = tt_to_full(tt_hadamard(ca, ca))
-        np.testing.assert_allclose(result, A ** 2, atol=1e-10)
+        np.testing.assert_allclose(result, A**2, atol=1e-10)
 
     def test_dimension_mismatch_raises(self):
         _, ca = _make_tt(5, 6, seed=0)
@@ -124,6 +128,7 @@ class TestTTHadamard:
 
 
 # ── tt_dot ───────────────────────────────────────────────────────────────
+
 
 class TestTTDot:
     def test_basic_2d(self):
@@ -143,7 +148,7 @@ class TestTTDot:
     def test_dot_with_self_equals_squared_norm(self):
         A, ca = _make_tt(5, 6, 7, seed=20)
         result = tt_dot(ca, ca)
-        expected = np.sum(A ** 2)
+        expected = np.sum(A**2)
         np.testing.assert_allclose(result, expected, atol=1e-10)
 
     def test_dot_returns_scalar(self):
@@ -154,6 +159,7 @@ class TestTTDot:
 
 
 # ── tt_frobenius_norm ────────────────────────────────────────────────────
+
 
 class TestTTFrobeniusNorm:
     def test_matches_numpy(self):
@@ -181,6 +187,7 @@ class TestTTFrobeniusNorm:
 
 # ── Cross-operation consistency ──────────────────────────────────────────
 
+
 class TestCrossOperations:
     def test_add_scale_linearity(self):
         """(alpha*A + beta*B) via TT arithmetic matches NumPy."""
@@ -207,4 +214,4 @@ class TestCrossOperations:
         _, ca = _make_tt(6, 5, 4, seed=20)
         norm_val = tt_frobenius_norm(ca)
         dot_val = tt_dot(ca, ca)
-        np.testing.assert_allclose(norm_val ** 2, dot_val, atol=1e-10)
+        np.testing.assert_allclose(norm_val**2, dot_val, atol=1e-10)

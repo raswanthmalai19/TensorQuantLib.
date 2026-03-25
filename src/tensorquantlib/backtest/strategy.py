@@ -1,9 +1,9 @@
 """Abstract base strategy and concrete strategy implementations."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -13,10 +13,10 @@ class Trade:
     """Record of a single trade."""
 
     step: int
-    quantity: float       # positive = buy, negative = sell
+    quantity: float  # positive = buy, negative = sell
     price: float
     label: str = ""
-    slippage: float = 0.0    # slippage cost paid on this trade
+    slippage: float = 0.0  # slippage cost paid on this trade
     commission: float = 0.0  # commission paid on this trade
 
     @property
@@ -87,8 +87,15 @@ class DeltaHedgeStrategy(Strategy):
         Total number of rebalancing steps.
     """
 
-    def __init__(self, K: float, T_total: float, r: float, sigma: float,
-                 option_type: str = "call", n_steps: int = 252):
+    def __init__(
+        self,
+        K: float,
+        T_total: float,
+        r: float,
+        sigma: float,
+        option_type: str = "call",
+        n_steps: int = 252,
+    ):
         super().__init__()
         self.K = K
         self.T_total = T_total
@@ -100,23 +107,27 @@ class DeltaHedgeStrategy(Strategy):
 
     def _bs_delta(self, S: float, T_remain: float) -> float:
         from scipy.stats import norm
+
         if T_remain <= 0:
             if self.option_type == "call":
                 return 1.0 if S > self.K else 0.0
             else:
                 return -1.0 if S < self.K else 0.0
-        d1 = (np.log(S / self.K) + (self.r + 0.5 * self.sigma**2) * T_remain) / \
-             (self.sigma * np.sqrt(T_remain))
+        d1 = (np.log(S / self.K) + (self.r + 0.5 * self.sigma**2) * T_remain) / (
+            self.sigma * np.sqrt(T_remain)
+        )
         if self.option_type == "call":
             return float(norm.cdf(d1))
         return float(norm.cdf(d1) - 1.0)
 
     def _bs_gamma(self, S: float, T_remain: float) -> float:
         from scipy.stats import norm
+
         if T_remain <= 0:
             return 0.0
-        d1 = (np.log(S / self.K) + (self.r + 0.5 * self.sigma**2) * T_remain) / \
-             (self.sigma * np.sqrt(T_remain))
+        d1 = (np.log(S / self.K) + (self.r + 0.5 * self.sigma**2) * T_remain) / (
+            self.sigma * np.sqrt(T_remain)
+        )
         return float(norm.pdf(d1) / (S * self.sigma * np.sqrt(T_remain)))
 
     def on_data(self, step: int, price: float, **kwargs) -> float:
@@ -162,8 +173,9 @@ class GammaScalpingStrategy(Strategy):
         Total rebalancing steps.
     """
 
-    def __init__(self, K: float, T_total: float, r: float,
-                 sigma_implied: float, n_steps: int = 252):
+    def __init__(
+        self, K: float, T_total: float, r: float, sigma_implied: float, n_steps: int = 252
+    ):
         super().__init__()
         self.K = K
         self.T_total = T_total
@@ -171,41 +183,52 @@ class GammaScalpingStrategy(Strategy):
         self.sigma = sigma_implied
         self.n_steps = n_steps
         self._greeks_history: dict[str, list] = {
-            "delta": [], "gamma": [], "theta": [],
-            "theoretical_gamma_pnl": [], "theoretical_theta_pnl": [],
+            "delta": [],
+            "gamma": [],
+            "theta": [],
+            "theoretical_gamma_pnl": [],
+            "theoretical_theta_pnl": [],
         }
         self._prev_price: float | None = None
 
     def _straddle_delta(self, S: float, T_remain: float) -> float:
         """Straddle delta = N(d1) − N(−d1) = 2N(d1) − 1."""
         from scipy.stats import norm
+
         if T_remain <= 0:
             return 0.0
-        d1 = (np.log(S / self.K) + (self.r + 0.5 * self.sigma ** 2) * T_remain) / \
-             (self.sigma * np.sqrt(T_remain))
+        d1 = (np.log(S / self.K) + (self.r + 0.5 * self.sigma**2) * T_remain) / (
+            self.sigma * np.sqrt(T_remain)
+        )
         return float(2.0 * norm.cdf(d1) - 1.0)
 
     def _straddle_gamma(self, S: float, T_remain: float) -> float:
         """Straddle Gamma = 2 × call Gamma (call and put share the same Gamma)."""
         from scipy.stats import norm
+
         if T_remain <= 0:
             return 0.0
-        d1 = (np.log(S / self.K) + (self.r + 0.5 * self.sigma ** 2) * T_remain) / \
-             (self.sigma * np.sqrt(T_remain))
+        d1 = (np.log(S / self.K) + (self.r + 0.5 * self.sigma**2) * T_remain) / (
+            self.sigma * np.sqrt(T_remain)
+        )
         return float(2.0 * norm.pdf(d1) / (S * self.sigma * np.sqrt(T_remain)))
 
     def _straddle_theta(self, S: float, T_remain: float) -> float:
         """Straddle Theta per year (negative = time decay)."""
         from scipy.stats import norm
+
         if T_remain <= 0:
             return 0.0
-        d1 = (np.log(S / self.K) + (self.r + 0.5 * self.sigma ** 2) * T_remain) / \
-             (self.sigma * np.sqrt(T_remain))
+        d1 = (np.log(S / self.K) + (self.r + 0.5 * self.sigma**2) * T_remain) / (
+            self.sigma * np.sqrt(T_remain)
+        )
         d2 = d1 - self.sigma * np.sqrt(T_remain)
-        theta_call = (-S * norm.pdf(d1) * self.sigma / (2.0 * np.sqrt(T_remain))
-                      - self.r * self.K * np.exp(-self.r * T_remain) * norm.cdf(d2))
-        theta_put = (-S * norm.pdf(d1) * self.sigma / (2.0 * np.sqrt(T_remain))
-                     + self.r * self.K * np.exp(-self.r * T_remain) * norm.cdf(-d2))
+        theta_call = -S * norm.pdf(d1) * self.sigma / (
+            2.0 * np.sqrt(T_remain)
+        ) - self.r * self.K * np.exp(-self.r * T_remain) * norm.cdf(d2)
+        theta_put = -S * norm.pdf(d1) * self.sigma / (
+            2.0 * np.sqrt(T_remain)
+        ) + self.r * self.K * np.exp(-self.r * T_remain) * norm.cdf(-d2)
         return float(theta_call + theta_put)
 
     def on_data(self, step: int, price: float, **kwargs) -> float:
@@ -217,8 +240,8 @@ class GammaScalpingStrategy(Strategy):
 
         if self._prev_price is not None:
             dS = price - self._prev_price
-            theoretical_gamma_pnl = 0.5 * gamma * dS ** 2
-            theoretical_theta_pnl = theta * dt   # negative (time decay)
+            theoretical_gamma_pnl = 0.5 * gamma * dS**2
+            theoretical_theta_pnl = theta * dt  # negative (time decay)
         else:
             theoretical_gamma_pnl = 0.0
             theoretical_theta_pnl = 0.0
@@ -271,8 +294,16 @@ class DeltaGammaHedgeStrategy(Strategy):
         ``'call'`` or ``'put'`` for both legs.
     """
 
-    def __init__(self, K1: float, K2: float, T_total: float, r: float,
-                 sigma: float, n_steps: int = 252, option_type: str = "call"):
+    def __init__(
+        self,
+        K1: float,
+        K2: float,
+        T_total: float,
+        r: float,
+        sigma: float,
+        n_steps: int = 252,
+        option_type: str = "call",
+    ):
         super().__init__()
         self.K1 = K1
         self.K2 = K2
@@ -282,25 +313,32 @@ class DeltaGammaHedgeStrategy(Strategy):
         self.n_steps = n_steps
         self.option_type = option_type
         self._greeks_history: dict[str, list] = {
-            "net_delta": [], "net_gamma": [], "hedge_ratio": [], "stock_position": []
+            "net_delta": [],
+            "net_gamma": [],
+            "hedge_ratio": [],
+            "stock_position": [],
         }
 
     def _delta(self, S: float, K: float, T_remain: float) -> float:
         from scipy.stats import norm
+
         if T_remain <= 0:
             return 0.0
-        d1 = (np.log(S / K) + (self.r + 0.5 * self.sigma ** 2) * T_remain) / \
-             (self.sigma * np.sqrt(T_remain))
+        d1 = (np.log(S / K) + (self.r + 0.5 * self.sigma**2) * T_remain) / (
+            self.sigma * np.sqrt(T_remain)
+        )
         if self.option_type == "call":
             return float(norm.cdf(d1))
         return float(norm.cdf(d1) - 1.0)
 
     def _gamma(self, S: float, K: float, T_remain: float) -> float:
         from scipy.stats import norm
+
         if T_remain <= 0:
             return 0.0
-        d1 = (np.log(S / K) + (self.r + 0.5 * self.sigma ** 2) * T_remain) / \
-             (self.sigma * np.sqrt(T_remain))
+        d1 = (np.log(S / K) + (self.r + 0.5 * self.sigma**2) * T_remain) / (
+            self.sigma * np.sqrt(T_remain)
+        )
         return float(norm.pdf(d1) / (S * self.sigma * np.sqrt(T_remain)))
 
     def on_data(self, step: int, price: float, **kwargs) -> float:
@@ -317,7 +355,7 @@ class DeltaGammaHedgeStrategy(Strategy):
         stock_position = -net_delta
 
         self._greeks_history["net_delta"].append(net_delta + stock_position)  # ≈ 0
-        self._greeks_history["net_gamma"].append(gamma1 - Q_hedge * gamma2)   # ≈ 0
+        self._greeks_history["net_gamma"].append(gamma1 - Q_hedge * gamma2)  # ≈ 0
         self._greeks_history["hedge_ratio"].append(Q_hedge)
         self._greeks_history["stock_position"].append(stock_position)
         return stock_position

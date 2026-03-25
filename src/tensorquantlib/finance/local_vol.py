@@ -4,16 +4,22 @@ The Dupire (1994) local volatility formula extracts local vol from
 an implied volatility surface, enabling exact calibration to European
 option prices.
 """
+
 from __future__ import annotations
 
 import numpy as np
-from scipy.stats import norm
 from scipy.interpolate import RectBivariateSpline
+from scipy.stats import norm
 
 
-def dupire_local_vol(strikes: np.ndarray, expiries: np.ndarray,
-                     iv_surface: np.ndarray, S: float,
-                     r: float = 0.0, q: float = 0.0) -> np.ndarray:
+def dupire_local_vol(
+    strikes: np.ndarray,
+    expiries: np.ndarray,
+    iv_surface: np.ndarray,
+    S: float,
+    r: float = 0.0,
+    q: float = 0.0,
+) -> np.ndarray:
     """Compute Dupire local volatility from an implied vol surface.
 
     Uses the Dupire (1994) formula:
@@ -71,19 +77,27 @@ def dupire_local_vol(strikes: np.ndarray, expiries: np.ndarray,
             if denominator > 1e-15:
                 local_vol2[i, j] = numerator / denominator
             else:
-                local_vol2[i, j] = iv_surface[i, j]**2
+                local_vol2[i, j] = iv_surface[i, j] ** 2
 
     # Clamp to avoid negative values (numerical noise)
     local_vol2 = np.maximum(local_vol2, 1e-8)
     return np.sqrt(local_vol2)
 
 
-def local_vol_mc(S: float, K: float, T: float, r: float,
-                 strikes: np.ndarray, expiries: np.ndarray,
-                 local_vol_surface: np.ndarray,
-                 option_type: str = "call", q: float = 0.0,
-                 n_paths: int = 100_000, n_steps: int = 252,
-                 seed: int | None = None) -> float:
+def local_vol_mc(
+    S: float,
+    K: float,
+    T: float,
+    r: float,
+    strikes: np.ndarray,
+    expiries: np.ndarray,
+    local_vol_surface: np.ndarray,
+    option_type: str = "call",
+    q: float = 0.0,
+    n_paths: int = 100_000,
+    n_steps: int = 252,
+    seed: int | None = None,
+) -> float:
     """Price an option using local vol MC simulation.
 
     Simulates paths under dS = (r-q)*S*dt + sigma_loc(S,t)*S*dW.
@@ -135,8 +149,7 @@ def local_vol_mc(S: float, K: float, T: float, r: float,
         sigma_loc = np.maximum(sigma_loc, 1e-6)
 
         z = rng.standard_normal(n_paths)
-        S_paths = S_paths * np.exp((r - q - 0.5 * sigma_loc**2) * dt
-                                   + sigma_loc * np.sqrt(dt) * z)
+        S_paths = S_paths * np.exp((r - q - 0.5 * sigma_loc**2) * dt + sigma_loc * np.sqrt(dt) * z)
 
     if option_type == "call":
         payoff = np.maximum(S_paths - K, 0.0)

@@ -19,6 +19,9 @@ from .greeks import compute_greeks, compute_greeks_vectorized
 # Lazy submodule access — these are importable via tensorquantlib.finance.<module>
 # but not eagerly imported to avoid import overhead.
 __all__ = [
+    "american",
+    "basket",
+    "black_scholes",
     "bs_delta",
     "bs_gamma",
     "bs_price_numpy",
@@ -30,23 +33,18 @@ __all__ = [
     "build_pricing_grid_analytic",
     "compute_greeks",
     "compute_greeks_vectorized",
-    "simulate_basket",
-    # Submodules (importable via tensorquantlib.finance.<name>)
-    "american",
-    "basket",
-    "black_scholes",
     "credit",
     "exotics",
     "fx",
     "greeks",
     "heston",
     "implied_vol",
-    "rates",
-    "risk",
-    "variance_reduction",
-    "volatility",
-    # New models (v0.3.0)
+    "ir_derivatives",
     "jump_diffusion",
     "local_vol",
-    "ir_derivatives",
+    "rates",
+    "risk",
+    "simulate_basket",
+    "variance_reduction",
+    "volatility",
 ]

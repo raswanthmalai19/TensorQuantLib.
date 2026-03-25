@@ -20,6 +20,7 @@ from tensorquantlib.core.tensor import Tensor, tensor_norm_cdf
 # Analytic Black-Scholes (NumPy) — ground truth
 # ====================================================================== #
 
+
 def _d1_d2(
     S: Union[float, np.ndarray],
     K: float,
@@ -29,7 +30,7 @@ def _d1_d2(
     q: float = 0.0,
 ) -> tuple[Any, Any]:
     """Compute d1 and d2 for Black-Scholes formula."""
-    d1 = (np.log(S / K) + (r - q + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+    d1 = (np.log(S / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
     d2 = d1 - sigma * np.sqrt(T)
     return d1, d2
 
@@ -42,7 +43,6 @@ def bs_price_numpy(
     sigma: float,
     q: float = 0.0,
     option_type: str = "call",
-
 ) -> Any:
     """Analytic Black-Scholes price (pure NumPy).
 
@@ -81,6 +81,7 @@ def bs_price_numpy(
 # Analytic Greeks (NumPy) — for validation
 # ====================================================================== #
 
+
 def bs_delta(
     S: Union[float, np.ndarray],
     K: float,
@@ -89,7 +90,6 @@ def bs_delta(
     sigma: float,
     q: float = 0.0,
     option_type: str = "call",
-
 ) -> Any:
     """Analytic Delta: dV/dS."""
     d1, _ = _d1_d2(S, K, T, r, sigma, q)
@@ -106,7 +106,6 @@ def bs_gamma(
     r: float,
     sigma: float,
     q: float = 0.0,
-
 ) -> Any:
     """Analytic Gamma: d²V/dS² (same for call and put)."""
     d1, _ = _d1_d2(S, K, T, r, sigma, q)
@@ -120,7 +119,6 @@ def bs_vega(
     r: float,
     sigma: float,
     q: float = 0.0,
-
 ) -> Any:
     """Analytic Vega: dV/dsigma (same for call and put)."""
     d1, _ = _d1_d2(S, K, T, r, sigma, q)
@@ -135,7 +133,6 @@ def bs_theta(
     sigma: float,
     q: float = 0.0,
     option_type: str = "call",
-
 ) -> Any:
     """Analytic Theta: -dV/dT (time decay per year)."""
     d1, d2 = _d1_d2(S, K, T, r, sigma, q)
@@ -143,7 +140,9 @@ def bs_theta(
     if option_type == "call":
         return term1 - r * K * np.exp(-r * T) * norm.cdf(d2) + q * S * np.exp(-q * T) * norm.cdf(d1)
     else:
-        return term1 + r * K * np.exp(-r * T) * norm.cdf(-d2) - q * S * np.exp(-q * T) * norm.cdf(-d1)
+        return (
+            term1 + r * K * np.exp(-r * T) * norm.cdf(-d2) - q * S * np.exp(-q * T) * norm.cdf(-d1)
+        )
 
 
 def bs_rho(
@@ -154,7 +153,6 @@ def bs_rho(
     sigma: float,
     q: float = 0.0,
     option_type: str = "call",
-
 ) -> Any:
     """Analytic Rho: dV/dr."""
     _, d2 = _d1_d2(S, K, T, r, sigma, q)
@@ -167,6 +165,7 @@ def bs_rho(
 # ====================================================================== #
 # Tensor-based Black-Scholes (flows through autograd)
 # ====================================================================== #
+
 
 def bs_price_tensor(
     S: Union[float, Tensor],
@@ -214,6 +213,8 @@ def bs_price_tensor(
     if option_type == "call":
         price = S * div_discount * tensor_norm_cdf(d1) - K * discount * tensor_norm_cdf(d2)
     else:
-        price = K * discount * tensor_norm_cdf(d2 * _ensure_tensor(-1.0)) - S * div_discount * tensor_norm_cdf(d1 * _ensure_tensor(-1.0))
+        price = K * discount * tensor_norm_cdf(
+            d2 * _ensure_tensor(-1.0)
+        ) - S * div_discount * tensor_norm_cdf(d1 * _ensure_tensor(-1.0))
 
     return price

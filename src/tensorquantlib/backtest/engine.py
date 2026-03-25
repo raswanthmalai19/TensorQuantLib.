@@ -1,4 +1,5 @@
 """Backtesting engine with realistic execution cost models."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -7,10 +8,10 @@ import numpy as np
 
 from tensorquantlib.backtest.strategy import Strategy, Trade
 
-
 # ------------------------------------------------------------------ #
 # Execution cost models
 # ------------------------------------------------------------------ #
+
 
 @dataclass
 class SlippageModel:
@@ -39,8 +40,9 @@ class SlippageModel:
         """Compute slippage cost for one trade (always non-negative)."""
         spread_cost = abs(quantity) * price * self.fixed_spread
         if self.market_impact > 0.0 and self.adv > 0.0:
-            impact_cost = (abs(quantity) * price * self.market_impact
-                           * np.sqrt(abs(quantity) / self.adv))
+            impact_cost = (
+                abs(quantity) * price * self.market_impact * np.sqrt(abs(quantity) / self.adv)
+            )
         else:
             impact_cost = 0.0
         return float(spread_cost + impact_cost)
@@ -73,9 +75,7 @@ class CommissionModel:
     def cost(self, price: float, quantity: float) -> float:
         """Compute commission for one trade (always non-negative)."""
         notional = abs(quantity) * price
-        c = (self.per_trade
-             + abs(quantity) * self.per_unit
-             + notional * self.percentage)
+        c = self.per_trade + abs(quantity) * self.per_unit + notional * self.percentage
         return float(max(c, self.minimum))
 
 
@@ -95,6 +95,7 @@ ILLIQUID_SLIP = SlippageModel(fixed_spread=0.002, market_impact=0.1, adv=50_000)
 # ------------------------------------------------------------------ #
 # Backtest result
 # ------------------------------------------------------------------ #
+
 
 @dataclass
 class BacktestResult:
@@ -131,6 +132,7 @@ class BacktestResult:
 # ------------------------------------------------------------------ #
 # Engine
 # ------------------------------------------------------------------ #
+
 
 class BacktestEngine:
     """Run a :class:`Strategy` over a price series with realistic execution.
@@ -224,9 +226,7 @@ class BacktestEngine:
 
             equity[i] = strat.cash + strat.position * prices[i]
 
-        returns = np.diff(equity) / np.where(
-            np.abs(equity[:-1]) > 1e-12, equity[:-1], 1.0
-        )
+        returns = np.diff(equity) / np.where(np.abs(equity[:-1]) > 1e-12, equity[:-1], 1.0)
         return BacktestResult(
             equity_curve=equity,
             trades=strat.trades,

@@ -7,6 +7,7 @@ from tensorquantlib.tt.ops import tt_error, tt_ranks, tt_to_full
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
+
 def _smooth_tensor(shape, seed=42):
     """Create a smooth low-rank tensor (should compress well)."""
     np.random.default_rng(seed)
@@ -26,6 +27,7 @@ def _random_tensor(shape, seed=42):
 
 
 # ── tt_svd basics ────────────────────────────────────────────────────────────
+
 
 class TestTTSVDBasic:
     """Basic TT-SVD decomposition tests."""
@@ -90,6 +92,7 @@ class TestTTSVDBasic:
 
 # ── tt_svd compression ──────────────────────────────────────────────────────
 
+
 class TestTTSVDCompression:
     """Test compression quality and rank truncation."""
 
@@ -142,6 +145,7 @@ class TestTTSVDCompression:
 
 # ── tt_round ─────────────────────────────────────────────────────────────────
 
+
 class TestTTRound:
     """Tests for TT-rounding (re-compression)."""
 
@@ -182,6 +186,7 @@ class TestTTRound:
 
 # ── _tt_norm ─────────────────────────────────────────────────────────────────
 
+
 class TestTTNorm:
     """Tests for TT-format Frobenius norm computation."""
 
@@ -206,6 +211,7 @@ class TestTTNorm:
 
 
 # ── edge cases ───────────────────────────────────────────────────────────────
+
 
 class TestTTSVDEdgeCases:
     """Edge cases for TT-SVD."""

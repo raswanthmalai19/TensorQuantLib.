@@ -172,10 +172,14 @@ class Tensor:
     # ------------------------------------------------------------------ #
     # Convenience methods that delegate to ops
     # ------------------------------------------------------------------ #
-    def sum(self, axis: Union[int, tuple[int, ...]] | None = None, keepdims: bool = False) -> Tensor:
+    def sum(
+        self, axis: Union[int, tuple[int, ...]] | None = None, keepdims: bool = False
+    ) -> Tensor:
         return tensor_sum(self, axis=axis, keepdims=keepdims)
 
-    def mean(self, axis: Union[int, tuple[int, ...]] | None = None, keepdims: bool = False) -> Tensor:
+    def mean(
+        self, axis: Union[int, tuple[int, ...]] | None = None, keepdims: bool = False
+    ) -> Tensor:
         return tensor_mean(self, axis=axis, keepdims=keepdims)
 
     def reshape(self, *shape: Union[int, tuple[int, ...], list[int]]) -> Tensor:
@@ -263,7 +267,7 @@ class Tensor:
     def __len__(self) -> int:
         return len(self.data)
 
-    def __getitem__(self, idx: Any) -> "Tensor":
+    def __getitem__(self, idx: Any) -> Tensor:
         """Index into the tensor, returning a Tensor that participates in autograd.
 
         Supports any NumPy-compatible index (int, slice, tuple, boolean mask).
@@ -307,6 +311,7 @@ def _unbroadcast(grad: np.ndarray, target_shape: tuple[int, ...]) -> np.ndarray:
 # ====================================================================== #
 # Core differentiable operations
 # ====================================================================== #
+
 
 def tensor_add(a: Tensor, b: Tensor) -> Tensor:
     """Element-wise addition: z = a + b."""
@@ -385,7 +390,7 @@ def tensor_div(a: Tensor, b: Tensor) -> Tensor:
         if b.requires_grad:
             if b.grad is None:
                 b.grad = np.zeros_like(b.data)
-            b.grad += _unbroadcast(-out.grad * a.data / (b.data ** 2), b.shape)
+            b.grad += _unbroadcast(-out.grad * a.data / (b.data**2), b.shape)
 
     if out.requires_grad:
         out._backward = _backward
@@ -454,7 +459,7 @@ def tensor_matmul(a: Tensor, b: Tensor) -> Tensor:
 
 def tensor_pow(a: Tensor, exponent: Union[int, float]) -> Tensor:
     """Power: z = a^exponent (exponent is a constant, not a Tensor)."""
-    out = Tensor(a.data ** exponent, _children=(a,), _op=f"**{exponent}")
+    out = Tensor(a.data**exponent, _children=(a,), _op=f"**{exponent}")
     out.requires_grad = a.requires_grad
 
     def _backward() -> None:
@@ -566,7 +571,9 @@ def tensor_sqrt(a: Tensor) -> Tensor:
     return out
 
 
-def tensor_sum(a: Tensor, axis: Union[int, tuple[int, ...]] | None = None, keepdims: bool = False) -> Tensor:
+def tensor_sum(
+    a: Tensor, axis: Union[int, tuple[int, ...]] | None = None, keepdims: bool = False
+) -> Tensor:
     """Sum: z = sum(a, axis)."""
     out_data = a.data.sum(axis=axis, keepdims=keepdims)
     out = Tensor(out_data, _children=(a,), _op="sum")
@@ -593,7 +600,9 @@ def tensor_sum(a: Tensor, axis: Union[int, tuple[int, ...]] | None = None, keepd
     return out
 
 
-def tensor_mean(a: Tensor, axis: Union[int, tuple[int, ...]] | None = None, keepdims: bool = False) -> Tensor:
+def tensor_mean(
+    a: Tensor, axis: Union[int, tuple[int, ...]] | None = None, keepdims: bool = False
+) -> Tensor:
     """Mean: z = mean(a, axis)."""
     out_data = a.data.mean(axis=axis, keepdims=keepdims)
     out = Tensor(out_data, _children=(a,), _op="mean")
@@ -785,7 +794,7 @@ def tensor_tanh(a: Tensor) -> Tensor:
             if a.grad is None:
                 a.grad = np.zeros_like(a.data)
             # d tanh/da = 1 - tanh²(a)
-            a.grad += out.grad * (1.0 - out_data ** 2)
+            a.grad += out.grad * (1.0 - out_data**2)
 
     if out.requires_grad:
         out._backward = _backward

@@ -176,7 +176,9 @@ class TestBasketValidation:
         with pytest.raises(ValueError, match="sigma shape"):
             simulate_basket(
                 S0=np.array([100.0, 100.0]),
-                K=100, T=1.0, r=0.05,
+                K=100,
+                T=1.0,
+                r=0.05,
                 sigma=np.array([0.2]),  # wrong shape
                 corr=np.eye(2),
                 weights=np.array([0.5, 0.5]),
@@ -187,7 +189,9 @@ class TestBasketValidation:
         with pytest.raises(ValueError, match="corr shape"):
             simulate_basket(
                 S0=np.array([100.0, 100.0]),
-                K=100, T=1.0, r=0.05,
+                K=100,
+                T=1.0,
+                r=0.05,
                 sigma=np.array([0.2, 0.2]),
                 corr=np.eye(3),  # wrong shape
                 weights=np.array([0.5, 0.5]),
@@ -198,7 +202,9 @@ class TestBasketValidation:
         with pytest.raises(ValueError, match="weights shape"):
             simulate_basket(
                 S0=np.array([100.0, 100.0]),
-                K=100, T=1.0, r=0.05,
+                K=100,
+                T=1.0,
+                r=0.05,
                 sigma=np.array([0.2, 0.2]),
                 corr=np.eye(2),
                 weights=np.array([1.0]),  # wrong shape
@@ -210,7 +216,9 @@ class TestBasketValidation:
         corr = np.array([[1.0, 1.0], [1.0, 1.0]])  # singular
         result = simulate_basket(
             S0=np.array([100.0, 100.0]),
-            K=100, T=1.0, r=0.05,
+            K=100,
+            T=1.0,
+            r=0.05,
             sigma=np.array([0.2, 0.2]),
             corr=corr,
             weights=np.array([0.5, 0.5]),
@@ -253,7 +261,12 @@ class TestGreeksEdgeCases:
     def test_compute_greeks_with_array_spot(self):
         """Lines 55, 87: multi-element price backward path."""
         greeks = compute_greeks(
-            bs_price_tensor, 100.0, 100.0, 1.0, 0.05, 0.2,
+            bs_price_tensor,
+            100.0,
+            100.0,
+            1.0,
+            0.05,
+            0.2,
             option_type="call",
         )
         assert 0 < greeks["delta"] < 1
@@ -265,7 +278,10 @@ class TestGreeksEdgeCases:
         result = compute_greeks_vectorized(
             bs_price_tensor,
             np.array([90.0, 100.0, 110.0]),
-            K=100.0, T=1.0, r=0.05, sigma=0.2,
+            K=100.0,
+            T=1.0,
+            r=0.05,
+            sigma=0.2,
         )
         assert result["vega"].shape[0] >= 1
         assert result["vega"][0] > 0
@@ -376,9 +392,13 @@ class TestSurrogateEdgeCases:
         """Line 335: print_summary smoke test."""
         surr = TTSurrogate.from_basket_analytic(
             S0_ranges=[(80, 120), (80, 120)],
-            K=100.0, T=1.0, r=0.05,
-            sigma=[0.2, 0.2], weights=[0.5, 0.5],
-            n_points=10, eps=1e-4,
+            K=100.0,
+            T=1.0,
+            r=0.05,
+            sigma=[0.2, 0.2],
+            weights=[0.5, 0.5],
+            n_points=10,
+            eps=1e-4,
         )
 
         # Just test it doesn't crash; output goes to stdout
@@ -388,7 +408,9 @@ class TestSurrogateEdgeCases:
         """Lines 204-220: from_basket_mc constructor."""
         surr = TTSurrogate.from_basket_mc(
             S0_ranges=[(90, 110), (90, 110)],
-            K=100.0, T=1.0, r=0.05,
+            K=100.0,
+            T=1.0,
+            r=0.05,
             sigma=[0.2, 0.2],
             corr=np.eye(2),
             weights=[0.5, 0.5],
@@ -404,9 +426,13 @@ class TestSurrogateEdgeCases:
         """Cover compression_ratio path in summary."""
         surr = TTSurrogate.from_basket_analytic(
             S0_ranges=[(80, 120), (80, 120)],
-            K=100.0, T=1.0, r=0.05,
-            sigma=[0.2, 0.2], weights=[0.5, 0.5],
-            n_points=10, eps=1e-4,
+            K=100.0,
+            T=1.0,
+            r=0.05,
+            sigma=[0.2, 0.2],
+            weights=[0.5, 0.5],
+            n_points=10,
+            eps=1e-4,
         )
         summary = surr.summary()
         assert "compression_ratio" in summary
@@ -432,8 +458,6 @@ class TestVizEdgeCases:
         rng = np.random.default_rng(42)
         grid = rng.standard_normal((10, 8))
         axes = [np.linspace(80, 120, 10), np.linspace(0.1, 0.5, 8)]
-        fig, axes_out = plot_greeks_surface(
-            {"Delta": grid}, axes, dims=(0, 1)
-        )
+        fig, axes_out = plot_greeks_surface({"Delta": grid}, axes, dims=(0, 1))
         assert fig is not None
         assert len(axes_out) == 1

@@ -40,7 +40,7 @@ def numerical_gradient(
             continue
 
         grad = np.zeros_like(inp.data)
-        it = np.nditer(inp.data, flags=["multi_index"], op_flags=[['readwrite']])
+        it = np.nditer(inp.data, flags=["multi_index"], op_flags=[["readwrite"]])
         while not it.finished:
             idx = it.multi_index
             old_val = inp.data[idx]

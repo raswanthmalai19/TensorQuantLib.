@@ -17,14 +17,14 @@ References:
 
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import Union
 
 import numpy as np
-
 
 # ------------------------------------------------------------------ #
 # Core LSM pricer
 # ------------------------------------------------------------------ #
+
 
 def american_option_lsm(
     S: float,
@@ -38,7 +38,7 @@ def american_option_lsm(
     n_paths: int = 100_000,
     n_steps: int = 252,
     basis_degree: int = 3,
-    seed: Optional[int] = None,
+    seed: int | None = None,
     return_stderr: bool = False,
 ) -> Union[float, tuple[float, float]]:
     """Price an American option via Longstaff-Schwartz LSM.
@@ -80,13 +80,15 @@ def american_option_lsm(
 
     # Build path matrix (shape: n_steps+1, n_paths)
     log_S = np.log(S) + np.cumsum(
-        (r - q - 0.5 * sigma ** 2) * dt + sigma * np.sqrt(dt) * z,
+        (r - q - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * z,
         axis=0,
     )
-    S_paths = np.vstack([
-        np.full(n_paths, S),
-        np.exp(log_S),
-    ])  # shape: (n_steps+1, n_paths)
+    S_paths = np.vstack(
+        [
+            np.full(n_paths, S),
+            np.exp(log_S),
+        ]
+    )  # shape: (n_steps+1, n_paths)
 
     # Payoff at each step
     if option_type == "put":
@@ -150,21 +152,22 @@ def _laguerre_basis(x: np.ndarray, degree: int) -> np.ndarray:
     if degree >= 1:
         X[:, 1] = 1.0 - x
     if degree >= 2:
-        X[:, 2] = 1.0 - 2.0 * x + 0.5 * x ** 2
+        X[:, 2] = 1.0 - 2.0 * x + 0.5 * x**2
     if degree >= 3:
-        X[:, 3] = 1.0 - 3.0 * x + 1.5 * x ** 2 - x ** 3 / 6.0
+        X[:, 3] = 1.0 - 3.0 * x + 1.5 * x**2 - x**3 / 6.0
     if degree >= 4:
-        X[:, 4] = 1.0 - 4.0 * x + 3.0 * x ** 2 - (2.0 / 3.0) * x ** 3 + x ** 4 / 24.0
+        X[:, 4] = 1.0 - 4.0 * x + 3.0 * x**2 - (2.0 / 3.0) * x**3 + x**4 / 24.0
     if degree > 4:
         # Fall back to Vandermonde (polynomial) basis for higher degrees
         for d in range(5, degree + 1):
-            X[:, d] = x ** d
+            X[:, d] = x**d
     return X
 
 
 # ------------------------------------------------------------------ #
 # Vectorized grid pricer
 # ------------------------------------------------------------------ #
+
 
 def american_option_grid(
     S_grid: np.ndarray,
@@ -177,7 +180,7 @@ def american_option_grid(
     *,
     n_paths: int = 50_000,
     n_steps: int = 100,
-    seed: Optional[int] = None,
+    seed: int | None = None,
 ) -> np.ndarray:
     """Price American options over a grid of spot prices.
 
@@ -198,19 +201,32 @@ def american_option_grid(
         >>> prices.shape[0] == 5
         True
     """
-    prices = np.array([
-        float(american_option_lsm(
-            float(s), K, T, r, sigma, q=q, option_type=option_type,
-            n_paths=n_paths, n_steps=n_steps, seed=seed,
-        ))
-        for s in S_grid
-    ])
+    prices = np.array(
+        [
+            float(
+                american_option_lsm(
+                    float(s),
+                    K,
+                    T,
+                    r,
+                    sigma,
+                    q=q,
+                    option_type=option_type,
+                    n_paths=n_paths,
+                    n_steps=n_steps,
+                    seed=seed,
+                )
+            )
+            for s in S_grid
+        ]
+    )
     return prices
 
 
 # ------------------------------------------------------------------ #
 # Greeks via finite differences
 # ------------------------------------------------------------------ #
+
 
 def american_greeks(
     S: float,
@@ -223,7 +239,7 @@ def american_greeks(
     *,
     n_paths: int = 50_000,
     n_steps: int = 100,
-    seed: Optional[int] = None,
+    seed: int | None = None,
     dS: float = 0.5,
     dT: float = 1.0 / 365.0,
     dsigma: float = 0.01,
@@ -252,7 +268,7 @@ def american_greeks(
     pd = float(american_option_lsm(S - dS, K, T, r, sigma, **kw))  # type: ignore[call-arg, arg-type]
 
     delta = (pu - pd) / (2.0 * dS)
-    gamma = (pu - 2.0 * p0 + pd) / (dS ** 2)
+    gamma = (pu - 2.0 * p0 + pd) / (dS**2)
 
     pt = float(american_option_lsm(S, K, T - dT, r, sigma, **kw))  # type: ignore[call-arg, arg-type]
     theta = (pt - p0) / dT

@@ -1,13 +1,14 @@
 """Tests for American option pricing via Longstaff-Schwartz LSM."""
+
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
 from tensorquantlib.finance.american import (
-    american_option_lsm,
-    american_option_grid,
     american_greeks,
+    american_option_grid,
+    american_option_lsm,
 )
 from tensorquantlib.finance.black_scholes import bs_price_numpy
 
@@ -25,8 +26,11 @@ class TestAmericanOptionLSM:
 
     def test_american_call_no_dividends_equals_european(self):
         """For q=0, American call ≈ European call (no early exercise premium)."""
-        am = float(american_option_lsm(100, 100, 1.0, 0.05, 0.2, option_type="call",
-                                        n_paths=50_000, n_steps=50, seed=0))
+        am = float(
+            american_option_lsm(
+                100, 100, 1.0, 0.05, 0.2, option_type="call", n_paths=50_000, n_steps=50, seed=0
+            )
+        )
         eu = float(bs_price_numpy(100, 100, 1.0, 0.05, 0.2))
         # Should be within ~1 of each other due to MC noise
         assert abs(am - eu) < 2.5
@@ -53,7 +57,9 @@ class TestAmericanOptionLSM:
 class TestAmericanOptionGrid:
     def test_grid_shape(self):
         S_grid = np.linspace(80, 120, 5)
-        prices = american_option_grid(S_grid, K=100, T=1.0, r=0.05, sigma=0.2, n_paths=5_000, seed=0)
+        prices = american_option_grid(
+            S_grid, K=100, T=1.0, r=0.05, sigma=0.2, n_paths=5_000, seed=0
+        )
         assert prices.shape == (5,)
         assert np.all(prices >= 0)
 

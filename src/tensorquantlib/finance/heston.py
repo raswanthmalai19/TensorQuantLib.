@@ -24,7 +24,7 @@ References:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional, Union
+from typing import Union
 
 import numpy as np
 from scipy.integrate import quad
@@ -34,12 +34,12 @@ from scipy.stats import norm as _scipy_norm
 # Local alias used in QE scheme (norm PPF for V sampling)
 norm_ppf = _scipy_norm.ppf
 
-from tensorquantlib.finance.black_scholes import bs_price_numpy
 
 
 # ------------------------------------------------------------------ #
 # Parameter container
 # ------------------------------------------------------------------ #
+
 
 @dataclass
 class HestonParams:
@@ -52,6 +52,7 @@ class HestonParams:
         rho: Correlation between asset and variance Brownian motions (-1 < rho < 1).
         v0: Initial variance (>0).
     """
+
     kappa: float = 2.0
     theta: float = 0.04
     xi: float = 0.3
@@ -60,7 +61,7 @@ class HestonParams:
 
     def feller_satisfied(self) -> bool:
         """Check the Feller condition: 2 * kappa * theta > xi^2."""
-        return 2.0 * self.kappa * self.theta > self.xi ** 2
+        return 2.0 * self.kappa * self.theta > self.xi**2
 
     def to_array(self) -> np.ndarray:
         return np.array([self.kappa, self.theta, self.xi, self.rho, self.v0])
@@ -73,6 +74,7 @@ class HestonParams:
 # ------------------------------------------------------------------ #
 # Characteristic function
 # ------------------------------------------------------------------ #
+
 
 def _heston_cf(
     phi: complex,
@@ -92,16 +94,16 @@ def _heston_cf(
     x = np.log(S) + (r - q) * T
 
     # Standard Heston characteristic function (Albrecher et al. 2007 stable form)
-    d = np.sqrt((rho * xi * 1j * phi - kappa) ** 2 + xi ** 2 * (1j * phi + phi ** 2))
+    d = np.sqrt((rho * xi * 1j * phi - kappa) ** 2 + xi**2 * (1j * phi + phi**2))
     g_num = kappa - rho * xi * 1j * phi - d
     g_den = kappa - rho * xi * 1j * phi + d
     g = g_num / g_den
 
     exp_dT = np.exp(-d * T)
-    C = (r - q) * 1j * phi * T + (kappa * theta / xi ** 2) * (
+    C = (r - q) * 1j * phi * T + (kappa * theta / xi**2) * (
         g_num * T - 2.0 * np.log((1.0 - g * exp_dT) / (1.0 - g))
     )
-    D = (g_num / xi ** 2) * (1.0 - exp_dT) / (1.0 - g * exp_dT)
+    D = (g_num / xi**2) * (1.0 - exp_dT) / (1.0 - g * exp_dT)
 
     return np.exp(C + D * v0 + 1j * phi * x)
 
@@ -109,6 +111,7 @@ def _heston_cf(
 # ------------------------------------------------------------------ #
 # Semi-analytic (Carr-Madan) pricing
 # ------------------------------------------------------------------ #
+
 
 def heston_price(
     S: float,
@@ -187,6 +190,7 @@ def heston_price(
 # Monte Carlo reference implementation
 # ------------------------------------------------------------------ #
 
+
 def heston_price_mc(
     S: float,
     K: float,
@@ -198,7 +202,7 @@ def heston_price_mc(
     *,
     n_paths: int = 100_000,
     n_steps: int = 252,
-    seed: Optional[int] = None,
+    seed: int | None = None,
     return_stderr: bool = False,
     scheme: str = "qe",
 ) -> Union[float, tuple[float, float]]:
@@ -249,25 +253,23 @@ def heston_price_mc(
         for _ in range(n_steps):
             z1 = rng.standard_normal(n_paths)
             z2 = rng.standard_normal(n_paths)
-            zv = rho * z1 + np.sqrt(1.0 - rho ** 2) * z2
+            zv = rho * z1 + np.sqrt(1.0 - rho**2) * z2
 
             V_t_pos = np.maximum(V_t, 0.0)
             sqrt_V = np.sqrt(V_t_pos)
 
-            S_t = S_t * np.exp(
-                (r - q - 0.5 * V_t_pos) * dt + sqrt_V * z1 * sqrt_dt
-            )
+            S_t = S_t * np.exp((r - q - 0.5 * V_t_pos) * dt + sqrt_V * z1 * sqrt_dt)
             V_t = V_t + kappa * (theta - V_t_pos) * dt + xi * sqrt_V * zv * sqrt_dt
             V_t = np.maximum(V_t, 0.0)
     else:
         # Quadratic-Exponential (QE) scheme (Andersen 2008) for variance
         # Precompute constants
         exp_kdt = np.exp(-kappa * dt)
-        xi2 = xi ** 2
+        xi2 = xi**2
         K0 = -rho * kappa * theta * dt / xi
         K1 = 0.5 * dt * (kappa * rho / xi - 0.5) - rho / xi
         K2 = 0.5 * dt * (kappa * rho / xi - 0.5) + rho / xi
-        K3 = 0.5 * dt * (1.0 - rho ** 2)
+        K3 = 0.5 * dt * (1.0 - rho**2)
         K4 = K3  # same by symmetry
 
         # QE critical ratio threshold (Andersen suggests psi_c = 1.5)
@@ -275,15 +277,17 @@ def heston_price_mc(
 
         for _ in range(n_steps):
             z1 = rng.standard_normal(n_paths)
-            u_v = rng.uniform(0.0, 1.0, n_paths)   # for V update
+            u_v = rng.uniform(0.0, 1.0, n_paths)  # for V update
 
             # QE step for V_t+dt given V_t
             # Conditional mean and variance of V(t+dt)|V(t) for CIR process
-            m   = theta + (V_t - theta) * exp_kdt
-            s2  = (V_t * xi2 * exp_kdt / kappa * (1.0 - exp_kdt)
-                   + theta * xi2 / (2.0 * kappa) * (1.0 - exp_kdt) ** 2)
-            s2  = np.maximum(s2, 0.0)
-            psi = s2 / (m ** 2)
+            m = theta + (V_t - theta) * exp_kdt
+            s2 = (
+                V_t * xi2 * exp_kdt / kappa * (1.0 - exp_kdt)
+                + theta * xi2 / (2.0 * kappa) * (1.0 - exp_kdt) ** 2
+            )
+            s2 = np.maximum(s2, 0.0)
+            psi = s2 / (m**2)
 
             # High-psi regime (exponential mixture): psi > psi_c
             # Low-psi regime (quadratic normal): psi <= psi_c
@@ -291,28 +295,32 @@ def heston_price_mc(
 
             # --- Low-psi branch: quadratic approximation ---
             inv_psi = 1.0 / np.where(hi, 1.0, psi)  # safe denominator
-            b2 = np.maximum(2.0 * inv_psi - 1.0 + np.sqrt(2.0 * inv_psi) * np.sqrt(2.0 * inv_psi - 1.0), 0.0)
-            b  = np.sqrt(b2)
-            a  = m / (1.0 + b2)
+            b2 = np.maximum(
+                2.0 * inv_psi - 1.0 + np.sqrt(2.0 * inv_psi) * np.sqrt(2.0 * inv_psi - 1.0), 0.0
+            )
+            b = np.sqrt(b2)
+            a = m / (1.0 + b2)
             z_v = norm_ppf(u_v)  # standard normal quantile
             V_lo = a * (b + z_v) ** 2
 
             # --- High-psi branch: exponential distribution ---
             p_exp = (psi - 1.0) / (psi + 1.0)
-            beta  = (1.0 - p_exp) / np.where(hi, m, 1.0)  # avoid /0 in lo branch
+            beta = (1.0 - p_exp) / np.where(hi, m, 1.0)  # avoid /0 in lo branch
             # Inversion of mixed distribution
             # u ~ [0, p] -> V = 0; u ~ (p, 1] -> V = ln(...) / beta
-            v_hi_safe = np.where(u_v > p_exp, np.log((1.0 - p_exp) / np.maximum(1.0 - u_v, 1e-300)) / np.where(beta > 0, beta, 1.0), 0.0)
+            v_hi_safe = np.where(
+                u_v > p_exp,
+                np.log((1.0 - p_exp) / np.maximum(1.0 - u_v, 1e-300))
+                / np.where(beta > 0, beta, 1.0),
+                0.0,
+            )
             V_hi = np.where(u_v > p_exp, v_hi_safe, 0.0)
 
             V_next = np.where(hi, V_hi, V_lo)
 
             # Log-asset update using V_t and V_next (trapezoidal integral approximation)
-            V_avg = 0.5 * (V_t + V_next)
             S_t = S_t * np.exp(
-                (r - q) * dt
-                + K0 + K1 * V_t + K2 * V_next
-                + np.sqrt(K3 * V_t + K4 * V_next) * z1
+                (r - q) * dt + K0 + K1 * V_t + K2 * V_next + np.sqrt(K3 * V_t + K4 * V_next) * z1
             )
 
             V_t = V_next
@@ -334,6 +342,7 @@ def heston_price_mc(
 # ------------------------------------------------------------------ #
 # Greeks (finite differences on the analytic price)
 # ------------------------------------------------------------------ #
+
 
 def heston_greeks(
     S: float,
@@ -373,13 +382,16 @@ def heston_greeks(
     price_dn = heston_price(S - dS, K, T, r, params, q=q, option_type=option_type)
 
     delta = (price_up - price_dn) / (2.0 * dS)
-    gamma = (price_up - 2.0 * price_0 + price_dn) / (dS ** 2)
+    gamma = (price_up - 2.0 * price_0 + price_dn) / (dS**2)
 
     price_T = heston_price(S, K, T - dT, r, params, q=q, option_type=option_type)
     theta = (price_T - price_0) / dT  # per year, negative = time decay
 
     p_vega = HestonParams(
-        kappa=params.kappa, theta=params.theta, xi=params.xi, rho=params.rho,
+        kappa=params.kappa,
+        theta=params.theta,
+        xi=params.xi,
+        rho=params.rho,
         v0=params.v0 + dv0,
     )
     price_v = heston_price(S, K, T, r, p_vega, q=q, option_type=option_type)
@@ -391,6 +403,7 @@ def heston_greeks(
 # ------------------------------------------------------------------ #
 # Calibration
 # ------------------------------------------------------------------ #
+
 
 @dataclass
 class HestonCalibrator:
@@ -457,13 +470,23 @@ class HestonCalibrator:
                 for j, T in enumerate(T_grid):
                     try:
                         model_price = heston_price(
-                            self.S, float(K), float(T), self.r, params,
-                            q=self.q, option_type=self.option_type,
+                            self.S,
+                            float(K),
+                            float(T),
+                            self.r,
+                            params,
+                            q=self.q,
+                            option_type=self.option_type,
                         )
                         # Convert model price to IV
                         model_iv = implied_vol(
-                            model_price, self.S, float(K), float(T), self.r,
-                            q=self.q, option_type=self.option_type,
+                            model_price,
+                            self.S,
+                            float(K),
+                            float(T),
+                            self.r,
+                            q=self.q,
+                            option_type=self.option_type,
                         )
                         sq_err += (model_iv - iv_market[i, j]) ** 2
                     except Exception:
@@ -471,10 +494,10 @@ class HestonCalibrator:
             return sq_err
 
         bounds = [
-            (0.1, 10.0),   # kappa
+            (0.1, 10.0),  # kappa
             (0.001, 0.5),  # theta
-            (0.1, 2.0),    # xi
-            (-0.99, 0.99), # rho
+            (0.1, 2.0),  # xi
+            (-0.99, 0.99),  # rho
             (0.001, 0.5),  # v0
         ]
 
@@ -486,9 +509,7 @@ class HestonCalibrator:
                 x0 = np.array([2.0, 0.04, 0.3, -0.5, 0.04])
             else:
                 # Random start within bounds
-                x0 = np.array([
-                    rng.uniform(lo, hi) for lo, hi in bounds
-                ])
+                x0 = np.array([rng.uniform(lo, hi) for lo, hi in bounds])
 
             result = minimize(
                 _objective,
@@ -501,7 +522,9 @@ class HestonCalibrator:
             if best_result is None or result.fun < best_result.fun:
                 best_result = result
                 if verbose:
-                    print(f"Restart {restart+1}/{n_restarts}: RMSE={np.sqrt(result.fun / (len(K_grid)*len(T_grid))):.6f}")
+                    print(
+                        f"Restart {restart + 1}/{n_restarts}: RMSE={np.sqrt(result.fun / (len(K_grid) * len(T_grid))):.6f}"
+                    )
 
         if best_result is not None:
             self.params_ = HestonParams.from_array(best_result.x)
@@ -531,12 +554,22 @@ class HestonCalibrator:
             for j, T in enumerate(T_grid):
                 try:
                     price = heston_price(
-                        self.S, float(K), float(T), self.r, self.params_,
-                        q=self.q, option_type=self.option_type,
+                        self.S,
+                        float(K),
+                        float(T),
+                        self.r,
+                        self.params_,
+                        q=self.q,
+                        option_type=self.option_type,
                     )
                     surface[i, j] = implied_vol(
-                        price, self.S, float(K), float(T), self.r,
-                        q=self.q, option_type=self.option_type,
+                        price,
+                        self.S,
+                        float(K),
+                        float(T),
+                        self.r,
+                        q=self.q,
+                        option_type=self.option_type,
                     )
                 except Exception:
                     surface[i, j] = np.nan

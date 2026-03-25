@@ -4,15 +4,16 @@ Implements FX-specific option pricing:
 - Garman-Kohlhagen (1983): Black-Scholes adapted for FX with foreign rate
 - Quanto options: options on foreign assets settled in domestic currency
 """
+
 from __future__ import annotations
 
 import numpy as np
 from scipy.stats import norm
 
-
 # ---------------------------------------------------------------------------
 # Garman-Kohlhagen model
 # ---------------------------------------------------------------------------
+
 
 def garman_kohlhagen(
     S: float,
@@ -50,7 +51,7 @@ def garman_kohlhagen(
     float
         Option price in domestic currency.
     """
-    d1 = (np.log(S / K) + (r_d - r_f + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+    d1 = (np.log(S / K) + (r_d - r_f + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
     d2 = d1 - sigma * np.sqrt(T)
 
     if option_type == "call":
@@ -78,7 +79,7 @@ def gk_greeks(
         {'delta': ..., 'gamma': ..., 'vega': ..., 'theta': ..., 'rho_d': ..., 'rho_f': ...}
     """
     sqT = sigma * np.sqrt(T)
-    d1 = (np.log(S / K) + (r_d - r_f + 0.5 * sigma ** 2) * T) / sqT
+    d1 = (np.log(S / K) + (r_d - r_f + 0.5 * sigma**2) * T) / sqT
     d2 = d1 - sqT
 
     exp_rf = np.exp(-r_f * T)
@@ -110,12 +111,12 @@ def gk_greeks(
         rho_f = S * T * exp_rf * norm.cdf(-d1)
 
     return {
-        'delta': float(delta),
-        'gamma': float(gamma),
-        'vega': float(vega),
-        'theta': float(theta),
-        'rho_d': float(rho_d),
-        'rho_f': float(rho_f),
+        "delta": float(delta),
+        "gamma": float(gamma),
+        "vega": float(vega),
+        "theta": float(theta),
+        "rho_d": float(rho_d),
+        "rho_f": float(rho_f),
     }
 
 
@@ -140,6 +141,7 @@ def fx_forward(
 # ---------------------------------------------------------------------------
 # Quanto option
 # ---------------------------------------------------------------------------
+
 
 def quanto_option(
     S: float,
@@ -189,16 +191,14 @@ def quanto_option(
     # Quanto-adjusted drift rate
     r_q = r_d - rho * sigma_s * sigma_fx
 
-    d1 = (np.log(S / K) + (r_q + 0.5 * sigma_s ** 2) * T) / (sigma_s * np.sqrt(T))
+    d1 = (np.log(S / K) + (r_q + 0.5 * sigma_s**2) * T) / (sigma_s * np.sqrt(T))
     d2 = d1 - sigma_s * np.sqrt(T)
 
     if option_type == "call":
-        price = fx_rate * np.exp(-r_d * T) * (
-            S * np.exp(r_q * T) * norm.cdf(d1) - K * norm.cdf(d2)
-        )
+        price = fx_rate * np.exp(-r_d * T) * (S * np.exp(r_q * T) * norm.cdf(d1) - K * norm.cdf(d2))
     else:
-        price = fx_rate * np.exp(-r_d * T) * (
-            K * norm.cdf(-d2) - S * np.exp(r_q * T) * norm.cdf(-d1)
+        price = (
+            fx_rate * np.exp(-r_d * T) * (K * norm.cdf(-d2) - S * np.exp(r_q * T) * norm.cdf(-d1))
         )
 
     return float(price)

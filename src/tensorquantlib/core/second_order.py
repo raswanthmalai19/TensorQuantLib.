@@ -38,7 +38,6 @@ import numpy as np
 
 from tensorquantlib.core.tensor import Tensor
 
-
 # ======================================================================
 # Core second-order routines
 # ======================================================================
@@ -235,9 +234,7 @@ def mixed_partial(
         out = fn(t1, t2)
         return float(out.data.item()) if out.data.size == 1 else float(out.data.sum())
 
-    return (_f(+h1, +h2) - _f(+h1, -h2) - _f(-h1, +h2) + _f(-h1, -h2)) / (
-        4.0 * h1 * h2
-    )
+    return (_f(+h1, +h2) - _f(+h1, -h2) - _f(-h1, +h2) + _f(-h1, -h2)) / (4.0 * h1 * h2)
 
 
 # ======================================================================
@@ -437,14 +434,14 @@ def second_order_greeks(
     v_mm = _price(S - h_S, sigma - h_v)
 
     # Gamma: central diff on S (average over sigma ± h to reduce noise)
-    v_p0 = (v_pp + v_pm) / 2.0   # V(S+h, sigma)
-    v_m0 = (v_mp + v_mm) / 2.0   # V(S-h, sigma)
-    gamma = (v_p0 - 2.0 * v0 + v_m0) / (h_S ** 2)
+    v_p0 = (v_pp + v_pm) / 2.0  # V(S+h, sigma)
+    v_m0 = (v_mp + v_mm) / 2.0  # V(S-h, sigma)
+    gamma = (v_p0 - 2.0 * v0 + v_m0) / (h_S**2)
 
     # Volga: central diff on sigma (average over S ± h to reduce noise)
-    v_0p = (v_pp + v_mp) / 2.0   # V(S, sigma+h)
-    v_0m = (v_pm + v_mm) / 2.0   # V(S, sigma-h)
-    volga = (v_0p - 2.0 * v0 + v_0m) / (h_v ** 2)
+    v_0p = (v_pp + v_mp) / 2.0  # V(S, sigma+h)
+    v_0m = (v_pm + v_mm) / 2.0  # V(S, sigma-h)
+    volga = (v_0p - 2.0 * v0 + v_0m) / (h_v**2)
 
     # Vanna: mixed partial via 4-point stencil
     vanna = (v_pp - v_pm - v_mp + v_mm) / (4.0 * h_S * h_v)
@@ -453,13 +450,13 @@ def second_order_greeks(
 
 
 __all__ = [
-    "hvp",
+    "gamma_autograd",
     "hessian",
     "hessian_diag",
-    "vhp",
+    "hvp",
     "mixed_partial",
-    "gamma_autograd",
-    "vanna_autograd",
-    "volga_autograd",
     "second_order_greeks",
+    "vanna_autograd",
+    "vhp",
+    "volga_autograd",
 ]

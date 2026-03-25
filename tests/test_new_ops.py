@@ -1,13 +1,18 @@
 """Tests for the new autograd ops: sin, cos, tanh, abs, clip, where, softmax."""
+
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from tensorquantlib.core.tensor import (
     Tensor,
-    tensor_sin, tensor_cos, tensor_tanh, tensor_abs, tensor_clip,
-    tensor_where, tensor_softmax,
+    tensor_abs,
+    tensor_clip,
+    tensor_cos,
+    tensor_sin,
+    tensor_softmax,
+    tensor_tanh,
+    tensor_where,
 )
 from tensorquantlib.utils.validation import check_grad
 
@@ -145,9 +150,7 @@ class TestSoftmax:
         """Check backward against check_grad (central-difference validation)."""
         x_data = np.array([1.0, 2.0, 0.5])
         t = Tensor(x_data.copy(), requires_grad=True)
-        result = check_grad(
-            lambda inp: tensor_softmax(inp, axis=0).sum(), [t], tol=1e-5
-        )
+        result = check_grad(lambda inp: tensor_softmax(inp, axis=0).sum(), [t], tol=1e-5)
         assert result["passed"], (
             f"Softmax gradient check failed: max_error={result['max_error']:.2e}"
         )
