@@ -1,5 +1,6 @@
 # TensorQuantLib
 
+[![PyPI](https://img.shields.io/pypi/v/tensorquantlib.svg)](https://pypi.org/project/tensorquantlib/)
 [![CI](https://github.com/raswanthmalai19/TensorQuantLib/actions/workflows/ci.yml/badge.svg)](https://github.com/raswanthmalai19/TensorQuantLib/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -20,7 +21,11 @@ TensorQuantLib provides a complete toolkit for derivatives pricing, risk managem
 ## Documentation
 
 Complete documentation with API reference, tutorials, and examples:
-**[https://raswanthmalai19.github.io/TensorQuantLib./](https://raswanthmalai19.github.io/TensorQuantLib./)**
+
+### Primary Resources
+- **[GitHub Documentation](https://raswanthmalai19.github.io/TensorQuantLib./)** — Full docs, tutorials, and examples
+- **[PyPI Package](https://pypi.org/project/tensorquantlib/)** — Installation and releases
+- **[GitHub Repository](https://github.com/raswanthmalai19/TensorQuantLib)** — Source code and issues
 
 ### Quick Links
 - [**API Reference**](https://raswanthmalai19.github.io/TensorQuantLib./api.html) — Full module documentation
@@ -61,23 +66,29 @@ Complete documentation with API reference, tutorials, and examples:
 
 ## Installation
 
-### pip install (recommended)
+### pip install from PyPI (recommended)
 
 ```bash
-pip install git+https://github.com/raswanthmalai19/TensorQuantLib.git
+pip install tensorquantlib
 ```
 
 ### With optional dependencies
 
 ```bash
 # Visualization support
-pip install "git+https://github.com/raswanthmalai19/TensorQuantLib.git#egg=tensorquantlib[viz]"
+pip install tensorquantlib[viz]
 
 # Market data support
-pip install "git+https://github.com/raswanthmalai19/TensorQuantLib.git#egg=tensorquantlib[data]"
+pip install tensorquantlib[data]
 
 # Everything
-pip install "git+https://github.com/raswanthmalai19/TensorQuantLib.git#egg=tensorquantlib[all]"
+pip install tensorquantlib[all]
+```
+
+### pip install from GitHub (latest development version)
+
+```bash
+pip install git+https://github.com/raswanthmalai19/TensorQuantLib.git
 ```
 
 ### Clone & install (development)
@@ -550,7 +561,7 @@ MIT — see [`LICENSE`](LICENSE).
 - [x] Market data integration (Yahoo Finance)
 - [x] Backtesting framework (engine, strategies, metrics)
 - [x] CLI interface
-- [ ] PyPI release
+- [x] PyPI release
 - [ ] GPU acceleration via CuPy
 
 ---
