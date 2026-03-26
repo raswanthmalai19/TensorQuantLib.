@@ -54,7 +54,6 @@ def sabr_implied_vol(
 
     # Avoid division by zero for ATM
     eps = 1e-12
-    FK = F * K
 
     log_FK = np.log(F / K)
     atm_mask = np.abs(log_FK) < eps

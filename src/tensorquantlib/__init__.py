@@ -3,7 +3,8 @@
 __version__ = "0.3.0"
 __author__ = "TensorQuantLib Contributors"
 
-# ── Core autograd ───────────────────────────────────────────────────
+# ruff: noqa: I001, RUF022  # keep imports and __all__ grouped by domain for readability
+
 # ── Backtesting ──────────────────────────────────────────────────────
 from tensorquantlib.backtest import (
     EQUITY_COMM,
@@ -34,7 +35,7 @@ from tensorquantlib.backtest import (
     win_rate,
 )
 
-# ── Second-order autodiff ───────────────────────────────────────────
+# ── Core autograd ───────────────────────────────────────────────────
 from tensorquantlib.core.second_order import (
     gamma_autograd,
     hessian,
@@ -56,6 +57,9 @@ from tensorquantlib.core.tensor import (
     tensor_tanh,
     tensor_where,
 )
+
+# ── Finance — Greeks ───────────────────────────────────────────────
+from tensorquantlib.finance.greeks import compute_greeks, compute_greeks_vectorized
 
 # ── Finance — American Options (LSM) ───────────────────────────────
 from tensorquantlib.finance.american import (
@@ -82,6 +86,15 @@ from tensorquantlib.finance.black_scholes import (
     bs_vega,
 )
 
+# ── Finance — Heston ───────────────────────────────────────────────
+from tensorquantlib.finance.heston import (
+    HestonCalibrator,
+    HestonParams,
+    heston_greeks,
+    heston_price,
+    heston_price_mc,
+)
+
 # ── Finance — Credit Risk ───────────────────────────────────────────
 from tensorquantlib.finance.credit import (
     cds_price,
@@ -92,39 +105,8 @@ from tensorquantlib.finance.credit import (
     survival_probability,
 )
 
-# ── Finance — Exotic Options ────────────────────────────────────────
-from tensorquantlib.finance.exotics import (
-    asian_geometric_price,
-    asian_price_mc,
-    barrier_price,
-    barrier_price_mc,
-    cliquet_price_mc,
-    digital_greeks,
-    digital_price,
-    digital_price_mc,
-    lookback_fixed_analytic,
-    lookback_floating_analytic,
-    lookback_price_mc,
-    rainbow_price_mc,
-)
-
 # ── Finance — FX Options ────────────────────────────────────────────
-from tensorquantlib.finance.fx import (
-    fx_forward,
-    garman_kohlhagen,
-    gk_greeks,
-    quanto_option,
-)
-from tensorquantlib.finance.greeks import compute_greeks, compute_greeks_vectorized
-
-# ── Finance — Heston Model ──────────────────────────────────────────
-from tensorquantlib.finance.heston import (
-    HestonCalibrator,
-    HestonParams,
-    heston_greeks,
-    heston_price,
-    heston_price_mc,
-)
+from tensorquantlib.finance.fx import fx_forward, garman_kohlhagen, gk_greeks, quanto_option
 
 # ── Finance — Implied Volatility ────────────────────────────────────
 from tensorquantlib.finance.implied_vol import (
@@ -171,6 +153,22 @@ from tensorquantlib.finance.rates import (
     vasicek_option_price,
     vasicek_simulate,
     vasicek_yield,
+)
+
+# ── Finance — Exotics ───────────────────────────────────────────────
+from tensorquantlib.finance.exotics import (
+    asian_geometric_price,
+    asian_price_mc,
+    barrier_price,
+    barrier_price_mc,
+    cliquet_price_mc,
+    digital_greeks,
+    digital_price,
+    digital_price_mc,
+    lookback_fixed_analytic,
+    lookback_floating_analytic,
+    lookback_price_mc,
+    rainbow_price_mc,
 )
 
 # ── Finance — Risk Metrics ──────────────────────────────────────────
@@ -229,7 +227,7 @@ from tensorquantlib.tt.pricing import (
 )
 from tensorquantlib.tt.surrogate import TTSurrogate
 
-# ── Visualization ────────────────────────────────────────────────────
+# ── Visualization ───────────────────────────────────────────────────
 from tensorquantlib.viz import plot_greeks_surface, plot_pricing_surface, plot_tt_ranks
 
 __all__ = [
@@ -255,6 +253,9 @@ __all__ = [
     "implied_vol_batch",
     "implied_vol_nr",
     "iv_surface",
+    # Greeks
+    "compute_greeks",
+    "compute_greeks_vectorized",
     # Heston
     "HestonCalibrator",
     "HestonParams",
@@ -265,6 +266,15 @@ __all__ = [
     "american_greeks",
     "american_option_grid",
     "american_option_lsm",
+    # Basket & Greeks
+    "build_pricing_grid",
+    "build_pricing_grid_analytic",
+    "simulate_basket",
+    # FX options
+    "fx_forward",
+    "garman_kohlhagen",
+    "gk_greeks",
+    "quanto_option",
     # Exotics
     "asian_geometric_price",
     "asian_price_mc",
@@ -297,11 +307,6 @@ __all__ = [
     "vasicek_option_price",
     "vasicek_simulate",
     "vasicek_yield",
-    # FX options
-    "fx_forward",
-    "garman_kohlhagen",
-    "gk_greeks",
-    "quanto_option",
     # Credit risk
     "cds_price",
     "cds_spread",
@@ -340,12 +345,6 @@ __all__ = [
     "swap_rate",
     "swaption_parity",
     "swaption_price",
-    # Basket & Greeks
-    "build_pricing_grid",
-    "build_pricing_grid_analytic",
-    "compute_greeks",
-    "compute_greeks_vectorized",
-    "simulate_basket",
     # Second-order autodiff
     "gamma_autograd",
     "hessian",
@@ -385,7 +384,7 @@ __all__ = [
     # Backtesting — engine
     "BacktestEngine",
     "BacktestResult",
-    "COMMISSIONMODEL",
+    "CommissionModel",
     "EQUITY_COMM",
     "EQUITY_SLIP",
     "FX_COMM",

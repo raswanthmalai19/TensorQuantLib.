@@ -464,25 +464,25 @@ def tt_cross(
         J.append(rows)
 
     # ------------------------------------------------------------------
-    # Step 2: Left-to-right sweep to build left pivot sets I[k]
-    # I[k] — left pivots at interface k-1 → k, shape (r_k, k)
-    # I[0] is a single "empty" index — the left boundary has rank 1.
+    # Step 2: Left-to-right sweep to build left pivot sets left_pivots[k]
+    # left_pivots[k] — left pivots at interface k-1 → k, shape (r_k, k)
+    # left_pivots[0] is a single "empty" index — the left boundary has rank 1.
     # ------------------------------------------------------------------
-    I: list[np.ndarray] = [np.zeros((1, 0), dtype=int)]
+    left_pivots: list[np.ndarray] = [np.zeros((1, 0), dtype=int)]
 
     for sweep in range(n_sweeps):
         # ---- Left-to-right ----
         for k in range(d - 1):
-            r_l = I[k].shape[0]
+            r_l = left_pivots[k].shape[0]
             r_r = J[k].shape[0]
             n_k = shape[k]
 
             # Evaluate cross C: shape (r_l * n_k, r_r)
-            C = _eval_fiber(fn, I[k], k, n_k, J[k], d)
+            C = _eval_fiber(fn, left_pivots[k], k, n_k, J[k], d)
 
             # QR + maxvol to select r_new pivot rows
             r_candidate = min(max_rank, r_l * n_k, max(r_r, 1))
-            Q_mat, _, piv = qr(C, pivoting=True, mode="economic")
+            Q_mat, _ = qr(C, mode="economic")
             Q_r = Q_mat[:, :r_candidate]
             pivot_rows = _maxvol_greedy(Q_r, r_candidate, rng)
 
@@ -492,22 +492,22 @@ def tt_cross(
             for j, row in enumerate(pivot_rows):
                 il_dec = int(row) // n_k
                 ik_dec = int(row) % n_k
-                if k > 0 and il_dec < I[k].shape[0]:
-                    new_I[j, :k] = I[k][il_dec, :]
+                if k > 0 and il_dec < left_pivots[k].shape[0]:
+                    new_I[j, :k] = left_pivots[k][il_dec, :]
                 new_I[j, k] = ik_dec
 
             if sweep == 0:
-                I.append(new_I)
+                left_pivots.append(new_I)
             else:
-                I[k + 1] = new_I
+                left_pivots[k + 1] = new_I
 
         # ---- Right-to-left (refine J) ----
         for k in range(d - 2, -1, -1):
-            r_l = I[k].shape[0]
+            r_l = left_pivots[k].shape[0]
             r_r = J[k].shape[0]
             n_k = shape[k]
 
-            C = _eval_fiber(fn, I[k], k, n_k, J[k], d)
+            C = _eval_fiber(fn, left_pivots[k], k, n_k, J[k], d)
 
             # Select new right pivots from column pivoting of C^T
             r_candidate = min(max_rank, r_l * n_k, max(r_r, 1))
@@ -523,7 +523,7 @@ def tt_cross(
                 # Right multi-index = (ik_dec, J[k][il_dec])
                 if n_right == 1:
                     new_J[j, 0] = ik_dec
-                elif n_right > 1 and il_dec < I[k + 1].shape[0]:
+                elif n_right > 1 and il_dec < left_pivots[k + 1].shape[0]:
                     # current right pivot is the k+1 index combined with J[k+1]
                     new_J[j, 0] = ik_dec
                     if k + 1 < len(J) and il_dec < J[k + 1].shape[0]:
@@ -539,15 +539,15 @@ def tt_cross(
 
     for k in range(d):
         n_k = shape[k]
-        r_l = I[k].shape[0]
+        r_l = left_pivots[k].shape[0]
 
         if k < d - 1:
             r_r = J[k].shape[0]
             # Fiber: (r_l * n_k, r_r)
-            C = _eval_fiber(fn, I[k], k, n_k, J[k], d)
+            C = _eval_fiber(fn, left_pivots[k], k, n_k, J[k], d)
 
-            # Interface matrix Z: (|I[k+1]|, r_r)
-            Z = _eval_interface(fn, I[k + 1], J[k], d)
+            # Interface matrix Z: (|left_pivots[k+1]|, r_r)
+            Z = _eval_interface(fn, left_pivots[k + 1], J[k], d)
 
             # Core = C @ pinv(Z): shape (r_l * n_k, r_next)
             # pinv handles rank-deficient Z gracefully
@@ -569,7 +569,7 @@ def tt_cross(
         else:
             # Last core: fiber only, no interface
             right_dummy = np.zeros((1, 0), dtype=int)
-            C = _eval_fiber(fn, I[k], k, n_k, right_dummy, d)  # (r_l * n_k, 1)
+            C = _eval_fiber(fn, left_pivots[k], k, n_k, right_dummy, d)  # (r_l * n_k, 1)
             cores.append(C.reshape(r_l, n_k, 1))
 
     return cores

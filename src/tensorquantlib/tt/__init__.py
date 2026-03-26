@@ -25,6 +25,10 @@ from .surrogate import TTSurrogate
 
 __all__ = [
     "TTSurrogate",
+    "american_surrogate",
+    "exotic_surrogate",
+    "heston_surrogate",
+    "jump_diffusion_surrogate",
     "tt_add",
     "tt_compression_ratio",
     "tt_cross",

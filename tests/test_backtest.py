@@ -215,7 +215,7 @@ class TestSlippageModel:
     def test_fixed_spread_cost(self):
         m = SlippageModel(fixed_spread=0.001)  # 10 bps round-trip
         cost = m.cost(price=100.0, quantity=100.0)
-        # spread_cost = 100 shares × $100 × 0.001 = $10
+        # spread_cost = 100 shares x $100 x 0.001 = $10
         assert abs(cost - 10.0) < 1e-10
 
     def test_cost_independent_of_trade_direction(self):
@@ -226,7 +226,7 @@ class TestSlippageModel:
         m = SlippageModel(market_impact=0.1, adv=10_000.0)
         c1 = m.cost(100.0, 100.0)
         c4 = m.cost(100.0, 400.0)
-        # sqrt-impact: cost ∝ qty^{3/2}, so 4× qty → (4)^{3/2} = 8× cost
+        # sqrt-impact: cost ∝ qty^{3/2}, so 4x qty -> (4)^{3/2} = 8x cost
         ratio = c4 / c1
         assert abs(ratio - 8.0) < 0.5  # 4^(3/2) = 8
 
@@ -243,22 +243,22 @@ class TestCommissionModel:
 
     def test_per_unit(self):
         m = CommissionModel(per_unit=0.005)
-        # 200 shares × $0.005 = $1.00
+        # 200 shares x $0.005 = $1.00
         assert abs(m.cost(100.0, 200.0) - 1.0) < 1e-10
 
     def test_minimum_applied(self):
         m = CommissionModel(per_unit=0.005, minimum=1.0)
-        # 10 shares × $0.005 = $0.05 < minimum $1.00 → $1.00
+        # 10 shares x $0.005 = $0.05 < minimum $1.00 -> $1.00
         assert abs(m.cost(100.0, 10.0) - 1.0) < 1e-10
 
     def test_percentage(self):
         m = CommissionModel(percentage=0.001)  # 10 bps
-        # 100 shares × $50 = $5000 notional × 0.001 = $5
+        # 100 shares x $50 = $5000 notional x 0.001 = $5
         assert abs(m.cost(50.0, 100.0) - 5.0) < 1e-10
 
     def test_equity_comm_preset(self):
         cost = EQUITY_COMM.cost(price=50.0, quantity=10.0)
-        # 10 × $0.005 = $0.05 < $1 minimum → $1.00
+        # 10 x $0.005 = $0.05 < $1 minimum -> $1.00
         assert abs(cost - 1.0) < 1e-10
 
 

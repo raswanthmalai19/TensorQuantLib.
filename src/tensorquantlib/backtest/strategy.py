@@ -62,6 +62,8 @@ class Strategy(ABC):
 
     def on_fill(self, trade: Trade) -> None:
         """Called after a trade is executed. Override for bookkeeping."""
+        # Default no-op; strategies override when they need fill bookkeeping.
+        return None
 
 
 class DeltaHedgeStrategy(Strategy):

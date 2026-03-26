@@ -130,7 +130,7 @@ class TestBlackScholesVsReference:
             (100, 100, 1 / 12, 0.05, 0.25, 0.00, "call"),
             # With continuous dividend yield
             (100, 100, 1.0, 0.05, 0.20, 0.03, "call"),
-            # Hull (2022) Example 19.1 pin-point: S=42,K=40,T=0.5,r=0.1,σ=0.2
+            # Hull (2022) Example 19.1 pin-point: S=42,K=40,T=0.5,r=0.1,sigma=0.2
             (42, 40, 0.5, 0.10, 0.20, 0.00, "call"),
         ],
     )
@@ -232,12 +232,12 @@ class TestBlackScholesGreeks:
     indicate an inconsistency between the Greek implementations.
     """
 
-    PARAMS = [
+    PARAMS = (
         (100, 100, 1.0, 0.05, 0.20, 0.00, "call"),
         (110, 95, 0.5, 0.03, 0.25, 0.00, "call"),
         (100, 100, 1.0, 0.05, 0.20, 0.00, "put"),
         (90, 100, 0.5, 0.05, 0.30, 0.02, "put"),
-    ]
+    )
 
     @pytest.mark.parametrize("S,K,T,r,sigma,q,otype", PARAMS)
     def test_delta(self, S, K, T, r, sigma, q, otype):
@@ -294,10 +294,10 @@ class TestBlackScholesGreeks:
         delta = bs_delta(S, K, T, r, sigma, option_type=otype)
         gamma = bs_gamma(S, K, T, r, sigma)
         theta = bs_theta(S, K, T, r, sigma, option_type=otype)
-        # θ = -dV/dT = dV/dt so the PDE reads: θ + ½σ²S²Γ + rSΔ - rC = 0
+        # theta = -dV/dT = dV/dt so the PDE reads: theta + 0.5*sigma^2*S^2*Gamma + r*S*Delta - r*C = 0
         residual = theta + 0.5 * sigma**2 * S**2 * gamma + r * S * delta - r * C
         assert abs(residual) < 1e-8, (
-            f"BS PDE residual={residual:.2e} for S={S},K={K},T={T},r={r},σ={sigma},{otype}"
+            f"BS PDE residual={residual:.2e} for S={S},K={K},T={T},r={r},sigma={sigma},{otype}"
         )
 
 
@@ -522,7 +522,7 @@ class TestAsianOptionBounds:
 
         geo = asian_geometric_price(S, K, T, r, sigma, option_type="call")
         arith = asian_price_mc(S, K, T, r, sigma, n_paths=200_000, n_steps=252, option_type="call")
-        # Allow 3σ MC uncertainty (roughly 0.05 for these params)
+        # Allow 3 sigma MC uncertainty (roughly 0.05 for these params)
         assert geo <= arith + 0.10, (
             f"Geometric ({geo:.4f}) > arithmetic MC ({arith:.4f}) by more than MC noise"
         )

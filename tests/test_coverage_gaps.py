@@ -284,7 +284,7 @@ class TestExoticsCoverageGaps:
     def test_lookback_floating(self):
         from tensorquantlib.finance.exotics import lookback_price_mc
 
-        p, se = lookback_price_mc(
+        p, _ = lookback_price_mc(
             100, None, 1.0, 0.05, 0.2, strike_type="floating", n_paths=10_000, seed=42
         )
         assert p > 0
@@ -292,7 +292,7 @@ class TestExoticsCoverageGaps:
     def test_lookback_put(self):
         from tensorquantlib.finance.exotics import lookback_price_mc
 
-        p, se = lookback_price_mc(
+        p, _ = lookback_price_mc(
             100, 100, 1.0, 0.05, 0.2, option_type="put", n_paths=10_000, seed=42
         )
         assert p > 0

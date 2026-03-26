@@ -250,7 +250,7 @@ class TestLookback:
     def test_mc_floating_call(self):
         from tensorquantlib.finance.exotics import lookback_price_mc
 
-        price, se = lookback_price_mc(
+        price, _ = lookback_price_mc(
             S=100, K=None, T=1.0, r=0.05, sigma=0.2, strike_type="floating", seed=42
         )
         assert price > 0
@@ -273,7 +273,7 @@ class TestCliquet:
     def test_positive_price(self):
         from tensorquantlib.finance.exotics import cliquet_price_mc
 
-        price, se = cliquet_price_mc(S=100, T=1.0, r=0.05, sigma=0.2, seed=42)
+        price, _ = cliquet_price_mc(S=100, T=1.0, r=0.05, sigma=0.2, seed=42)
         assert price > 0
 
     def test_floor_increases_price(self):
@@ -299,7 +299,7 @@ class TestCliquet:
     def test_global_cap(self):
         from tensorquantlib.finance.exotics import cliquet_price_mc
 
-        price, se = cliquet_price_mc(S=100, T=1.0, r=0.05, sigma=0.2, global_cap=0.1, seed=42)
+        price, _ = cliquet_price_mc(S=100, T=1.0, r=0.05, sigma=0.2, global_cap=0.1, seed=42)
         assert price >= 0
 
 
@@ -317,7 +317,7 @@ class TestRainbow:
         spots = np.array([100.0, 100.0])
         sigmas = np.array([0.2, 0.3])
         corr = np.array([[1.0, 0.5], [0.5, 1.0]])
-        price, se = rainbow_price_mc(
+        price, _ = rainbow_price_mc(
             spots, K=100, T=1.0, r=0.05, sigmas=sigmas, corr=corr, seed=42, n_steps=50
         )
         assert price > 0
@@ -373,7 +373,7 @@ class TestRainbow:
         spots = np.array([100.0, 100.0])
         sigmas = np.array([0.2, 0.3])
         corr = np.array([[1.0, 0.5], [0.5, 1.0]])
-        price, se = rainbow_price_mc(
+        price, _ = rainbow_price_mc(
             spots,
             K=100,
             T=1.0,

@@ -33,6 +33,7 @@ from tensorquantlib.backtest.strategy import (
     Trade,
 )
 
+# ruff: noqa: RUF022  # keep __all__ grouped by domain
 __all__ = [
     # metrics
     "annualized_return",

@@ -110,6 +110,6 @@ class TestCompareVR:
 
     def test_vr_ratios_positive(self):
         results = compare_variance_reduction(100, 100, 1.0, 0.05, 0.20, n_paths=10_000, seed=0)
-        for name, r in results.items():
+        for _name, r in results.items():
             if not np.isnan(r["vr_ratio"]):
                 assert r["vr_ratio"] > 0

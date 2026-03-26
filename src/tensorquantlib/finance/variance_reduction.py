@@ -22,6 +22,7 @@ References:
 
 from __future__ import annotations
 
+from itertools import pairwise
 from typing import Union
 
 import numpy as np
@@ -337,10 +338,7 @@ def bs_price_stratified(
     # Stratified uniform samples
     strata_bounds = np.linspace(0.0, 1.0, n_strata + 1)
     u = np.concatenate(
-        [
-            rng.uniform(lo, hi, paths_per_stratum)
-            for lo, hi in zip(strata_bounds[:-1], strata_bounds[1:])
-        ]
+        [rng.uniform(lo, hi, paths_per_stratum) for lo, hi in pairwise(strata_bounds)]
     )
     z = norm.ppf(np.clip(u, 1e-10, 1 - 1e-10))
 
