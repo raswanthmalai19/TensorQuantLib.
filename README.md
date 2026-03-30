@@ -24,20 +24,23 @@ TensorQuantLib provides a complete toolkit for derivatives pricing, risk managem
 
 ---
 
-## Documentation
+## 📚 Documentation
 
-Complete documentation with API reference, tutorials, and examples:
+**Complete API reference, tutorials, and guides:**
 
-### Primary Resources
-- **[GitHub Documentation](https://raswanthmalai19.github.io/TensorQuantLib/)** — Full docs, tutorials, and examples
-- **[PyPI Package](https://pypi.org/project/tensorquantlib/)** — Installation and releases
+| Resource | Link | Purpose |
+|----------|------|---------|
+| **Main Site** | [raswanthmalai19.github.io/TensorQuantLib/](https://raswanthmalai19.github.io/TensorQuantLib/) | Full documentation with tutorials |
+| **Quick Start** | [Getting Started in 5 min](https://raswanthmalai19.github.io/TensorQuantLib/quickstart.html) | Installation and first example |
+| **API Reference** | [Complete API docs](https://raswanthmalai19.github.io/TensorQuantLib/api.html) | All functions and classes |
+| **Theory** | [Math & algorithms](https://raswanthmalai19.github.io/TensorQuantLib/theory.html) | Mathematical foundations |
+| **Performance** | [Benchmarks & tuning](https://raswanthmalai19.github.io/TensorQuantLib/performance.html) | Latency, optimization, production guide |
+| **Limitations** | [What to know](https://raswanthmalai19.github.io/TensorQuantLib/limitations.html) | Current limitations and roadmap |
+
+### Other Links
+- **[PyPI Package](https://pypi.org/project/tensorquantlib/)** — `pip install tensorquantlib`
 - **[GitHub Repository](https://github.com/raswanthmalai19/TensorQuantLib)** — Source code and issues
-
-### Quick Links
-- [**API Reference**](https://raswanthmalai19.github.io/TensorQuantLib/api.html) — Full module documentation
-- [**Quick Start**](https://raswanthmalai19.github.io/TensorQuantLib/quickstart.html) — Getting started guide
-- [**Theory**](https://raswanthmalai19.github.io/TensorQuantLib/theory.html) — Mathematical foundations
-- [**Changelog**](https://raswanthmalai19.github.io/TensorQuantLib/changelog.html) — Version history
+- **[Changelog](https://raswanthmalai19.github.io/TensorQuantLib/changelog.html)** — Version history
 
 ---
 
