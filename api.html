@@ -6,16 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>API Reference &#8212; TensorQuantLib 0.3.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=f6a572b4" />
     <script src="_static/documentation_options.js?v=e259d695"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Theory &amp; Background" href="theory.html" />
-    <link rel="prev" title="Quickstart" href="quickstart.html" />
+    <link rel="prev" title="Performance &amp; Production Guide" href="performance.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -38,7 +39,7 @@
 
 
 <p>
-<iframe src="https://ghbtns.com/github-btn.html?user=raswanthmalai19&repo=TensorQuantLib&type=watch&count=true&size=large&v=2"
+<iframe src="https://ghbtns.com/github-btn.html?user=raswanthmalai19&repo=TensorQuantLib.&type=watch&count=true&size=large&v=2"
   allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
 </p>
 
@@ -59,6 +60,7 @@
 <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="performance.html">Performance &amp; Production Guide</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#module-tensorquantlib.core.tensor">Core — Autodiff Engine</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-tensorquantlib.finance.black_scholes">Finance — Pricing &amp; Greeks</a></li>
@@ -78,7 +80,7 @@
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="quickstart.html" title="previous chapter">Quickstart</a></li>
+      <li>Previous: <a href="performance.html" title="previous chapter">Performance &amp; Production Guide</a></li>
       <li>Next: <a href="theory.html" title="next chapter">Theory &amp; Background</a></li>
   </ul></li>
 </ul>
@@ -337,6 +339,39 @@ with requires_grad=True.</p>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="tensorquantlib.core.tensor.Tensor.detach">
+<span class="sig-name descname"><span class="pre">detach</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/core/tensor.html#Tensor.detach"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.core.tensor.Tensor.detach" title="Link to this definition">¶</a></dt>
+<dd><p>Return a new Tensor with the same data but detached from the graph.</p>
+<p>The returned tensor has <code class="docutils literal notranslate"><span class="pre">requires_grad=False</span></code> and no <code class="docutils literal notranslate"><span class="pre">_children</span></code>,
+so gradients will not flow through it. Use this to treat an
+intermediate result as a constant:</p>
+<blockquote>
+<div><p>y = x * x
+y_const = y.detach()  # gradients stop here</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tensorquantlib.core.tensor.Tensor.free_graph">
+<span class="sig-name descname"><span class="pre">free_graph</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/core/tensor.html#Tensor.free_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.core.tensor.Tensor.free_graph" title="Link to this definition">¶</a></dt>
+<dd><p>Release all references to the computational graph.</p>
+<p>Clears <code class="docutils literal notranslate"><span class="pre">_children</span></code> and the <code class="docutils literal notranslate"><span class="pre">_backward</span></code> closure for this node
+and all ancestors, breaking reference cycles and allowing GC to
+reclaim memory.  Call after <code class="docutils literal notranslate"><span class="pre">backward()</span></code> in long-running loops
+to prevent unbounded memory growth.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py function">
@@ -410,15 +445,25 @@ with requires_grad=True.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="tensorquantlib.core.tensor.tensor_neg">
 <span class="sig-prename descclassname"><span class="pre">tensorquantlib.core.tensor.</span></span><span class="sig-name descname"><span class="pre">tensor_neg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/core/tensor.html#tensor_neg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.core.tensor.tensor_neg" title="Link to this definition">¶</a></dt>
-<dd><p>Negation: z = -a.</p>
+<dd><p>Element-wise negation: z = -a.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>a</strong> (<a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a>)</p>
+<dd class="field-odd"><p><strong>a</strong> (<a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a>) – Input tensor.</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a></p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>dz/da = -1.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>New tensor with negated values. Gradient</p>
 </dd>
 </dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">3.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">]),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">tensor_neg</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span><span class="o">.</span><span class="n">data</span>
+<span class="go">array([-3.,  2.])</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -458,43 +503,74 @@ with requires_grad=True.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="tensorquantlib.core.tensor.tensor_exp">
 <span class="sig-prename descclassname"><span class="pre">tensorquantlib.core.tensor.</span></span><span class="sig-name descname"><span class="pre">tensor_exp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/core/tensor.html#tensor_exp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.core.tensor.tensor_exp" title="Link to this definition">¶</a></dt>
-<dd><p>Exponential: z = exp(a).</p>
+<dd><p>Element-wise exponential: z = exp(a).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>a</strong> (<a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a>)</p>
+<dd class="field-odd"><p><strong>a</strong> (<a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a>) – Input tensor.</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a></p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>dz/da = exp(a).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>New tensor with exp(a). Gradient</p>
 </dd>
 </dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">tensor_exp</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">e</span><span class="p">])</span>
+<span class="go">True</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tensorquantlib.core.tensor.tensor_log">
 <span class="sig-prename descclassname"><span class="pre">tensorquantlib.core.tensor.</span></span><span class="sig-name descname"><span class="pre">tensor_log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/core/tensor.html#tensor_log"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.core.tensor.tensor_log" title="Link to this definition">¶</a></dt>
-<dd><p>Natural logarithm: z = log(a). Clamps input to avoid log(0).</p>
+<dd><p>Element-wise natural logarithm: z = log(a).</p>
+<p>Input is clamped to a minimum of 1e-12 to avoid log(0).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>a</strong> (<a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a>)</p>
+<dd class="field-odd"><p><strong>a</strong> (<a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a>) – Input tensor (values should be positive).</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a></p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>dz/da = 1/a.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>New tensor with log(a). Gradient</p>
 </dd>
 </dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">e</span><span class="p">]),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">tensor_log</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])</span>
+<span class="go">True</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tensorquantlib.core.tensor.tensor_sqrt">
 <span class="sig-prename descclassname"><span class="pre">tensorquantlib.core.tensor.</span></span><span class="sig-name descname"><span class="pre">tensor_sqrt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/core/tensor.html#tensor_sqrt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.core.tensor.tensor_sqrt" title="Link to this definition">¶</a></dt>
-<dd><p>Square root: z = sqrt(a).</p>
+<dd><p>Element-wise square root: z = sqrt(a).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>a</strong> (<a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a>)</p>
+<dd class="field-odd"><p><strong>a</strong> (<a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a>) – Input tensor (values should be non-negative).</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a></p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>dz/da = 1 / (2 * sqrt(a)).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>New tensor with sqrt(a). Gradient</p>
 </dd>
 </dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">4.0</span><span class="p">,</span> <span class="mf">9.0</span><span class="p">]),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">tensor_sqrt</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="p">[</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">])</span>
+<span class="go">True</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -601,12 +677,22 @@ with requires_grad=True.</p>
 <dd><p>Element-wise sine: z = sin(a).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>a</strong> (<a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a>)</p>
+<dd class="field-odd"><p><strong>a</strong> (<a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a>) – Input tensor (in radians).</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a></p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>dz/da = cos(a).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>New tensor with sin(a). Gradient</p>
 </dd>
 </dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">]),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">tensor_sin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -615,12 +701,22 @@ with requires_grad=True.</p>
 <dd><p>Element-wise cosine: z = cos(a).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>a</strong> (<a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a>)</p>
+<dd class="field-odd"><p><strong>a</strong> (<a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a>) – Input tensor (in radians).</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a></p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>dz/da = -sin(a).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>New tensor with cos(a). Gradient</p>
 </dd>
 </dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">]),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">tensor_cos</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">],</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -629,26 +725,47 @@ with requires_grad=True.</p>
 <dd><p>Element-wise hyperbolic tangent: z = tanh(a).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>a</strong> (<a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a>)</p>
+<dd class="field-odd"><p><strong>a</strong> (<a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a>) – Input tensor.</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a></p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>dz/da = 1 - tanh(a)^2.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>New tensor with tanh(a). Gradient</p>
 </dd>
 </dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">tensor_tanh</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mf">1e-10</span>  <span class="c1"># tanh(0) = 0</span>
+<span class="go">True</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tensorquantlib.core.tensor.tensor_abs">
 <span class="sig-prename descclassname"><span class="pre">tensorquantlib.core.tensor.</span></span><span class="sig-name descname"><span class="pre">tensor_abs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/core/tensor.html#tensor_abs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.core.tensor.tensor_abs" title="Link to this definition">¶</a></dt>
-<dd><p>Element-wise absolute value: z = abs(a). Subgradient at 0 is 0.</p>
+<dd><p>Element-wise absolute value: z = <a href="#id1"><span class="problematic" id="id2">|a|</span></a>.</p>
+<p>Uses sign(a) as the subgradient, with subgradient 0 at a=0.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>a</strong> (<a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a>)</p>
+<dd class="field-odd"><p><strong>a</strong> (<a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a>) – Input tensor.</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a></p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>dz/da = sign(a).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>New tensor with <a href="#id3"><span class="problematic" id="id4">|a|</span></a>. Gradient</p>
 </dd>
 </dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">]),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">tensor_abs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span><span class="o">.</span><span class="n">data</span>
+<span class="go">array([3., 0., 5.])</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -698,6 +815,30 @@ with requires_grad=True.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>a</strong> (<a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a>)</p></li>
 <li><p><strong>axis</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tensorquantlib.core.tensor.tensor_getitem">
+<span class="sig-prename descclassname"><span class="pre">tensorquantlib.core.tensor.</span></span><span class="sig-name descname"><span class="pre">tensor_getitem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/core/tensor.html#tensor_getitem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.core.tensor.tensor_getitem" title="Link to this definition">¶</a></dt>
+<dd><p>Index into a Tensor, preserving gradient flow.</p>
+<p>Supports any NumPy-compatible index (int, slice, array, bool mask).
+Gradient is scattered back to the original positions.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">],</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span>   <span class="c1"># y = 4.0; x.grad[1] = 4.0 after backward</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>a</strong> (<a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a>)</p></li>
+<li><p><strong>idx</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -987,7 +1128,7 @@ the solver failed (e.g. below intrinsic).</p>
 </dd>
 </dl>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">ivs</span> <span class="o">=</span> <span class="n">implied_vol_batch</span><span class="p">([</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="mf">15.0</span><span class="p">],</span> <span class="n">S</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">K</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -1019,8 +1160,8 @@ NaN where solver failed.</p>
 </dd>
 </dl>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">tensorquantlib.finance.black_scholes</span> <span class="kn">import</span> <span class="n">bs_price_numpy</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib.finance.black_scholes</span><span class="w"> </span><span class="kn">import</span> <span class="n">bs_price_numpy</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">K</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">90.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">,</span> <span class="mf">110.0</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">prices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">bs_price_numpy</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">T</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">K</span><span class="p">])</span>
@@ -1252,8 +1393,8 @@ Vega is reported per unit change in v0 (not in sigma).</p>
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tensorquantlib.finance.heston.</span></span><span class="sig-name descname"><span class="pre">HestonCalibrator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">S</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">option_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'call'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params_</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/finance/heston.html#HestonCalibrator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.finance.heston.HestonCalibrator" title="Link to this definition">¶</a></dt>
 <dd><p>Calibrate Heston model parameters to a market implied-volatility surface.</p>
 <p>Usage:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">tensorquantlib.finance.heston</span> <span class="kn">import</span> <span class="n">HestonCalibrator</span><span class="p">,</span> <span class="n">HestonParams</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib.finance.heston</span><span class="w"> </span><span class="kn">import</span> <span class="n">HestonCalibrator</span><span class="p">,</span> <span class="n">HestonParams</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="n">cal</span> <span class="o">=</span> <span class="n">HestonCalibrator</span><span class="p">(</span><span class="n">S</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
 <span class="n">K_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">90.</span><span class="p">,</span> <span class="mf">95.</span><span class="p">,</span> <span class="mf">100.</span><span class="p">,</span> <span class="mf">105.</span><span class="p">,</span> <span class="mf">110.</span><span class="p">])</span>
@@ -1456,7 +1597,7 @@ early exercise and continuation.</p>
 </dd>
 </dl>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">S_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">prices</span> <span class="o">=</span> <span class="n">american_option_grid</span><span class="p">(</span><span class="n">S_grid</span><span class="p">,</span> <span class="n">K</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">prices</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">5</span>
@@ -1999,22 +2140,23 @@ tensor of shape (n_points, n_points, …, n_points).</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="tensorquantlib.finance.basket.build_pricing_grid_analytic">
 <span class="sig-prename descclassname"><span class="pre">tensorquantlib.finance.basket.</span></span><span class="sig-name descname"><span class="pre">build_pricing_grid_analytic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">S0_ranges</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_points</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/finance/basket.html#build_pricing_grid_analytic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.finance.basket.build_pricing_grid_analytic" title="Link to this definition">¶</a></dt>
-<dd><p>Build a pricing grid using a fast analytic approximation.</p>
-<p>Instead of MC (slow), uses the discounted expected payoff of a basket
-under a simplifying assumption (independent lognormals). This is much
-faster and produces a smooth tensor ideal for TT compression demos.</p>
-<p>The payoff is: max(sum(w_i * S_i) - K, 0), priced as:
-Price ≈ exp(-rT) * max(sum(w_i * S_i * exp((r - 0.5*sigma_i^2)*T)) - K, 0)</p>
-<p>This is the “intrinsic forward value” — not a perfect price but produces
-a smooth, low-rank tensor that demonstrates TT compression well.</p>
+<dd><p>Build a pricing grid using log-normal moment-matching (Gentle 1993).</p>
+<p>Approximates the basket option price by matching the first two moments
+of the basket value to a single log-normal distribution, then applying
+the Black-Scholes formula to that equivalent asset. This is the standard
+“moment-matching” approximation used in practice for European basket options.</p>
+<p>The approximation is accurate to within ~1-3% for typical parameters
+and produces a smooth, low-rank tensor ideal for TT compression.</p>
+<p>For deep ITM/OTM or highly correlated assets (rho &gt; 0.9), consider
+using <code class="docutils literal notranslate"><span class="pre">build_pricing_grid</span></code> (Monte Carlo) for higher accuracy.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>S0_ranges</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em><em>]</em>) – List of (min, max) tuples for each asset.</p></li>
-<li><p><strong>K</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Strike.</p></li>
+<li><p><strong>S0_ranges</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em><em>]</em>) – List of (min, max) tuples for each asset’s spot range.</p></li>
+<li><p><strong>K</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Strike price.</p></li>
 <li><p><strong>T</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Time to expiry.</p></li>
 <li><p><strong>r</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Risk-free rate.</p></li>
-<li><p><strong>sigma</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a>) – Volatilities, shape (d,).</p></li>
+<li><p><strong>sigma</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a>) – Volatilities per asset, shape (d,).</p></li>
 <li><p><strong>weights</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a>) – Basket weights, shape (d,).</p></li>
 <li><p><strong>n_points</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Grid points per axis.</p></li>
 </ul>
@@ -2033,31 +2175,41 @@ a smooth, low-rank tensor that demonstrates TT compression well.</p>
 the Tensor autograd engine and extracting gradients.</p>
 <blockquote>
 <div><ul class="simple">
-<li><p>Delta (dV/dS) via autograd</p></li>
-<li><p>Vega (dV/dsigma) via autograd</p></li>
-<li><p>Gamma (d²V/dS²) via finite-difference on autograd Delta</p></li>
+<li><p>Delta  (dV/dS)       via first-order autograd</p></li>
+<li><p>Vega   (dV/dσ)       via first-order autograd</p></li>
+<li><p>Gamma  (d²V/dS²)     via second-order autograd (gamma_autograd)</p></li>
+<li><p>Vanna  (d²V/dS dσ)   via second-order autograd (vanna_autograd)</p></li>
+<li><p>Volga  (d²V/dσ²)     via second-order autograd (volga_autograd)</p></li>
 </ul>
 </div></blockquote>
 <dl class="py function">
 <dt class="sig sig-object py" id="tensorquantlib.finance.greeks.compute_greeks">
-<span class="sig-prename descclassname"><span class="pre">tensorquantlib.finance.greeks.</span></span><span class="sig-name descname"><span class="pre">compute_greeks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">price_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">S</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">option_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'call'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/finance/greeks.html#compute_greeks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.finance.greeks.compute_greeks" title="Link to this definition">¶</a></dt>
-<dd><p>Compute Delta, Vega, and Gamma using autograd + finite differences.</p>
+<span class="sig-prename descclassname"><span class="pre">tensorquantlib.finance.greeks.</span></span><span class="sig-name descname"><span class="pre">compute_greeks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">price_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">S</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">option_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'call'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_second_order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/finance/greeks.html#compute_greeks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.finance.greeks.compute_greeks" title="Link to this definition">¶</a></dt>
+<dd><p>Compute Delta, Vega, Gamma (and optionally Vanna, Volga) using autograd.</p>
+<p>First-order Greeks (Delta, Vega) come from a single backward pass.
+Second-order Greeks (Gamma, Vanna, Volga) use the hybrid semi-analytic
+method from <code class="docutils literal notranslate"><span class="pre">tensorquantlib.core.second_order</span></code>: analytical gradients
+differentiated once more by central differences (~1e-10 accuracy).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>price_fn</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.14)"><em>Callable</em></a><em>[</em><em>[</em><em>...</em><em>]</em><em>, </em><a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a><em>]</em>) – Pricing function (e.g., bs_price_tensor) that accepts
-(S, K, T, r, sigma, q, option_type) and returns a Tensor.</p></li>
+<li><p><strong>price_fn</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.14)"><em>Callable</em></a><em>[</em><em>[</em><em>...</em><em>]</em><em>, </em><a class="reference internal" href="#tensorquantlib.core.tensor.Tensor" title="tensorquantlib.core.tensor.Tensor"><em>Tensor</em></a><em>]</em>) – Pricing function accepting
+<code class="docutils literal notranslate"><span class="pre">(S,</span> <span class="pre">K,</span> <span class="pre">T,</span> <span class="pre">r,</span> <span class="pre">sigma,</span> <span class="pre">q,</span> <span class="pre">option_type)</span></code> and returning a Tensor.</p></li>
 <li><p><strong>S</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Spot price.</p></li>
 <li><p><strong>K</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Strike price.</p></li>
 <li><p><strong>T</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Time to expiry.</p></li>
 <li><p><strong>r</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Risk-free rate.</p></li>
 <li><p><strong>sigma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Volatility.</p></li>
 <li><p><strong>q</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Dividend yield.</p></li>
-<li><p><strong>option_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – ‘call’ or ‘put’.</p></li>
+<li><p><strong>option_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – <code class="docutils literal notranslate"><span class="pre">'call'</span></code> or <code class="docutils literal notranslate"><span class="pre">'put'</span></code>.</p></li>
+<li><p><strong>include_second_order</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True (default), also compute Gamma, Vanna,
+and Volga. Set False for speed when only
+first-order Greeks are needed.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Dict with keys ‘price’, ‘delta’, ‘vega’, ‘gamma’.</p>
+<dd class="field-even"><p>Dict with keys <code class="docutils literal notranslate"><span class="pre">'price'</span></code>, <code class="docutils literal notranslate"><span class="pre">'delta'</span></code>, <code class="docutils literal notranslate"><span class="pre">'vega'</span></code>, and (when
+<code class="docutils literal notranslate"><span class="pre">include_second_order=True</span></code>) <code class="docutils literal notranslate"><span class="pre">'gamma'</span></code>, <code class="docutils literal notranslate"><span class="pre">'vanna'</span></code>, <code class="docutils literal notranslate"><span class="pre">'volga'</span></code>.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a>]</p>
@@ -2400,7 +2552,7 @@ Princeton University Press.</p>
 </dd>
 </dl>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">v</span> <span class="o">=</span> <span class="n">var_historical</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.95</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">v</span> <span class="o">&gt;</span> <span class="mi">0</span>
@@ -2429,7 +2581,7 @@ Princeton University Press.</p>
 </dd>
 </dl>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">es</span> <span class="o">=</span> <span class="n">cvar</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.95</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">es</span> <span class="o">&gt;=</span> <span class="n">var_historical</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.95</span><span class="p">)</span>
@@ -2493,7 +2645,7 @@ E.g. {‘crash -20%’: 80.0, ‘rally +20%’: 120.0}</p></li>
 </dd>
 </dl>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">v</span><span class="p">(</span><span class="n">s</span><span class="p">):</span> <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">s</span> <span class="o">-</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># long call</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">v</span><span class="p">(</span><span class="n">s</span><span class="p">):</span> <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">s</span> <span class="o">-</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># long call</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">results</span> <span class="o">=</span> <span class="n">scenario_analysis</span><span class="p">(</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;down&#39;</span><span class="p">:</span> <span class="mf">90.0</span><span class="p">,</span> <span class="s1">&#39;up&#39;</span><span class="p">:</span> <span class="mf">110.0</span><span class="p">})</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="s1">&#39;down&#39;</span> <span class="ow">in</span> <span class="n">results</span> <span class="ow">and</span> <span class="s1">&#39;up&#39;</span> <span class="ow">in</span> <span class="n">results</span>
 <span class="go">True</span>
@@ -2619,7 +2771,7 @@ E.g. {‘crash -20%’: 80.0, ‘rally +20%’: 120.0}</p></li>
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tensorquantlib.finance.risk.</span></span><span class="sig-name descname"><span class="pre">PortfolioRisk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">returns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.95</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">risk_free_daily</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/finance/risk.html#PortfolioRisk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.finance.risk.PortfolioRisk" title="Link to this definition">¶</a></dt>
 <dd><p>Compute risk metrics for a time series of portfolio returns.</p>
 <p>Usage:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="n">risk</span> <span class="o">=</span> <span class="n">PortfolioRisk</span><span class="p">(</span><span class="n">returns</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.0002</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mi">252</span><span class="p">))</span>
 <span class="n">risk</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>
 </pre></div>
@@ -2743,7 +2895,7 @@ E.g. {‘crash -20%’: 80.0, ‘rally +20%’: 120.0}</p></li>
 <span class="sig-name descname"><span class="pre">summary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/finance/risk.html#PortfolioRisk.summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.finance.risk.PortfolioRisk.summary" title="Link to this definition">¶</a></dt>
 <dd><p>Return all risk metrics as a dictionary.</p>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">pr</span> <span class="o">=</span> <span class="n">PortfolioRisk</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.015</span><span class="p">,</span> <span class="mi">500</span><span class="p">))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">pr</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="s1">&#39;var_95&#39;</span> <span class="ow">in</span> <span class="n">s</span> <span class="ow">and</span> <span class="s1">&#39;sharpe&#39;</span> <span class="ow">in</span> <span class="n">s</span>
@@ -3966,10 +4118,258 @@ dependency installable via <code class="docutils literal notranslate"><span clas
 </dl>
 </dd></dl>
 
-<p id="module-tensorquantlib.backtest.engine">Backtesting engine — runs a strategy on a price series.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.metrics.annualized_return">
+<span class="sig-prename descclassname"><span class="pre">tensorquantlib.backtest.metrics.</span></span><span class="sig-name descname"><span class="pre">annualized_return</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">equity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periods_per_year</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">252</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/metrics.html#annualized_return"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.metrics.annualized_return" title="Link to this definition">¶</a></dt>
+<dd><p>Compound annualized growth rate (CAGR) from an equity curve.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>equity</strong> (<em>array-like</em>) – Equity value at each step (must start &gt; 0).</p></li>
+<li><p><strong>periods_per_year</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Annualisation factor (252 for daily).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Annualized return, e.g. 0.12 = 12 %.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.metrics.calmar_ratio">
+<span class="sig-prename descclassname"><span class="pre">tensorquantlib.backtest.metrics.</span></span><span class="sig-name descname"><span class="pre">calmar_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">equity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periods_per_year</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">252</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/metrics.html#calmar_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.metrics.calmar_ratio" title="Link to this definition">¶</a></dt>
+<dd><p>Calmar ratio = annualized return / maximum drawdown.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>equity</strong> (<em>array-like</em>) – Equity curve.</p></li>
+<li><p><strong>periods_per_year</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Annualisation factor.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Calmar ratio.  Returns <code class="docutils literal notranslate"><span class="pre">inf</span></code> if max drawdown is zero.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.metrics.information_ratio">
+<span class="sig-prename descclassname"><span class="pre">tensorquantlib.backtest.metrics.</span></span><span class="sig-name descname"><span class="pre">information_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strategy_returns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">benchmark_returns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">periods_per_year</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">252</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/metrics.html#information_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.metrics.information_ratio" title="Link to this definition">¶</a></dt>
+<dd><p>Annualised information ratio (IR).</p>
+<p>IR = E[active_return] / std(active_return) * sqrt(periods_per_year)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strategy_returns</strong> (<em>array-like</em>) – Period returns of the strategy.</p></li>
+<li><p><strong>benchmark_returns</strong> (<em>array-like</em>) – Period returns of the benchmark.</p></li>
+<li><p><strong>periods_per_year</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Annualisation factor.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Annualised information ratio.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.metrics.turnover">
+<span class="sig-prename descclassname"><span class="pre">tensorquantlib.backtest.metrics.</span></span><span class="sig-name descname"><span class="pre">turnover</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trades</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_capital</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/metrics.html#turnover"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.metrics.turnover" title="Link to this definition">¶</a></dt>
+<dd><p>Annualized one-way turnover as a fraction of initial capital.</p>
+<p>turnover = total_notional_traded / initial_capital</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trades</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference internal" href="#tensorquantlib.backtest.strategy.Trade" title="tensorquantlib.backtest.strategy.Trade"><em>Trade</em></a>) – Executed trades (each must have <code class="docutils literal notranslate"><span class="pre">.quantity</span></code> and <code class="docutils literal notranslate"><span class="pre">.price</span></code>).</p></li>
+<li><p><strong>initial_capital</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Starting capital used as the denominator.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Turnover (e.g. 2.5 = 250 % of capital traded).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.metrics.hedge_pnl_attribution">
+<span class="sig-prename descclassname"><span class="pre">tensorquantlib.backtest.metrics.</span></span><span class="sig-name descname"><span class="pre">hedge_pnl_attribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">equity_curve</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deltas</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gammas</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prices</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/metrics.html#hedge_pnl_attribution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.metrics.hedge_pnl_attribution" title="Link to this definition">¶</a></dt>
+<dd><p>Decompose per-step portfolio P&amp;L into Delta, Gamma, and residual.</p>
+<p>For a continuously delta-hedged portfolio, the per-step P&amp;L can be
+approximated as:</p>
+<div class="math notranslate nohighlight">
+\[\text{Total P\&amp;L} \approx
+\underbrace{\Delta \cdot \Delta S}_{\text{delta P\&amp;L}}
++ \underbrace{\tfrac{1}{2}\Gamma (\Delta S)^2}_{\text{gamma P\&amp;L}}
++ \text{residual}\]</div>
+<p>The residual captures higher-order terms (Theta decay, vanna, etc.) and
+hedging error from discrete rebalancing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>equity_curve</strong> (<em>array-like</em>) – Portfolio equity at each step (length N).</p></li>
+<li><p><strong>deltas</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Per-step delta of the overall position (length N).</p></li>
+<li><p><strong>gammas</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Per-step gamma (length N).</p></li>
+<li><p><strong>prices</strong> (<em>array-like</em>) – Underlying asset price at each step (length N).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Keys <code class="docutils literal notranslate"><span class="pre">'delta_pnl'</span></code>, <code class="docutils literal notranslate"><span class="pre">'gamma_pnl'</span></code>, <code class="docutils literal notranslate"><span class="pre">'residual_pnl'</span></code>.
+Each is an array of length N-1.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.metrics.hedge_efficiency">
+<span class="sig-prename descclassname"><span class="pre">tensorquantlib.backtest.metrics.</span></span><span class="sig-name descname"><span class="pre">hedge_efficiency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hedged_equity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unhedged_equity</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/metrics.html#hedge_efficiency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.metrics.hedge_efficiency" title="Link to this definition">¶</a></dt>
+<dd><p>Variance reduction achieved by a hedge.</p>
+<div class="math notranslate nohighlight">
+\[\text{efficiency} = 1 - \frac{\operatorname{Var}(\text{hedged P\&amp;L})}{
+\operatorname{Var}(\text{unhedged P\&amp;L})}\]</div>
+<p>Returns 1.0 for a perfect hedge, 0.0 if the hedge adds no value,
+and a negative number if the hedge increases variance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hedged_equity</strong> (<em>array-like</em>) – Equity curve of the hedged portfolio.</p></li>
+<li><p><strong>unhedged_equity</strong> (<em>array-like</em>) – Equity curve of the same portfolio <em>without</em> hedging.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Hedge efficiency in (-inf, 1].</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<p id="module-tensorquantlib.backtest.engine">Backtesting engine with realistic execution cost models.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.engine.SlippageModel">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tensorquantlib.backtest.engine.</span></span><span class="sig-name descname"><span class="pre">SlippageModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fixed_spread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">market_impact</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/engine.html#SlippageModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.engine.SlippageModel" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Market-impact and bid-ask spread model.</p>
+<p>Total slippage = half-spread cost + square-root market-impact cost.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fixed_spread</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – One-way half-spread as a fraction of price.
+E.g. <code class="docutils literal notranslate"><span class="pre">0.0005</span></code> = 5 bps one-way (10 bps round-trip).</p></li>
+<li><p><strong>market_impact</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Square-root market-impact coefficient.
+Cost per unit = <code class="docutils literal notranslate"><span class="pre">price</span> <span class="pre">×</span> <span class="pre">market_impact</span> <span class="pre">×</span> <span class="pre">sqrt(|qty|</span> <span class="pre">/</span> <span class="pre">adv)</span></code>.
+Set to 0 to disable market impact.</p></li>
+<li><p><strong>adv</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Average daily volume (units). Used for impact scaling only.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.engine.SlippageModel.cost">
+<span class="sig-name descname"><span class="pre">cost</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">price</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/engine.html#SlippageModel.cost"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.engine.SlippageModel.cost" title="Link to this definition">¶</a></dt>
+<dd><p>Compute slippage cost for one trade (always non-negative).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>price</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+<li><p><strong>quantity</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.engine.CommissionModel">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tensorquantlib.backtest.engine.</span></span><span class="sig-name descname"><span class="pre">CommissionModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">per_trade</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">per_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percentage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minimum</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/engine.html#CommissionModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.engine.CommissionModel" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Commission / brokerage fee model.</p>
+<p>Total commission = max(per_trade + per_unit×|qty| + percentage×notional,
+minimum).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>per_trade</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Fixed fee per order (e.g. <code class="docutils literal notranslate"><span class="pre">1.0</span></code> = $1 per trade).</p></li>
+<li><p><strong>per_unit</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Fee per unit traded (e.g. <code class="docutils literal notranslate"><span class="pre">0.005</span></code> = half a cent per share).</p></li>
+<li><p><strong>percentage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Fraction of notional (e.g. <code class="docutils literal notranslate"><span class="pre">0.001</span></code> = 10 bps of notional).</p></li>
+<li><p><strong>minimum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Minimum commission per trade.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.engine.CommissionModel.cost">
+<span class="sig-name descname"><span class="pre">cost</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">price</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/engine.html#CommissionModel.cost"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.engine.CommissionModel.cost" title="Link to this definition">¶</a></dt>
+<dd><p>Compute commission for one trade (always non-negative).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>price</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+<li><p><strong>quantity</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.engine.ZERO_COST">
+<span class="sig-prename descclassname"><span class="pre">tensorquantlib.backtest.engine.</span></span><span class="sig-name descname"><span class="pre">ZERO_COST</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">CommissionModel(per_trade=0.0,</span> <span class="pre">per_unit=0.0,</span> <span class="pre">percentage=0.0,</span> <span class="pre">minimum=0.0)</span></span><a class="headerlink" href="#tensorquantlib.backtest.engine.ZERO_COST" title="Link to this definition">¶</a></dt>
+<dd><p>Zero-cost model (default when no model is supplied).</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.engine.EQUITY_COMM">
+<span class="sig-prename descclassname"><span class="pre">tensorquantlib.backtest.engine.</span></span><span class="sig-name descname"><span class="pre">EQUITY_COMM</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">CommissionModel(per_trade=0.0,</span> <span class="pre">per_unit=0.005,</span> <span class="pre">percentage=0.0,</span> <span class="pre">minimum=1.0)</span></span><a class="headerlink" href="#tensorquantlib.backtest.engine.EQUITY_COMM" title="Link to this definition">¶</a></dt>
+<dd><p>Interactive Brokers-style equity commission ($0.005/share, $1 min).</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.engine.FX_COMM">
+<span class="sig-prename descclassname"><span class="pre">tensorquantlib.backtest.engine.</span></span><span class="sig-name descname"><span class="pre">FX_COMM</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">CommissionModel(per_trade=0.0,</span> <span class="pre">per_unit=0.0,</span> <span class="pre">percentage=2e-05,</span> <span class="pre">minimum=0.0)</span></span><a class="headerlink" href="#tensorquantlib.backtest.engine.FX_COMM" title="Link to this definition">¶</a></dt>
+<dd><p>Typical institutional FX desk (0.2 bps of notional).</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.engine.EQUITY_SLIP">
+<span class="sig-prename descclassname"><span class="pre">tensorquantlib.backtest.engine.</span></span><span class="sig-name descname"><span class="pre">EQUITY_SLIP</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">SlippageModel(fixed_spread=0.0005,</span> <span class="pre">market_impact=0.0,</span> <span class="pre">adv=1000000.0)</span></span><a class="headerlink" href="#tensorquantlib.backtest.engine.EQUITY_SLIP" title="Link to this definition">¶</a></dt>
+<dd><p>Liquid-equity half-spread slippage (5 bps one-way).</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.engine.ILLIQUID_SLIP">
+<span class="sig-prename descclassname"><span class="pre">tensorquantlib.backtest.engine.</span></span><span class="sig-name descname"><span class="pre">ILLIQUID_SLIP</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">SlippageModel(fixed_spread=0.002,</span> <span class="pre">market_impact=0.1,</span> <span class="pre">adv=50000)</span></span><a class="headerlink" href="#tensorquantlib.backtest.engine.ILLIQUID_SLIP" title="Link to this definition">¶</a></dt>
+<dd><p>20 bps spread + square-root market impact.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Illiquid name</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorquantlib.backtest.engine.BacktestResult">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tensorquantlib.backtest.engine.</span></span><span class="sig-name descname"><span class="pre">BacktestResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">equity_curve</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trades</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">final_equity</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/engine.html#BacktestResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.engine.BacktestResult" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tensorquantlib.backtest.engine.</span></span><span class="sig-name descname"><span class="pre">BacktestResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">equity_curve</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trades</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">final_equity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_commission</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_slippage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_turnover</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_trades</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">greeks_history</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/engine.html#BacktestResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.engine.BacktestResult" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Container for backtest output.</p>
 <dl class="field-list simple">
@@ -3979,6 +4379,11 @@ dependency installable via <code class="docutils literal notranslate"><span clas
 <li><p><strong>trades</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference internal" href="#tensorquantlib.backtest.strategy.Trade" title="tensorquantlib.backtest.strategy.Trade"><em>Trade</em></a><em>]</em>)</p></li>
 <li><p><strong>returns</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a>)</p></li>
 <li><p><strong>final_equity</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+<li><p><strong>total_commission</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+<li><p><strong>total_slippage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+<li><p><strong>total_turnover</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+<li><p><strong>n_trades</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>greeks_history</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -4006,29 +4411,77 @@ dependency installable via <code class="docutils literal notranslate"><span clas
 <dd><p>Final portfolio value.</p>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.engine.BacktestResult.total_commission">
+<span class="sig-name descname"><span class="pre">total_commission</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></span><a class="headerlink" href="#tensorquantlib.backtest.engine.BacktestResult.total_commission" title="Link to this definition">¶</a></dt>
+<dd><p>Total commissions paid during the backtest.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.engine.BacktestResult.total_slippage">
+<span class="sig-name descname"><span class="pre">total_slippage</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></span><a class="headerlink" href="#tensorquantlib.backtest.engine.BacktestResult.total_slippage" title="Link to this definition">¶</a></dt>
+<dd><p>Total slippage cost paid during the backtest.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.engine.BacktestResult.total_turnover">
+<span class="sig-name descname"><span class="pre">total_turnover</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></span><a class="headerlink" href="#tensorquantlib.backtest.engine.BacktestResult.total_turnover" title="Link to this definition">¶</a></dt>
+<dd><p>Total gross notional traded (sum of <a href="#id5"><span class="problematic" id="id6">|qty|</span></a> * price).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.engine.BacktestResult.n_trades">
+<span class="sig-name descname"><span class="pre">n_trades</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></span><a class="headerlink" href="#tensorquantlib.backtest.engine.BacktestResult.n_trades" title="Link to this definition">¶</a></dt>
+<dd><p>Number of trades executed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.engine.BacktestResult.greeks_history">
+<span class="sig-name descname"><span class="pre">greeks_history</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span><a class="headerlink" href="#tensorquantlib.backtest.engine.BacktestResult.greeks_history" title="Link to this definition">¶</a></dt>
+<dd><p>Per-step Greeks recorded by the strategy (if any).</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorquantlib.backtest.engine.BacktestEngine">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tensorquantlib.backtest.engine.</span></span><span class="sig-name descname"><span class="pre">BacktestEngine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strategy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_capital</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/engine.html#BacktestEngine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.engine.BacktestEngine" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tensorquantlib.backtest.engine.</span></span><span class="sig-name descname"><span class="pre">BacktestEngine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strategy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_capital</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slippage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">commission</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/engine.html#BacktestEngine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.engine.BacktestEngine" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
-<p>Run a <code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code> over a price series.</p>
+<p>Run a <code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code> over a price series with realistic execution.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>strategy</strong> (<a class="reference internal" href="#tensorquantlib.backtest.strategy.Strategy" title="tensorquantlib.backtest.strategy.Strategy"><em>Strategy</em></a>) – Strategy instance to run.</p></li>
 <li><p><strong>prices</strong> (<em>array-like</em>) – 1-D array of asset prices (one per time step).</p></li>
 <li><p><strong>initial_capital</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Starting cash.</p></li>
+<li><p><strong>slippage</strong> (<a class="reference internal" href="#tensorquantlib.backtest.engine.SlippageModel" title="tensorquantlib.backtest.engine.SlippageModel"><em>SlippageModel</em></a><em>, </em><em>optional</em>) – Slippage model.  Defaults to <code class="docutils literal notranslate"><span class="pre">SlippageModel()</span></code> (zero slippage).
+Use <a class="reference internal" href="#tensorquantlib.backtest.engine.EQUITY_SLIP" title="tensorquantlib.backtest.engine.EQUITY_SLIP"><code class="xref py py-data docutils literal notranslate"><span class="pre">EQUITY_SLIP</span></code></a> for a realistic liquid-equity preset.</p></li>
+<li><p><strong>commission</strong> (<a class="reference internal" href="#tensorquantlib.backtest.engine.CommissionModel" title="tensorquantlib.backtest.engine.CommissionModel"><em>CommissionModel</em></a><em>, </em><em>optional</em>) – Commission model.  Defaults to <code class="docutils literal notranslate"><span class="pre">CommissionModel()</span></code> (zero fees).
+Use <a class="reference internal" href="#tensorquantlib.backtest.engine.EQUITY_COMM" title="tensorquantlib.backtest.engine.EQUITY_COMM"><code class="xref py py-data docutils literal notranslate"><span class="pre">EQUITY_COMM</span></code></a> for an Interactive Brokers-style preset.</p></li>
 </ul>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<p>Zero-cost (default):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">engine</span> <span class="o">=</span> <span class="n">BacktestEngine</span><span class="p">(</span><span class="n">strategy</span><span class="p">,</span> <span class="n">prices</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>With realistic costs:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib.backtest.engine</span><span class="w"> </span><span class="kn">import</span> <span class="n">EQUITY_SLIP</span><span class="p">,</span> <span class="n">EQUITY_COMM</span>
+<span class="n">engine</span> <span class="o">=</span> <span class="n">BacktestEngine</span><span class="p">(</span>
+    <span class="n">strategy</span><span class="p">,</span> <span class="n">prices</span><span class="p">,</span>
+    <span class="n">slippage</span><span class="o">=</span><span class="n">EQUITY_SLIP</span><span class="p">,</span>
+    <span class="n">commission</span><span class="o">=</span><span class="n">EQUITY_COMM</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorquantlib.backtest.engine.BacktestEngine.run">
 <span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/engine.html#BacktestEngine.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.engine.BacktestEngine.run" title="Link to this definition">¶</a></dt>
-<dd><p>Execute the backtest.</p>
+<dd><p>Execute the backtest and return a <a class="reference internal" href="#tensorquantlib.backtest.engine.BacktestResult" title="tensorquantlib.backtest.engine.BacktestResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">BacktestResult</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#tensorquantlib.backtest.engine.BacktestResult" title="tensorquantlib.backtest.engine.BacktestResult">BacktestResult</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="#tensorquantlib.backtest.engine.BacktestResult" title="tensorquantlib.backtest.engine.BacktestResult"><em>BacktestResult</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -4038,7 +4491,7 @@ dependency installable via <code class="docutils literal notranslate"><span clas
 <p id="module-tensorquantlib.backtest.strategy">Abstract base strategy and concrete strategy implementations.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tensorquantlib.backtest.strategy.Trade">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tensorquantlib.backtest.strategy.</span></span><span class="sig-name descname"><span class="pre">Trade</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">price</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/strategy.html#Trade"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.strategy.Trade" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tensorquantlib.backtest.strategy.</span></span><span class="sig-name descname"><span class="pre">Trade</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">price</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slippage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">commission</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/strategy.html#Trade"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.strategy.Trade" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Record of a single trade.</p>
 <dl class="field-list simple">
@@ -4048,9 +4501,23 @@ dependency installable via <code class="docutils literal notranslate"><span clas
 <li><p><strong>quantity</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
 <li><p><strong>price</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
 <li><p><strong>label</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
+<li><p><strong>slippage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+<li><p><strong>commission</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.strategy.Trade.notional">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">notional</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><a class="headerlink" href="#tensorquantlib.backtest.strategy.Trade.notional" title="Link to this definition">¶</a></dt>
+<dd><p>Gross notional value of the trade.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.strategy.Trade.total_cost">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">total_cost</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><a class="headerlink" href="#tensorquantlib.backtest.strategy.Trade.total_cost" title="Link to this definition">¶</a></dt>
+<dd><p>Total execution cost (slippage + commission).</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -4101,7 +4568,9 @@ difference between current and desired position.</p>
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tensorquantlib.backtest.strategy.</span></span><span class="sig-name descname"><span class="pre">DeltaHedgeStrategy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_total</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">option_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'call'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">252</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/strategy.html#DeltaHedgeStrategy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.strategy.DeltaHedgeStrategy" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#tensorquantlib.backtest.strategy.Strategy" title="tensorquantlib.backtest.strategy.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code></a></p>
 <p>Delta-hedge a short option position using Black-Scholes delta.</p>
-<p>At each step compute BS delta and rebalance the hedge portfolio.</p>
+<p>At each step compute BS delta and rebalance the hedge portfolio.
+Also tracks per-step Delta and Gamma in <code class="docutils literal notranslate"><span class="pre">_greeks_history</span></code> for
+P&amp;L attribution via <a class="reference internal" href="#tensorquantlib.backtest.metrics.hedge_pnl_attribution" title="tensorquantlib.backtest.metrics.hedge_pnl_attribution"><code class="xref py py-func docutils literal notranslate"><span class="pre">hedge_pnl_attribution()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -4117,6 +4586,109 @@ difference between current and desired position.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tensorquantlib.backtest.strategy.DeltaHedgeStrategy.on_data">
 <span class="sig-name descname"><span class="pre">on_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">price</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/strategy.html#DeltaHedgeStrategy.on_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.strategy.DeltaHedgeStrategy.on_data" title="Link to this definition">¶</a></dt>
+<dd><p>Called each time step with current price.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>step</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Current time step index.</p></li>
+<li><p><strong>price</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Current asset price.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Desired position size (signed). The engine will trade the
+difference between current and desired position.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.strategy.GammaScalpingStrategy">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tensorquantlib.backtest.strategy.</span></span><span class="sig-name descname"><span class="pre">GammaScalpingStrategy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_total</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_implied</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">252</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/strategy.html#GammaScalpingStrategy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.strategy.GammaScalpingStrategy" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tensorquantlib.backtest.strategy.Strategy" title="tensorquantlib.backtest.strategy.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code></a></p>
+<p>Gamma scalping: delta-hedge a long straddle and harvest realized volatility.</p>
+<p>The strategy holds a synthetic long straddle (long gamma) and
+continuously delta-hedges to remain directionally neutral.  It
+profits when <em>realized</em> volatility exceeds the <em>implied</em> volatility
+embedded in the initial option price.</p>
+<p>Per-step P&amp;L attribution (stored in <code class="docutils literal notranslate"><span class="pre">_greeks_history</span></code>):</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Daily P&amp;L ≈  ½Γ(ΔS)²          (gamma P&amp;L — profits from large moves)
+           + Θ · Δt             (theta P&amp;L — loses time value daily)
+           + residual           (higher-order / hedging error)
+</pre></div>
+</div>
+<p>When realized_vol &gt; implied_vol the gamma P&amp;L dominates and the
+strategy is profitable over the full holding period.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>K</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Straddle strike (ideally near-ATM).</p></li>
+<li><p><strong>T_total</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Time to expiry at inception (years).</p></li>
+<li><p><strong>r</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Risk-free rate.</p></li>
+<li><p><strong>sigma_implied</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Implied volatility at inception.</p></li>
+<li><p><strong>n_steps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Total rebalancing steps.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.strategy.GammaScalpingStrategy.on_data">
+<span class="sig-name descname"><span class="pre">on_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">price</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/strategy.html#GammaScalpingStrategy.on_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.strategy.GammaScalpingStrategy.on_data" title="Link to this definition">¶</a></dt>
+<dd><p>Called each time step with current price.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>step</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Current time step index.</p></li>
+<li><p><strong>price</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Current asset price.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Desired position size (signed). The engine will trade the
+difference between current and desired position.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.strategy.DeltaGammaHedgeStrategy">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">tensorquantlib.backtest.strategy.</span></span><span class="sig-name descname"><span class="pre">DeltaGammaHedgeStrategy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">K1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_total</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">252</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">option_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'call'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/strategy.html#DeltaGammaHedgeStrategy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.strategy.DeltaGammaHedgeStrategy" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tensorquantlib.backtest.strategy.Strategy" title="tensorquantlib.backtest.strategy.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code></a></p>
+<p>Delta-Gamma neutral hedge using two options and the underlying.</p>
+<p>Holds a primary long option (strike <code class="docutils literal notranslate"><span class="pre">K1</span></code>) and hedges <strong>Gamma</strong>
+using a second option (strike <code class="docutils literal notranslate"><span class="pre">K2</span></code>).  Any residual Delta is
+neutralised using the underlying asset.</p>
+<p>At each rebalancing step the hedge ratios are:</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}Q_{\text{hedge}} = \frac{\Gamma_1(S,T)}{\Gamma_2(S,T)}
+\qquad \text{(makes net Gamma = 0)}\\N_{\text{stock}} = -(\Delta_1 - Q_{\text{hedge}} \cdot \Delta_2)
+\qquad \text{(makes net Delta = 0)}\end{aligned}\end{align} \]</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">_greeks_history</span></code> dict records <code class="docutils literal notranslate"><span class="pre">net_delta</span></code>, <code class="docutils literal notranslate"><span class="pre">net_gamma</span></code>,
+<code class="docutils literal notranslate"><span class="pre">hedge_ratio</span></code>, and <code class="docutils literal notranslate"><span class="pre">stock_position</span></code> at every step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>K1</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Strike of the <em>primary</em> (long) option.</p></li>
+<li><p><strong>K2</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Strike of the <em>hedge</em> option (must differ from K1 for the
+gamma hedge to be non-trivial).</p></li>
+<li><p><strong>T_total</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Time to expiry at inception (years).</p></li>
+<li><p><strong>r</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Risk-free rate.</p></li>
+<li><p><strong>sigma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Implied volatility (flat smile assumed).</p></li>
+<li><p><strong>n_steps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Total rebalancing steps.</p></li>
+<li><p><strong>option_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – <code class="docutils literal notranslate"><span class="pre">'call'</span></code> or <code class="docutils literal notranslate"><span class="pre">'put'</span></code> for both legs.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tensorquantlib.backtest.strategy.DeltaGammaHedgeStrategy.on_data">
+<span class="sig-name descname"><span class="pre">on_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">price</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/backtest/strategy.html#DeltaGammaHedgeStrategy.on_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.backtest.strategy.DeltaGammaHedgeStrategy.on_data" title="Link to this definition">¶</a></dt>
 <dd><p>Called each time step with current price.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -4179,8 +4751,14 @@ difference between current and desired position.</p>
 <p>Tensor-Train decomposition algorithms.</p>
 <dl class="simple">
 <dt>Implements:</dt><dd><ul class="simple">
-<li><p>tt_svd: TT-SVD decomposition (Oseledets, 2011)</p></li>
+<li><p>tt_svd:   TT-SVD decomposition (Oseledets, 2011)</p></li>
 <li><p>tt_round: TT-rounding via orthogonalization + truncated SVD</p></li>
+<li><dl class="simple">
+<dt>tt_cross: Black-box TT-Cross approximation (Oseledets &amp; Tyrtyshnikov, 2010)</dt><dd><p>Builds a TT decomposition without forming the full tensor,
+making 6+ asset problems feasible.</p>
+</dd>
+</dl>
+</li>
 </ul>
 </dd>
 </dl>
@@ -4233,6 +4811,124 @@ Per-step truncation threshold: <code class="docutils literal notranslate"><span 
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tensorquantlib.tt.decompose.tt_cross">
+<span class="sig-prename descclassname"><span class="pre">tensorquantlib.tt.decompose.</span></span><span class="sig-name descname"><span class="pre">tt_cross</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_rank</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sweeps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">42</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/tt/decompose.html#tt_cross"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.tt.decompose.tt_cross" title="Link to this definition">¶</a></dt>
+<dd><p>TT-Cross black-box approximation (Oseledets &amp; Tyrtyshnikov, 2010).</p>
+<p>Constructs a Tensor-Train decomposition of a <em>d</em>-dimensional function
+<strong>without forming the full tensor</strong>.  Only queries <code class="docutils literal notranslate"><span class="pre">fn</span></code> at a
+carefully selected set of index combinations — O(d · r² · n) evaluations
+instead of O(n^d) for TT-SVD.</p>
+<p>This makes 6+ asset problems feasible:</p>
+<ul class="simple">
+<li><p>6 assets, 15 pts/axis, rank 10 → ~54,000 evaluations</p></li>
+<li><p>vs. 15^6 = 11,390,625 for full-grid TT-SVD</p></li>
+</ul>
+<section id="algorithm">
+<h3>Algorithm<a class="headerlink" href="#algorithm" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Initialise</strong> right index sets J_k randomly.</p></li>
+<li><p><strong>Left-to-right sweep</strong>: for each core k, evaluate the cross
+C_k = f(I_k × {0..n_k-1} × J_k) and select new left pivots I_{k+1}
+via greedy maxvol on the QR factor of C_k.</p></li>
+<li><p><strong>Build TT-cores</strong> using the cross-interpolation formula:
+Core_k = C_k &#64; pinv(Z_k) where Z_k = f(I_{k+1} ++ J_k) is the
+(r_k × r_k) interface matrix.</p></li>
+<li><p><strong>Alternating sweeps</strong> refine accuracy.</p></li>
+</ol>
+<dl class="field-list">
+<dt class="field-odd">param fn<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Function accepting <code class="docutils literal notranslate"><span class="pre">d</span></code> integer arguments (grid indices)
+and returning a float:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">fn</span><span class="p">(</span><span class="n">i_0</span><span class="p">,</span> <span class="n">i_1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">i_</span><span class="p">{</span><span class="n">d</span><span class="o">-</span><span class="mi">1</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="nb">float</span>
+</pre></div>
+</div>
+<p>Use <code class="docutils literal notranslate"><span class="pre">functools.partial</span></code> or a lambda to curry other parameters.</p>
+</dd>
+<dt class="field-even">type fn<span class="colon">:</span></dt>
+<dd class="field-even"><p>callable</p>
+</dd>
+<dt class="field-odd">param shape<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Mode sizes <code class="docutils literal notranslate"><span class="pre">(n_0,</span> <span class="pre">n_1,</span> <span class="pre">...,</span> <span class="pre">n_{d-1})</span></code>.  These are <em>index</em> sizes.
+To convert continuous axes to indices, wrap <code class="docutils literal notranslate"><span class="pre">fn</span></code> accordingly.</p>
+</dd>
+<dt class="field-even">type shape<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple of int</p>
+</dd>
+<dt class="field-odd">param eps<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Target relative accuracy.  Controls rank selection via the
+tolerance passed to the SVD truncation after each cross.</p>
+</dd>
+<dt class="field-even">type eps<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">param max_rank<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Hard upper bound on TT-ranks.</p>
+</dd>
+<dt class="field-even">type max_rank<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">param n_sweeps<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of left-to-right + right-to-left alternating sweeps.
+<code class="docutils literal notranslate"><span class="pre">n_sweeps=1</span></code> gives a single L→R pass (fast, lower accuracy).
+<code class="docutils literal notranslate"><span class="pre">n_sweeps=4</span></code> is sufficient for smooth pricing surfaces.</p>
+</dd>
+<dt class="field-even">type n_sweeps<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">param seed<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Random seed for initialising right index sets.</p>
+</dd>
+<dt class="field-even">type seed<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>TT-cores[k].shape = <code class="docutils literal notranslate"><span class="pre">(r_{k-1},</span> <span class="pre">n_k,</span> <span class="pre">r_k)</span></code> with
+<code class="docutils literal notranslate"><span class="pre">r_0</span> <span class="pre">=</span> <span class="pre">r_d</span> <span class="pre">=</span> <span class="pre">1</span></code>.</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of np.ndarray</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>Compress a 6-asset basket payoff without forming the 15^6 grid:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib.tt.decompose</span><span class="w"> </span><span class="kn">import</span> <span class="n">tt_cross</span>
+
+<span class="c1"># Suppose price_lookup(i0, i1, i2, i3, i4, i5) evaluates the</span>
+<span class="c1"># basket option price at the i-th point on each asset&#39;s price axis.</span>
+<span class="n">axes</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="mi">15</span><span class="p">)]</span> <span class="o">*</span> <span class="mi">6</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">price_lookup</span><span class="p">(</span><span class="o">*</span><span class="n">indices</span><span class="p">):</span>
+    <span class="n">spots</span> <span class="o">=</span> <span class="p">[</span><span class="n">axes</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">indices</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">basket_mc</span><span class="p">(</span><span class="n">spots</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>   <span class="c1"># your existing pricer</span>
+
+<span class="n">cores</span> <span class="o">=</span> <span class="n">tt_cross</span><span class="p">(</span><span class="n">price_lookup</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,)</span><span class="o">*</span><span class="mi">6</span><span class="p">,</span> <span class="n">max_rank</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">n_sweeps</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<p>After calling <code class="docutils literal notranslate"><span class="pre">tt_cross</span></code>, wrap the result in a <code class="docutils literal notranslate"><span class="pre">TTSurrogate</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib.tt.surrogate</span><span class="w"> </span><span class="kn">import</span> <span class="n">TTSurrogate</span>
+<span class="n">surr</span> <span class="o">=</span> <span class="n">TTSurrogate</span><span class="p">(</span><span class="n">cores</span><span class="o">=</span><span class="n">cores</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="n">axes</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">eps</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fn</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.14)"><em>Callable</em></a><em>[</em><em>[</em><em>...</em><em>]</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>)</p></li>
+<li><p><strong>shape</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>...</em><em>]</em>)</p></li>
+<li><p><strong>eps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+<li><p><strong>max_rank</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>n_sweeps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>seed</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -4510,15 +5206,26 @@ sequential transfer-matrix contraction. O(d * r_a^2 * r_b^2 * n).</p>
 </ol>
 </dd>
 </dl>
+<p>For 6+ assets, use from_function() which applies TT-Cross and never
+builds the full grid.</p>
 <p>Typical usage:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">tensorquantlib.tt.surrogate</span> <span class="kn">import</span> <span class="n">TTSurrogate</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib.tt.surrogate</span><span class="w"> </span><span class="kn">import</span> <span class="n">TTSurrogate</span>
 
+<span class="c1"># ≤5 assets — TT-SVD on full grid</span>
 <span class="n">surr</span> <span class="o">=</span> <span class="n">TTSurrogate</span><span class="o">.</span><span class="n">from_basket</span><span class="p">(</span>
     <span class="n">S0_ranges</span><span class="o">=</span><span class="p">[(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">120</span><span class="p">)]</span> <span class="o">*</span> <span class="mi">3</span><span class="p">,</span>
     <span class="n">K</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="p">[</span><span class="mf">0.2</span><span class="p">]</span><span class="o">*</span><span class="mi">3</span><span class="p">,</span>
     <span class="n">corr</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="n">weights</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">]</span><span class="o">*</span><span class="mi">3</span><span class="p">,</span>
     <span class="n">n_points</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span>
 <span class="p">)</span>
+
+<span class="c1"># 6+ assets — TT-Cross (no full grid)</span>
+<span class="n">surr6</span> <span class="o">=</span> <span class="n">TTSurrogate</span><span class="o">.</span><span class="n">from_function</span><span class="p">(</span>
+    <span class="n">fn</span><span class="o">=</span><span class="n">my_pricer</span><span class="p">,</span>       <span class="c1"># fn(*integer_indices) -&gt; float</span>
+    <span class="n">axes</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="mi">15</span><span class="p">)]</span> <span class="o">*</span> <span class="mi">6</span><span class="p">,</span>
+    <span class="n">max_rank</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span> <span class="n">n_sweeps</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+<span class="p">)</span>
+
 <span class="n">price</span> <span class="o">=</span> <span class="n">surr</span><span class="o">.</span><span class="n">evaluate</span><span class="p">([</span><span class="mi">100</span><span class="p">,</span> <span class="mi">105</span><span class="p">,</span> <span class="mi">95</span><span class="p">])</span>
 <span class="n">greeks</span> <span class="o">=</span> <span class="n">surr</span><span class="o">.</span><span class="n">greeks</span><span class="p">([</span><span class="mi">100</span><span class="p">,</span> <span class="mi">105</span><span class="p">,</span> <span class="mi">95</span><span class="p">])</span>
 </pre></div>
@@ -4657,6 +5364,52 @@ by mapping continuous spot prices to grid indices via linear interpolation.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tensorquantlib.tt.surrogate.TTSurrogate.from_function">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_rank</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sweeps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">42</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/tt/surrogate.html#TTSurrogate.from_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.tt.surrogate.TTSurrogate.from_function" title="Link to this definition">¶</a></dt>
+<dd><p>Build surrogate via TT-Cross — <strong>no full grid needed</strong>.</p>
+<p>This is the recommended constructor for <strong>6+ asset</strong> problems.
+TT-Cross samples the pricing function at O(d · r² · n) selected
+index combinations instead of the full n^d grid, making
+high-dimensional problems feasible.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fn</strong> (<em>callable</em>) – <p>Function accepting <code class="docutils literal notranslate"><span class="pre">d</span></code> integer grid-index arguments and
+returning a float price:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">fn</span><span class="p">(</span><span class="n">i_0</span><span class="p">,</span> <span class="n">i_1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">i_</span><span class="p">{</span><span class="n">d</span><span class="o">-</span><span class="mi">1</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="nb">float</span>
+</pre></div>
+</div>
+<p>The simplest way to build this is to pre-compute an axis
+array for continuous spots and index into it inside <code class="docutils literal notranslate"><span class="pre">fn</span></code>.
+Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">axes</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="mi">15</span><span class="p">)]</span> <span class="o">*</span> <span class="mi">6</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">my_pricer</span><span class="p">(</span><span class="o">*</span><span class="n">indices</span><span class="p">):</span>
+    <span class="n">spots</span> <span class="o">=</span> <span class="p">[</span><span class="n">axes</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">indices</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">basket_mc</span><span class="p">(</span><span class="n">spots</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">corr</span><span class="p">)</span>
+
+<span class="n">surr</span> <span class="o">=</span> <span class="n">TTSurrogate</span><span class="o">.</span><span class="n">from_function</span><span class="p">(</span><span class="n">my_pricer</span><span class="p">,</span> <span class="n">axes</span><span class="p">)</span>
+</pre></div>
+</div>
+</p></li>
+<li><p><strong>axes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>np.ndarray</em>) – 1D grid arrays, one per asset.  <code class="docutils literal notranslate"><span class="pre">len(axes)</span></code> is the number
+of assets.  <code class="docutils literal notranslate"><span class="pre">axes[k][i]</span></code> gives the spot price at index <code class="docutils literal notranslate"><span class="pre">i</span></code>
+for asset <code class="docutils literal notranslate"><span class="pre">k</span></code>.</p></li>
+<li><p><strong>eps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Relative accuracy target passed to TT-Cross.</p></li>
+<li><p><strong>max_rank</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Hard upper bound on TT-ranks.  Increase if accuracy is
+insufficient; decrease if speed is the priority.</p></li>
+<li><p><strong>n_sweeps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of left-to-right + right-to-left alternating sweeps.
+Default 6 is sufficient for smooth option pricing surfaces.</p></li>
+<li><p><strong>seed</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Random seed for TT-Cross initialisation.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#tensorquantlib.tt.surrogate.TTSurrogate" title="tensorquantlib.tt.surrogate.TTSurrogate">TTSurrogate</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tensorquantlib.tt.surrogate.TTSurrogate.evaluate">
 <span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spots</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/tt/surrogate.html#TTSurrogate.evaluate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.tt.surrogate.TTSurrogate.evaluate" title="Link to this definition">¶</a></dt>
 <dd><p>Evaluate the surrogate price at given spot prices.</p>
@@ -4715,6 +5468,73 @@ Gamma: (Delta(S+h) - Delta(S-h)) / 2h (finite-diff on Delta).</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tensorquantlib.tt.surrogate.TTSurrogate.plot_surface">
+<span class="sig-name descname"><span class="pre">plot_surface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Pricing</span> <span class="pre">Surface'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'heatmap'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/tt/surrogate.html#TTSurrogate.plot_surface"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.tt.surrogate.TTSurrogate.plot_surface" title="Link to this definition">¶</a></dt>
+<dd><p>Plot a 2D pricing surface slice.</p>
+<p>Evaluates the full pricing grid from TT-cores and plots a 2D
+heatmap or 3D surface.  Any extra keyword arguments are forwarded
+to <code class="docutils literal notranslate"><span class="pre">plot_pricing_surface</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dims</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>) – Which two asset axes to plot (default: first two).</p></li>
+<li><p><strong>fixed_indices</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>] </em><em>| </em><em>None</em>) – Override slice indices for remaining axes.</p></li>
+<li><p><strong>title</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Plot title.</p></li>
+<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – <code class="docutils literal notranslate"><span class="pre">&quot;heatmap&quot;</span></code> (default) or <code class="docutils literal notranslate"><span class="pre">&quot;surface&quot;</span></code> (3D).</p></li>
+<li><p><strong>kwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><em>object</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(fig,</span> <span class="pre">ax)</span></code> matplotlib tuple.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)">object</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tensorquantlib.tt.surrogate.TTSurrogate.plot_greeks">
+<span class="sig-name descname"><span class="pre">plot_greeks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/tt/surrogate.html#TTSurrogate.plot_greeks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.tt.surrogate.TTSurrogate.plot_greeks" title="Link to this definition">¶</a></dt>
+<dd><p>Plot Delta and Gamma surfaces as side-by-side heatmaps.</p>
+<p>Computes Greek grids via finite differences on the TT surrogate
+and plots them using <code class="docutils literal notranslate"><span class="pre">plot_greeks_surface</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dims</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>) – Which two axes to plot.</p></li>
+<li><p><strong>fixed_indices</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>] </em><em>| </em><em>None</em>) – Override slice indices for remaining axes.</p></li>
+<li><p><strong>h</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Relative bump for finite-difference Greeks (h_abs = S * h).</p></li>
+<li><p><strong>kwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><em>object</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(fig,</span> <span class="pre">axes)</span></code> matplotlib tuple.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)">object</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tensorquantlib.tt.surrogate.TTSurrogate.plot_ranks">
+<span class="sig-name descname"><span class="pre">plot_ranks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/tt/surrogate.html#TTSurrogate.plot_ranks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.tt.surrogate.TTSurrogate.plot_ranks" title="Link to this definition">¶</a></dt>
+<dd><p>Bar chart of TT-ranks across bonds.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">(fig,</span> <span class="pre">ax)</span></code> matplotlib tuple.</p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>kwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><em>object</em></a>)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)">object</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tensorquantlib.tt.surrogate.TTSurrogate.summary">
 <span class="sig-name descname"><span class="pre">summary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tensorquantlib/tt/surrogate.html#TTSurrogate.summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tensorquantlib.tt.surrogate.TTSurrogate.summary" title="Link to this definition">¶</a></dt>
 <dd><p>Return diagnostic summary of the surrogate model.</p>
@@ -4754,7 +5574,7 @@ Monte-Carlo pricers on structured grids and compressing via TT-SVD.</p>
 </dd>
 </dl>
 <p>Usage:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">tensorquantlib.tt.pricing</span> <span class="kn">import</span> <span class="n">heston_surrogate</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib.tt.pricing</span><span class="w"> </span><span class="kn">import</span> <span class="n">heston_surrogate</span>
 
 <span class="n">surr</span> <span class="o">=</span> <span class="n">heston_surrogate</span><span class="p">(</span>
     <span class="n">S_range</span><span class="o">=</span><span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">120</span><span class="p">),</span> <span class="n">K_range</span><span class="o">=</span><span class="p">(</span><span class="mi">90</span><span class="p">,</span> <span class="mi">110</span><span class="p">),</span>
@@ -5113,7 +5933,7 @@ Matplotlib is imported lazily — the rest of the library works without it.</p>
     </div>
 
     
-    <a href="https://github.com/raswanthmalai19/TensorQuantLib" class="github">
+    <a href="https://github.com/raswanthmalai19/TensorQuantLib." class="github">
         <img src="_static/github-banner.svg" alt="Fork me on GitHub" class="github"/>
     </a>
     

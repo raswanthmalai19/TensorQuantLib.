@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>tensorquantlib.finance.heston &#8212; TensorQuantLib 0.3.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=f6a572b4" />
     <script src="../../../_static/documentation_options.js?v=e259d695"></script>
@@ -35,7 +35,7 @@
 
 
 <p>
-<iframe src="https://ghbtns.com/github-btn.html?user=raswanthmalai19&repo=TensorQuantLib&type=watch&count=true&size=large&v=2"
+<iframe src="https://ghbtns.com/github-btn.html?user=raswanthmalai19&repo=TensorQuantLib.&type=watch&count=true&size=large&v=2"
   allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
 </p>
 
@@ -56,6 +56,7 @@
 <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../performance.html">Performance &amp; Production Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../theory.html">Theory &amp; Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../limitations.html">Known Limitations</a></li>
@@ -111,30 +112,30 @@
 <span class="sd">    on Fourier-Cosine Series Expansions. SIAM J. Sci. Comput., 31(2), 826-848.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">scipy.integrate</span> <span class="kn">import</span> <span class="n">quad</span>
-<span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">minimize</span>
-<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">norm</span> <span class="k">as</span> <span class="n">_scipy_norm</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.integrate</span><span class="w"> </span><span class="kn">import</span> <span class="n">quad</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">minimize</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">norm</span> <span class="k">as</span> <span class="n">_scipy_norm</span>
 
 <span class="c1"># Local alias used in QE scheme (norm PPF for V sampling)</span>
 <span class="n">norm_ppf</span> <span class="o">=</span> <span class="n">_scipy_norm</span><span class="o">.</span><span class="n">ppf</span>
 
-<span class="kn">from</span> <span class="nn">tensorquantlib.finance.black_scholes</span> <span class="kn">import</span> <span class="n">bs_price_numpy</span>
 
 
 <span class="c1"># ------------------------------------------------------------------ #</span>
 <span class="c1"># Parameter container</span>
 <span class="c1"># ------------------------------------------------------------------ #</span>
 
+
 <div class="viewcode-block" id="HestonParams">
 <a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.heston.HestonParams">[docs]</a>
 <span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">HestonParams</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">HestonParams</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Heston model parameters.</span>
 
 <span class="sd">    Attributes:</span>
@@ -144,6 +145,7 @@
 <span class="sd">        rho: Correlation between asset and variance Brownian motions (-1 &lt; rho &lt; 1).</span>
 <span class="sd">        v0: Initial variance (&gt;0).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">kappa</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span>
     <span class="n">theta</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.04</span>
     <span class="n">xi</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span>
@@ -152,16 +154,16 @@
 
 <div class="viewcode-block" id="HestonParams.feller_satisfied">
 <a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.heston.HestonParams.feller_satisfied">[docs]</a>
-    <span class="k">def</span> <span class="nf">feller_satisfied</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">feller_satisfied</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check the Feller condition: 2 * kappa * theta &gt; xi^2.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">kappa</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">xi</span> <span class="o">**</span> <span class="mi">2</span></div>
+        <span class="k">return</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">kappa</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">xi</span><span class="o">**</span><span class="mi">2</span></div>
 
 
-    <span class="k">def</span> <span class="nf">to_array</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_array</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">kappa</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">xi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">v0</span><span class="p">])</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_array</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">arr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HestonParams</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_array</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">arr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HestonParams</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">kappa</span><span class="o">=</span><span class="n">arr</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">theta</span><span class="o">=</span><span class="n">arr</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">xi</span><span class="o">=</span><span class="n">arr</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">rho</span><span class="o">=</span><span class="n">arr</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">v0</span><span class="o">=</span><span class="n">arr</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span></div>
 
 
@@ -170,7 +172,8 @@
 <span class="c1"># Characteristic function</span>
 <span class="c1"># ------------------------------------------------------------------ #</span>
 
-<span class="k">def</span> <span class="nf">_heston_cf</span><span class="p">(</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_heston_cf</span><span class="p">(</span>
     <span class="n">phi</span><span class="p">:</span> <span class="nb">complex</span><span class="p">,</span>
     <span class="n">S</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">K</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
@@ -188,16 +191,16 @@
     <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">r</span> <span class="o">-</span> <span class="n">q</span><span class="p">)</span> <span class="o">*</span> <span class="n">T</span>
 
     <span class="c1"># Standard Heston characteristic function (Albrecher et al. 2007 stable form)</span>
-    <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">rho</span> <span class="o">*</span> <span class="n">xi</span> <span class="o">*</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">-</span> <span class="n">kappa</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">xi</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">+</span> <span class="n">phi</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">rho</span> <span class="o">*</span> <span class="n">xi</span> <span class="o">*</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">-</span> <span class="n">kappa</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">xi</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">+</span> <span class="n">phi</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
     <span class="n">g_num</span> <span class="o">=</span> <span class="n">kappa</span> <span class="o">-</span> <span class="n">rho</span> <span class="o">*</span> <span class="n">xi</span> <span class="o">*</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">-</span> <span class="n">d</span>
     <span class="n">g_den</span> <span class="o">=</span> <span class="n">kappa</span> <span class="o">-</span> <span class="n">rho</span> <span class="o">*</span> <span class="n">xi</span> <span class="o">*</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">+</span> <span class="n">d</span>
     <span class="n">g</span> <span class="o">=</span> <span class="n">g_num</span> <span class="o">/</span> <span class="n">g_den</span>
 
     <span class="n">exp_dT</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">d</span> <span class="o">*</span> <span class="n">T</span><span class="p">)</span>
-    <span class="n">C</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span> <span class="o">-</span> <span class="n">q</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">*</span> <span class="n">T</span> <span class="o">+</span> <span class="p">(</span><span class="n">kappa</span> <span class="o">*</span> <span class="n">theta</span> <span class="o">/</span> <span class="n">xi</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span> <span class="o">-</span> <span class="n">q</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">*</span> <span class="n">T</span> <span class="o">+</span> <span class="p">(</span><span class="n">kappa</span> <span class="o">*</span> <span class="n">theta</span> <span class="o">/</span> <span class="n">xi</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
         <span class="n">g_num</span> <span class="o">*</span> <span class="n">T</span> <span class="o">-</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">g</span> <span class="o">*</span> <span class="n">exp_dT</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">g</span><span class="p">))</span>
     <span class="p">)</span>
-    <span class="n">D</span> <span class="o">=</span> <span class="p">(</span><span class="n">g_num</span> <span class="o">/</span> <span class="n">xi</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">exp_dT</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">g</span> <span class="o">*</span> <span class="n">exp_dT</span><span class="p">)</span>
+    <span class="n">D</span> <span class="o">=</span> <span class="p">(</span><span class="n">g_num</span> <span class="o">/</span> <span class="n">xi</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">exp_dT</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">g</span> <span class="o">*</span> <span class="n">exp_dT</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">C</span> <span class="o">+</span> <span class="n">D</span> <span class="o">*</span> <span class="n">v0</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span>
 
@@ -206,9 +209,10 @@
 <span class="c1"># Semi-analytic (Carr-Madan) pricing</span>
 <span class="c1"># ------------------------------------------------------------------ #</span>
 
+
 <div class="viewcode-block" id="heston_price">
 <a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.heston.heston_price">[docs]</a>
-<span class="k">def</span> <span class="nf">heston_price</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">heston_price</span><span class="p">(</span>
     <span class="n">S</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">K</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
@@ -249,7 +253,7 @@
     <span class="c1"># Precompute CF(-i) for normalisation of the P1 integrand (S-numeraire probability)</span>
     <span class="n">cf_minus_i</span> <span class="o">=</span> <span class="n">_heston_cf</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">integrand_p1</span><span class="p">(</span><span class="n">phi</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">integrand_p1</span><span class="p">(</span><span class="n">phi</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="c1"># P1 = Prob(S_T &gt; K) under the S-numeraire (forward measure equivalent).</span>
         <span class="c1"># Uses the Radon-Nikodym derivative: CF_S(phi) = CF_Q(phi - i) / CF_Q(-i)</span>
         <span class="c1"># where CF_Q(u) = E^Q[exp(i*u*ln(S_T))].</span>
@@ -257,7 +261,7 @@
         <span class="n">num</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">*</span> <span class="n">log_K</span><span class="p">)</span> <span class="o">*</span> <span class="n">cf_val</span>
         <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">num</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">*</span> <span class="n">cf_minus_i</span><span class="p">)))</span>
 
-    <span class="k">def</span> <span class="nf">integrand_p2</span><span class="p">(</span><span class="n">phi</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">integrand_p2</span><span class="p">(</span><span class="n">phi</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="c1"># P2 = Prob(S_T &gt; K) under the risk-neutral measure Q.</span>
         <span class="n">cf_val</span> <span class="o">=</span> <span class="n">_heston_cf</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
         <span class="n">num</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">phi</span> <span class="o">*</span> <span class="n">log_K</span><span class="p">)</span> <span class="o">*</span> <span class="n">cf_val</span>
@@ -286,9 +290,10 @@
 <span class="c1"># Monte Carlo reference implementation</span>
 <span class="c1"># ------------------------------------------------------------------ #</span>
 
+
 <div class="viewcode-block" id="heston_price_mc">
 <a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.heston.heston_price_mc">[docs]</a>
-<span class="k">def</span> <span class="nf">heston_price_mc</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">heston_price_mc</span><span class="p">(</span>
     <span class="n">S</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">K</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
@@ -299,7 +304,7 @@
     <span class="o">*</span><span class="p">,</span>
     <span class="n">n_paths</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100_000</span><span class="p">,</span>
     <span class="n">n_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">252</span><span class="p">,</span>
-    <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">return_stderr</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">scheme</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;qe&quot;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
@@ -350,25 +355,23 @@
         <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">):</span>
             <span class="n">z1</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">n_paths</span><span class="p">)</span>
             <span class="n">z2</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">n_paths</span><span class="p">)</span>
-            <span class="n">zv</span> <span class="o">=</span> <span class="n">rho</span> <span class="o">*</span> <span class="n">z1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">rho</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">z2</span>
+            <span class="n">zv</span> <span class="o">=</span> <span class="n">rho</span> <span class="o">*</span> <span class="n">z1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">rho</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">z2</span>
 
             <span class="n">V_t_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">V_t</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
             <span class="n">sqrt_V</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">V_t_pos</span><span class="p">)</span>
 
-            <span class="n">S_t</span> <span class="o">=</span> <span class="n">S_t</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
-                <span class="p">(</span><span class="n">r</span> <span class="o">-</span> <span class="n">q</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">V_t_pos</span><span class="p">)</span> <span class="o">*</span> <span class="n">dt</span> <span class="o">+</span> <span class="n">sqrt_V</span> <span class="o">*</span> <span class="n">z1</span> <span class="o">*</span> <span class="n">sqrt_dt</span>
-            <span class="p">)</span>
+            <span class="n">S_t</span> <span class="o">=</span> <span class="n">S_t</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">((</span><span class="n">r</span> <span class="o">-</span> <span class="n">q</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">V_t_pos</span><span class="p">)</span> <span class="o">*</span> <span class="n">dt</span> <span class="o">+</span> <span class="n">sqrt_V</span> <span class="o">*</span> <span class="n">z1</span> <span class="o">*</span> <span class="n">sqrt_dt</span><span class="p">)</span>
             <span class="n">V_t</span> <span class="o">=</span> <span class="n">V_t</span> <span class="o">+</span> <span class="n">kappa</span> <span class="o">*</span> <span class="p">(</span><span class="n">theta</span> <span class="o">-</span> <span class="n">V_t_pos</span><span class="p">)</span> <span class="o">*</span> <span class="n">dt</span> <span class="o">+</span> <span class="n">xi</span> <span class="o">*</span> <span class="n">sqrt_V</span> <span class="o">*</span> <span class="n">zv</span> <span class="o">*</span> <span class="n">sqrt_dt</span>
             <span class="n">V_t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">V_t</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># Quadratic-Exponential (QE) scheme (Andersen 2008) for variance</span>
         <span class="c1"># Precompute constants</span>
         <span class="n">exp_kdt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">kappa</span> <span class="o">*</span> <span class="n">dt</span><span class="p">)</span>
-        <span class="n">xi2</span> <span class="o">=</span> <span class="n">xi</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">xi2</span> <span class="o">=</span> <span class="n">xi</span><span class="o">**</span><span class="mi">2</span>
         <span class="n">K0</span> <span class="o">=</span> <span class="o">-</span><span class="n">rho</span> <span class="o">*</span> <span class="n">kappa</span> <span class="o">*</span> <span class="n">theta</span> <span class="o">*</span> <span class="n">dt</span> <span class="o">/</span> <span class="n">xi</span>
         <span class="n">K1</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">dt</span> <span class="o">*</span> <span class="p">(</span><span class="n">kappa</span> <span class="o">*</span> <span class="n">rho</span> <span class="o">/</span> <span class="n">xi</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">-</span> <span class="n">rho</span> <span class="o">/</span> <span class="n">xi</span>
         <span class="n">K2</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">dt</span> <span class="o">*</span> <span class="p">(</span><span class="n">kappa</span> <span class="o">*</span> <span class="n">rho</span> <span class="o">/</span> <span class="n">xi</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">+</span> <span class="n">rho</span> <span class="o">/</span> <span class="n">xi</span>
-        <span class="n">K3</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">dt</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">rho</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">K3</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">dt</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">rho</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">K4</span> <span class="o">=</span> <span class="n">K3</span>  <span class="c1"># same by symmetry</span>
 
         <span class="c1"># QE critical ratio threshold (Andersen suggests psi_c = 1.5)</span>
@@ -376,15 +379,17 @@
 
         <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">):</span>
             <span class="n">z1</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">n_paths</span><span class="p">)</span>
-            <span class="n">u_v</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">n_paths</span><span class="p">)</span>   <span class="c1"># for V update</span>
+            <span class="n">u_v</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">n_paths</span><span class="p">)</span>  <span class="c1"># for V update</span>
 
             <span class="c1"># QE step for V_t+dt given V_t</span>
             <span class="c1"># Conditional mean and variance of V(t+dt)|V(t) for CIR process</span>
-            <span class="n">m</span>   <span class="o">=</span> <span class="n">theta</span> <span class="o">+</span> <span class="p">(</span><span class="n">V_t</span> <span class="o">-</span> <span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">exp_kdt</span>
-            <span class="n">s2</span>  <span class="o">=</span> <span class="p">(</span><span class="n">V_t</span> <span class="o">*</span> <span class="n">xi2</span> <span class="o">*</span> <span class="n">exp_kdt</span> <span class="o">/</span> <span class="n">kappa</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">exp_kdt</span><span class="p">)</span>
-                   <span class="o">+</span> <span class="n">theta</span> <span class="o">*</span> <span class="n">xi2</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">kappa</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">exp_kdt</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
-            <span class="n">s2</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">s2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-            <span class="n">psi</span> <span class="o">=</span> <span class="n">s2</span> <span class="o">/</span> <span class="p">(</span><span class="n">m</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">+</span> <span class="p">(</span><span class="n">V_t</span> <span class="o">-</span> <span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">exp_kdt</span>
+            <span class="n">s2</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">V_t</span> <span class="o">*</span> <span class="n">xi2</span> <span class="o">*</span> <span class="n">exp_kdt</span> <span class="o">/</span> <span class="n">kappa</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">exp_kdt</span><span class="p">)</span>
+                <span class="o">+</span> <span class="n">theta</span> <span class="o">*</span> <span class="n">xi2</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">kappa</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">exp_kdt</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+            <span class="p">)</span>
+            <span class="n">s2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">s2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="n">psi</span> <span class="o">=</span> <span class="n">s2</span> <span class="o">/</span> <span class="p">(</span><span class="n">m</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
 
             <span class="c1"># High-psi regime (exponential mixture): psi &gt; psi_c</span>
             <span class="c1"># Low-psi regime (quadratic normal): psi &lt;= psi_c</span>
@@ -392,28 +397,32 @@
 
             <span class="c1"># --- Low-psi branch: quadratic approximation ---</span>
             <span class="n">inv_psi</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">hi</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">psi</span><span class="p">)</span>  <span class="c1"># safe denominator</span>
-            <span class="n">b2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">inv_psi</span> <span class="o">-</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">inv_psi</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">inv_psi</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">)</span>
-            <span class="n">b</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">b2</span><span class="p">)</span>
-            <span class="n">a</span>  <span class="o">=</span> <span class="n">m</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">b2</span><span class="p">)</span>
+            <span class="n">b2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+                <span class="mf">2.0</span> <span class="o">*</span> <span class="n">inv_psi</span> <span class="o">-</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">inv_psi</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">inv_psi</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">),</span> <span class="mf">0.0</span>
+            <span class="p">)</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">b2</span><span class="p">)</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="n">m</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">b2</span><span class="p">)</span>
             <span class="n">z_v</span> <span class="o">=</span> <span class="n">norm_ppf</span><span class="p">(</span><span class="n">u_v</span><span class="p">)</span>  <span class="c1"># standard normal quantile</span>
             <span class="n">V_lo</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="p">(</span><span class="n">b</span> <span class="o">+</span> <span class="n">z_v</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
 
             <span class="c1"># --- High-psi branch: exponential distribution ---</span>
             <span class="n">p_exp</span> <span class="o">=</span> <span class="p">(</span><span class="n">psi</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">psi</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span>
-            <span class="n">beta</span>  <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">p_exp</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">hi</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>  <span class="c1"># avoid /0 in lo branch</span>
+            <span class="n">beta</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">p_exp</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">hi</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>  <span class="c1"># avoid /0 in lo branch</span>
             <span class="c1"># Inversion of mixed distribution</span>
             <span class="c1"># u ~ [0, p] -&gt; V = 0; u ~ (p, 1] -&gt; V = ln(...) / beta</span>
-            <span class="n">v_hi_safe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">u_v</span> <span class="o">&gt;</span> <span class="n">p_exp</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">p_exp</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">u_v</span><span class="p">,</span> <span class="mf">1e-300</span><span class="p">))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">beta</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="n">v_hi_safe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+                <span class="n">u_v</span> <span class="o">&gt;</span> <span class="n">p_exp</span><span class="p">,</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">p_exp</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">u_v</span><span class="p">,</span> <span class="mf">1e-300</span><span class="p">))</span>
+                <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">beta</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+                <span class="mf">0.0</span><span class="p">,</span>
+            <span class="p">)</span>
             <span class="n">V_hi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">u_v</span> <span class="o">&gt;</span> <span class="n">p_exp</span><span class="p">,</span> <span class="n">v_hi_safe</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
 
             <span class="n">V_next</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">hi</span><span class="p">,</span> <span class="n">V_hi</span><span class="p">,</span> <span class="n">V_lo</span><span class="p">)</span>
 
             <span class="c1"># Log-asset update using V_t and V_next (trapezoidal integral approximation)</span>
-            <span class="n">V_avg</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">V_t</span> <span class="o">+</span> <span class="n">V_next</span><span class="p">)</span>
             <span class="n">S_t</span> <span class="o">=</span> <span class="n">S_t</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
-                <span class="p">(</span><span class="n">r</span> <span class="o">-</span> <span class="n">q</span><span class="p">)</span> <span class="o">*</span> <span class="n">dt</span>
-                <span class="o">+</span> <span class="n">K0</span> <span class="o">+</span> <span class="n">K1</span> <span class="o">*</span> <span class="n">V_t</span> <span class="o">+</span> <span class="n">K2</span> <span class="o">*</span> <span class="n">V_next</span>
-                <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">K3</span> <span class="o">*</span> <span class="n">V_t</span> <span class="o">+</span> <span class="n">K4</span> <span class="o">*</span> <span class="n">V_next</span><span class="p">)</span> <span class="o">*</span> <span class="n">z1</span>
+                <span class="p">(</span><span class="n">r</span> <span class="o">-</span> <span class="n">q</span><span class="p">)</span> <span class="o">*</span> <span class="n">dt</span> <span class="o">+</span> <span class="n">K0</span> <span class="o">+</span> <span class="n">K1</span> <span class="o">*</span> <span class="n">V_t</span> <span class="o">+</span> <span class="n">K2</span> <span class="o">*</span> <span class="n">V_next</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">K3</span> <span class="o">*</span> <span class="n">V_t</span> <span class="o">+</span> <span class="n">K4</span> <span class="o">*</span> <span class="n">V_next</span><span class="p">)</span> <span class="o">*</span> <span class="n">z1</span>
             <span class="p">)</span>
 
             <span class="n">V_t</span> <span class="o">=</span> <span class="n">V_next</span>
@@ -437,9 +446,10 @@
 <span class="c1"># Greeks (finite differences on the analytic price)</span>
 <span class="c1"># ------------------------------------------------------------------ #</span>
 
+
 <div class="viewcode-block" id="heston_greeks">
 <a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.heston.heston_greeks">[docs]</a>
-<span class="k">def</span> <span class="nf">heston_greeks</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">heston_greeks</span><span class="p">(</span>
     <span class="n">S</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">K</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
@@ -477,13 +487,16 @@
     <span class="n">price_dn</span> <span class="o">=</span> <span class="n">heston_price</span><span class="p">(</span><span class="n">S</span> <span class="o">-</span> <span class="n">dS</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">q</span><span class="p">,</span> <span class="n">option_type</span><span class="o">=</span><span class="n">option_type</span><span class="p">)</span>
 
     <span class="n">delta</span> <span class="o">=</span> <span class="p">(</span><span class="n">price_up</span> <span class="o">-</span> <span class="n">price_dn</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">dS</span><span class="p">)</span>
-    <span class="n">gamma</span> <span class="o">=</span> <span class="p">(</span><span class="n">price_up</span> <span class="o">-</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">price_0</span> <span class="o">+</span> <span class="n">price_dn</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">dS</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">gamma</span> <span class="o">=</span> <span class="p">(</span><span class="n">price_up</span> <span class="o">-</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">price_0</span> <span class="o">+</span> <span class="n">price_dn</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">dS</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
 
     <span class="n">price_T</span> <span class="o">=</span> <span class="n">heston_price</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">T</span> <span class="o">-</span> <span class="n">dT</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">q</span><span class="p">,</span> <span class="n">option_type</span><span class="o">=</span><span class="n">option_type</span><span class="p">)</span>
     <span class="n">theta</span> <span class="o">=</span> <span class="p">(</span><span class="n">price_T</span> <span class="o">-</span> <span class="n">price_0</span><span class="p">)</span> <span class="o">/</span> <span class="n">dT</span>  <span class="c1"># per year, negative = time decay</span>
 
     <span class="n">p_vega</span> <span class="o">=</span> <span class="n">HestonParams</span><span class="p">(</span>
-        <span class="n">kappa</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">kappa</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">theta</span><span class="p">,</span> <span class="n">xi</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">xi</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span>
+        <span class="n">kappa</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">kappa</span><span class="p">,</span>
+        <span class="n">theta</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">theta</span><span class="p">,</span>
+        <span class="n">xi</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">xi</span><span class="p">,</span>
+        <span class="n">rho</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span>
         <span class="n">v0</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">v0</span> <span class="o">+</span> <span class="n">dv0</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">price_v</span> <span class="o">=</span> <span class="n">heston_price</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p_vega</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">q</span><span class="p">,</span> <span class="n">option_type</span><span class="o">=</span><span class="n">option_type</span><span class="p">)</span>
@@ -497,10 +510,11 @@
 <span class="c1"># Calibration</span>
 <span class="c1"># ------------------------------------------------------------------ #</span>
 
+
 <div class="viewcode-block" id="HestonCalibrator">
 <a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.heston.HestonCalibrator">[docs]</a>
 <span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">HestonCalibrator</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">HestonCalibrator</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Calibrate Heston model parameters to a market implied-volatility surface.</span>
 
 <span class="sd">    Usage::</span>
@@ -533,7 +547,7 @@
 
 <div class="viewcode-block" id="HestonCalibrator.fit">
 <a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.heston.HestonCalibrator.fit">[docs]</a>
-    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">iv_market</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">K_grid</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -556,9 +570,9 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            self</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">tensorquantlib.finance.implied_vol</span> <span class="kn">import</span> <span class="n">implied_vol</span>  <span class="c1"># avoid circular import</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib.finance.implied_vol</span><span class="w"> </span><span class="kn">import</span> <span class="n">implied_vol</span>  <span class="c1"># avoid circular import</span>
 
-        <span class="k">def</span> <span class="nf">_objective</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">_objective</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
             <span class="n">kappa</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">xi</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">v0</span> <span class="o">=</span> <span class="n">x</span>
             <span class="n">params</span> <span class="o">=</span> <span class="n">HestonParams</span><span class="p">(</span><span class="n">kappa</span><span class="o">=</span><span class="n">kappa</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="n">theta</span><span class="p">,</span> <span class="n">xi</span><span class="o">=</span><span class="n">xi</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">,</span> <span class="n">v0</span><span class="o">=</span><span class="n">v0</span><span class="p">)</span>
             <span class="n">sq_err</span> <span class="o">=</span> <span class="mf">0.0</span>
@@ -566,13 +580,23 @@
                 <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">T</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">T_grid</span><span class="p">):</span>
                     <span class="k">try</span><span class="p">:</span>
                         <span class="n">model_price</span> <span class="o">=</span> <span class="n">heston_price</span><span class="p">(</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">K</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">T</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span>
-                            <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">,</span> <span class="n">option_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">option_type</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">,</span>
+                            <span class="nb">float</span><span class="p">(</span><span class="n">K</span><span class="p">),</span>
+                            <span class="nb">float</span><span class="p">(</span><span class="n">T</span><span class="p">),</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span>
+                            <span class="n">params</span><span class="p">,</span>
+                            <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">,</span>
+                            <span class="n">option_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">option_type</span><span class="p">,</span>
                         <span class="p">)</span>
                         <span class="c1"># Convert model price to IV</span>
                         <span class="n">model_iv</span> <span class="o">=</span> <span class="n">implied_vol</span><span class="p">(</span>
-                            <span class="n">model_price</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">K</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">T</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span>
-                            <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">,</span> <span class="n">option_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">option_type</span><span class="p">,</span>
+                            <span class="n">model_price</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">,</span>
+                            <span class="nb">float</span><span class="p">(</span><span class="n">K</span><span class="p">),</span>
+                            <span class="nb">float</span><span class="p">(</span><span class="n">T</span><span class="p">),</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span>
+                            <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">,</span>
+                            <span class="n">option_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">option_type</span><span class="p">,</span>
                         <span class="p">)</span>
                         <span class="n">sq_err</span> <span class="o">+=</span> <span class="p">(</span><span class="n">model_iv</span> <span class="o">-</span> <span class="n">iv_market</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span>
                     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -580,10 +604,10 @@
             <span class="k">return</span> <span class="n">sq_err</span>
 
         <span class="n">bounds</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">),</span>   <span class="c1"># kappa</span>
+            <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">),</span>  <span class="c1"># kappa</span>
             <span class="p">(</span><span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span>  <span class="c1"># theta</span>
-            <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>    <span class="c1"># xi</span>
-            <span class="p">(</span><span class="o">-</span><span class="mf">0.99</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">),</span> <span class="c1"># rho</span>
+            <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>  <span class="c1"># xi</span>
+            <span class="p">(</span><span class="o">-</span><span class="mf">0.99</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">),</span>  <span class="c1"># rho</span>
             <span class="p">(</span><span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span>  <span class="c1"># v0</span>
         <span class="p">]</span>
 
@@ -595,9 +619,7 @@
                 <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">0.04</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.04</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Random start within bounds</span>
-                <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
-                    <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span> <span class="k">for</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="ow">in</span> <span class="n">bounds</span>
-                <span class="p">])</span>
+                <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span> <span class="k">for</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="ow">in</span> <span class="n">bounds</span><span class="p">])</span>
 
             <span class="n">result</span> <span class="o">=</span> <span class="n">minimize</span><span class="p">(</span>
                 <span class="n">_objective</span><span class="p">,</span>
@@ -610,7 +632,9 @@
             <span class="k">if</span> <span class="n">best_result</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">result</span><span class="o">.</span><span class="n">fun</span> <span class="o">&lt;</span> <span class="n">best_result</span><span class="o">.</span><span class="n">fun</span><span class="p">:</span>
                 <span class="n">best_result</span> <span class="o">=</span> <span class="n">result</span>
                 <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Restart </span><span class="si">{</span><span class="n">restart</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">n_restarts</span><span class="si">}</span><span class="s2">: RMSE=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">fun</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">K_grid</span><span class="p">)</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">T_grid</span><span class="p">)))</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Restart </span><span class="si">{</span><span class="n">restart</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">n_restarts</span><span class="si">}</span><span class="s2">: RMSE=</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">fun</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">K_grid</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">T_grid</span><span class="p">)))</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">best_result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">params_</span> <span class="o">=</span> <span class="n">HestonParams</span><span class="o">.</span><span class="n">from_array</span><span class="p">(</span><span class="n">best_result</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
@@ -622,7 +646,7 @@
 
 <div class="viewcode-block" id="HestonCalibrator.implied_vol_surface">
 <a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.heston.HestonCalibrator.implied_vol_surface">[docs]</a>
-    <span class="k">def</span> <span class="nf">implied_vol_surface</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">implied_vol_surface</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">K_grid</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">T_grid</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
@@ -636,19 +660,29 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            2-D array of model-implied volatilities, shape (len(K_grid), len(T_grid)).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">tensorquantlib.finance.implied_vol</span> <span class="kn">import</span> <span class="n">implied_vol</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib.finance.implied_vol</span><span class="w"> </span><span class="kn">import</span> <span class="n">implied_vol</span>
 
         <span class="n">surface</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">K_grid</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">T_grid</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">K</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">K_grid</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">T</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">T_grid</span><span class="p">):</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">price</span> <span class="o">=</span> <span class="n">heston_price</span><span class="p">(</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">K</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">T</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params_</span><span class="p">,</span>
-                        <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">,</span> <span class="n">option_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">option_type</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">,</span>
+                        <span class="nb">float</span><span class="p">(</span><span class="n">K</span><span class="p">),</span>
+                        <span class="nb">float</span><span class="p">(</span><span class="n">T</span><span class="p">),</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">params_</span><span class="p">,</span>
+                        <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">,</span>
+                        <span class="n">option_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">option_type</span><span class="p">,</span>
                     <span class="p">)</span>
                     <span class="n">surface</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">implied_vol</span><span class="p">(</span>
-                        <span class="n">price</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">K</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">T</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span>
-                        <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">,</span> <span class="n">option_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">option_type</span><span class="p">,</span>
+                        <span class="n">price</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">,</span>
+                        <span class="nb">float</span><span class="p">(</span><span class="n">K</span><span class="p">),</span>
+                        <span class="nb">float</span><span class="p">(</span><span class="n">T</span><span class="p">),</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span>
+                        <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">,</span>
+                        <span class="n">option_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">option_type</span><span class="p">,</span>
                     <span class="p">)</span>
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                     <span class="n">surface</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
@@ -673,7 +707,7 @@
     </div>
 
     
-    <a href="https://github.com/raswanthmalai19/TensorQuantLib" class="github">
+    <a href="https://github.com/raswanthmalai19/TensorQuantLib." class="github">
         <img src="../../../_static/github-banner.svg" alt="Fork me on GitHub" class="github"/>
     </a>
     

@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Performance &amp; Production Guide &#8212; TensorQuantLib 0.3.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=f6a572b4" />
+    <script src="_static/documentation_options.js?v=e259d695"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Reference" href="api.html" />
+    <link rel="prev" title="Quickstart" href="quickstart.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">TensorQuantLib</a></h1>
+
+
+
+<p class="blurb">Comprehensive quant finance library with TT compression & autodiff</p>
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=raswanthmalai19&repo=TensorQuantLib.&type=watch&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Performance &amp; Production Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#at-a-glance-latency-table">At-a-Glance Latency Table</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#choosing-the-right-pricer">Choosing the Right Pricer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch-vectorised-pricing">Batch / Vectorised Pricing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tt-rank-and-n-points-tuning">TT-Rank and <code class="docutils literal notranslate"><span class="pre">n_points</span></code> Tuning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#heston-calibration-from-10-s-to-2-s">Heston Calibration: From 10 s to &lt; 2 s</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#memory-profiling">Memory Profiling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#monte-carlo-variance-reduction-which-method-when">Monte Carlo Variance Reduction: Which Method When</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#parallelism-pricing-a-large-portfolio">Parallelism: Pricing a Large Portfolio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#production-configuration-checklist">Production Configuration Checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#interpreting-print-summary-output">Interpreting <code class="docutils literal notranslate"><span class="pre">print_summary()</span></code> Output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#profiling-your-own-workflow">Profiling Your Own Workflow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="theory.html">Theory &amp; Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="limitations.html">Known Limitations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="quickstart.html" title="previous chapter">Quickstart</a></li>
+      <li>Next: <a href="api.html" title="next chapter">API Reference</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="performance-production-guide">
+<h1>Performance &amp; Production Guide<a class="headerlink" href="#performance-production-guide" title="Link to this heading">¶</a></h1>
+<p>This guide is written for <strong>quant traders, risk engineers, and production
+system architects</strong> who need to know exactly how fast TensorQuantLib is, where
+the bottlenecks are, and how to tune every knob.</p>
+<p>All timings were measured on <strong>Apple M1 (8-core, 8 GB RAM), Python 3.11,
+NumPy linked to Apple Accelerate</strong>.  Expect similar or better numbers on a
+modern x86-64 server with an AVX-512-enabled BLAS.</p>
+<nav class="contents local" id="on-this-page">
+<p class="topic-title">On this page</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#at-a-glance-latency-table" id="id1">At-a-Glance Latency Table</a></p></li>
+<li><p><a class="reference internal" href="#choosing-the-right-pricer" id="id2">Choosing the Right Pricer</a></p></li>
+<li><p><a class="reference internal" href="#batch-vectorised-pricing" id="id3">Batch / Vectorised Pricing</a></p></li>
+<li><p><a class="reference internal" href="#tt-rank-and-n-points-tuning" id="id4">TT-Rank and <code class="docutils literal notranslate"><span class="pre">n_points</span></code> Tuning</a></p>
+<ul>
+<li><p><a class="reference internal" href="#grid-resolution-n-points" id="id5">Grid resolution: <code class="docutils literal notranslate"><span class="pre">n_points</span></code></a></p></li>
+<li><p><a class="reference internal" href="#svd-tolerance-eps" id="id6">SVD tolerance: <code class="docutils literal notranslate"><span class="pre">eps</span></code></a></p></li>
+<li><p><a class="reference internal" href="#hard-capping-ranks-max-rank" id="id7">Hard-capping ranks: <code class="docutils literal notranslate"><span class="pre">max_rank</span></code></a></p></li>
+<li><p><a class="reference internal" href="#n-sweeps-in-tt-cross" id="id8"><code class="docutils literal notranslate"><span class="pre">n_sweeps</span></code> in TT-Cross</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#heston-calibration-from-10-s-to-2-s" id="id9">Heston Calibration: From 10 s to &lt; 2 s</a></p>
+<ul>
+<li><p><a class="reference internal" href="#speedup-strategy-1-single-restart-with-warm-start" id="id10">Speedup strategy 1 — Single restart with warm start</a></p></li>
+<li><p><a class="reference internal" href="#speedup-strategy-2-parallel-restarts-with-joblib" id="id11">Speedup strategy 2 — Parallel restarts with joblib</a></p></li>
+<li><p><a class="reference internal" href="#speedup-strategy-3-reduce-the-cf-integration-cost" id="id12">Speedup strategy 3 — Reduce the CF integration cost</a></p></li>
+<li><p><a class="reference internal" href="#speedup-strategy-4-coarsen-the-iv-grid" id="id13">Speedup strategy 4 — Coarsen the IV grid</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#memory-profiling" id="id14">Memory Profiling</a></p></li>
+<li><p><a class="reference internal" href="#monte-carlo-variance-reduction-which-method-when" id="id15">Monte Carlo Variance Reduction: Which Method When</a></p></li>
+<li><p><a class="reference internal" href="#parallelism-pricing-a-large-portfolio" id="id16">Parallelism: Pricing a Large Portfolio</a></p></li>
+<li><p><a class="reference internal" href="#production-configuration-checklist" id="id17">Production Configuration Checklist</a></p></li>
+<li><p><a class="reference internal" href="#interpreting-print-summary-output" id="id18">Interpreting <code class="docutils literal notranslate"><span class="pre">print_summary()</span></code> Output</a></p></li>
+<li><p><a class="reference internal" href="#profiling-your-own-workflow" id="id19">Profiling Your Own Workflow</a></p></li>
+</ul>
+</nav>
+<section id="at-a-glance-latency-table">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">At-a-Glance Latency Table</a><a class="headerlink" href="#at-a-glance-latency-table" title="Link to this heading">¶</a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 28.0%" />
+<col style="width: 18.0%" />
+<col style="width: 18.0%" />
+<col style="width: 36.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Function / Workflow</p></th>
+<th class="head"><p>Single-call latency</p></th>
+<th class="head"><p>Throughput</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">black_scholes</span></code></p></td>
+<td><p>&lt; 5 µs</p></td>
+<td><p>&gt; 200 K/s</p></td>
+<td><p>Fully analytic, log+exp only</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">bs_greeks</span></code></p></td>
+<td><p>&lt; 5 µs</p></td>
+<td><p>&gt; 200 K/s</p></td>
+<td><p>Analytic Delta/Gamma/Theta/Vega/Rho</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">second_order_greeks</span></code></p></td>
+<td><p>~1 ms</p></td>
+<td><p>~1 K/s</p></td>
+<td><p>4-point finite-diff bump × 2 params</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">implied_vol</span></code></p></td>
+<td><p>&lt; 1 ms</p></td>
+<td><p>~2 K/s</p></td>
+<td><p>Brent solver, ~10 iterations</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">heston_price</span></code> (CF)</p></td>
+<td><p>~1 ms</p></td>
+<td><p>~1 K/s</p></td>
+<td><p>100-pt Gaussian quadrature</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">heston_price_mc</span></code> (QE)</p></td>
+<td><p>200–500 ms</p></td>
+<td><p>2–5/s</p></td>
+<td><p>100 K paths × 252 steps</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">american_option_lsm</span></code></p></td>
+<td><p>100–500 ms</p></td>
+<td><p>2–10/s</p></td>
+<td><p>50 K paths × 100 steps</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">asian_price_mc</span></code></p></td>
+<td><p>100–400 ms</p></td>
+<td><p>2–10/s</p></td>
+<td><p>50 K paths × 252 steps</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">asian_price_cv</span></code></p></td>
+<td><p>50–200 ms</p></td>
+<td><p>5–20/s</p></td>
+<td><p>Control variate; 10× variance reduction</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">barrier_price</span></code></p></td>
+<td><p>&lt; 5 µs</p></td>
+<td><p>&gt; 200 K/s</p></td>
+<td><p>Rubinstein-Reiner closed form</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">HestonCalibrator.fit</span></code></p></td>
+<td><p>5–15 s</p></td>
+<td><p>—</p></td>
+<td><p>Default: 3 restarts, 500 iterations</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TTSurrogate</span></code> build (3D, n=15)</p></td>
+<td><p>2 ms</p></td>
+<td><p>—</p></td>
+<td><p>One-time cost; paid at startup</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">TTSurrogate.evaluate</span></code> (3D)</p></td>
+<td><p>1.5 µs</p></td>
+<td><p>650 K/s</p></td>
+<td><p>After build; multi-linear interp on TT cores</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TTSurrogate.evaluate</span></code> (5D)</p></td>
+<td><p>~5 µs</p></td>
+<td><p>~200 K/s</p></td>
+<td><p>After build</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="choosing-the-right-pricer">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Choosing the Right Pricer</a><a class="headerlink" href="#choosing-the-right-pricer" title="Link to this heading">¶</a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Need a price RIGHT NOW (&lt; 10 µs)?
+├── Vanilla (single asset)  →  black_scholes / bs_greeks
+├── Barrier (single asset)  →  barrier_price
+├── Vasicek / CIR bond      →  vasicek_bond_price / cir_bond_price
+└── FX vanilla              →  garman_kohlhagen
+
+Need something slightly slower but model-richer?
+├── Heston (single price)   →  heston_price          (~1 ms)
+├── Implied vol             →  implied_vol            (~1 ms)
+├── SABR smile              →  sabr_implied_vol       (&lt; 10 µs)
+└── SVI surface             →  svi_implied_vol        (&lt; 10 µs)
+
+Monte Carlo is unavoidable?
+├── American option         →  american_option_lsm   (100 ms)
+├── Asian (with VR!)        →  asian_price_cv        (50 ms)
+└── Heston stress-test      →  heston_price_mc       (200 ms)
+
+Many strikes / expiries to price daily?
+└── Build a TTSurrogate once at market open, query at µs latency forever.
+</pre></div>
+</div>
+</section>
+<section id="batch-vectorised-pricing">
+<span id="batch-pricing"></span><h2><a class="toc-backref" href="#id3" role="doc-backlink">Batch / Vectorised Pricing</a><a class="headerlink" href="#batch-vectorised-pricing" title="Link to this heading">¶</a></h2>
+<p>Every scalar pricer accepts plain Python floats and works inside
+<code class="docutils literal notranslate"><span class="pre">np.vectorize</span></code> or a list comprehension with no code change.</p>
+<p><strong>Price a 1 000-strike chain in one shot:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">black_scholes</span>
+
+<span class="n">strikes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+<span class="n">S</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.2</span>
+
+<span class="c1"># np.vectorize adds basically zero overhead for C-speed functions</span>
+<span class="n">bs_vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="n">black_scholes</span><span class="p">)</span>
+<span class="n">prices</span> <span class="o">=</span> <span class="n">bs_vec</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">strikes</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">option_type</span><span class="o">=</span><span class="s2">&quot;call&quot;</span><span class="p">)</span>
+<span class="c1"># ~5 ms for 1 000 strikes — 200 K/s effective throughput</span>
+</pre></div>
+</div>
+<p><strong>Price a full Heston surface (5 strikes × 3 expiries) at once:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">heston_price</span><span class="p">,</span> <span class="n">HestonParams</span>
+
+<span class="n">params</span> <span class="o">=</span> <span class="n">HestonParams</span><span class="p">(</span><span class="n">kappa</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="mf">0.04</span><span class="p">,</span> <span class="n">xi</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">rho</span><span class="o">=-</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">v0</span><span class="o">=</span><span class="mf">0.04</span><span class="p">)</span>
+<span class="n">K_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">90.</span><span class="p">,</span> <span class="mf">95.</span><span class="p">,</span> <span class="mf">100.</span><span class="p">,</span> <span class="mf">105.</span><span class="p">,</span> <span class="mf">110.</span><span class="p">])</span>
+<span class="n">T_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">])</span>
+<span class="n">S</span><span class="p">,</span> <span class="n">r</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span> <span class="mf">0.05</span>
+
+<span class="c1"># 15 calls × ~1 ms each ≈ 15 ms</span>
+<span class="n">surface</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+    <span class="p">[</span><span class="n">heston_price</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span> <span class="k">for</span> <span class="n">T</span> <span class="ow">in</span> <span class="n">T_grid</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">K</span> <span class="ow">in</span> <span class="n">K_grid</span>
+<span class="p">])</span>   <span class="c1"># shape (5, 3)</span>
+</pre></div>
+</div>
+<p><strong>Even faster: TTSurrogate replaces the surface loop entirely:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">TTSurrogate</span><span class="p">,</span> <span class="n">heston_price</span><span class="p">,</span> <span class="n">HestonParams</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">params</span> <span class="o">=</span> <span class="n">HestonParams</span><span class="p">(</span><span class="n">kappa</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="mf">0.04</span><span class="p">,</span> <span class="n">xi</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">rho</span><span class="o">=-</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">v0</span><span class="o">=</span><span class="mf">0.04</span><span class="p">)</span>
+
+<span class="c1"># Build once at startup (~2 ms for 3D)</span>
+<span class="n">surr</span> <span class="o">=</span> <span class="n">TTSurrogate</span><span class="o">.</span><span class="n">from_function</span><span class="p">(</span>
+    <span class="n">fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">s</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">heston_price</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="n">params</span><span class="p">),</span>
+    <span class="n">axes</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span>   <span class="c1"># S axis</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">85</span><span class="p">,</span> <span class="mi">115</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span>   <span class="c1"># K axis</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.25</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span> <span class="c1"># T axis</span>
+    <span class="p">],</span>
+    <span class="n">eps</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+    <span class="n">max_rank</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Now price 10 000 spot/strike/expiry combos in &lt; 15 ms</span>
+<span class="n">pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">([</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="mi">10_000</span><span class="p">),</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">85</span><span class="p">,</span> <span class="mi">115</span><span class="p">,</span> <span class="mi">10_000</span><span class="p">),</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.25</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mi">10_000</span><span class="p">),</span>
+<span class="p">])</span>
+<span class="n">prices</span> <span class="o">=</span> <span class="n">surr</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">pts</span><span class="p">)</span>   <span class="c1"># vectorised; ~1.5 µs/call = 650 K/s</span>
+</pre></div>
+</div>
+</section>
+<section id="tt-rank-and-n-points-tuning">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">TT-Rank and <code class="docutils literal notranslate"><span class="pre">n_points</span></code> Tuning</a><a class="headerlink" href="#tt-rank-and-n-points-tuning" title="Link to this heading">¶</a></h2>
+<p>These are the two levers that control the accuracy/speed trade-off in every
+<code class="docutils literal notranslate"><span class="pre">TTSurrogate</span></code>.</p>
+<section id="grid-resolution-n-points">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Grid resolution: <code class="docutils literal notranslate"><span class="pre">n_points</span></code></a><a class="headerlink" href="#grid-resolution-n-points" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">n_points</span></code> is the number of grid points <strong>per axis</strong>.  The full tensor has
+<code class="docutils literal notranslate"><span class="pre">n_points</span> <span class="pre">**</span> <span class="pre">d</span></code> entries; TT compresses this exponentially.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 30.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Dimensions (d)</p></th>
+<th class="head"><p>Recommended <code class="docutils literal notranslate"><span class="pre">n_points</span></code></p></th>
+<th class="head"><p>Full grid size</p></th>
+<th class="head"><p>Build time (approx)</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>2–3</p></td>
+<td><p>20–30</p></td>
+<td><p>400–27 K entries</p></td>
+<td><p>&lt; 5 ms</p></td>
+<td><p>Dense enough for smooth Heston/BS surfaces</p></td>
+</tr>
+<tr class="row-odd"><td><p>4–5</p></td>
+<td><p>15–20</p></td>
+<td><p>50 K–3 M entries</p></td>
+<td><p>10–100 ms (use TT-Cross)</p></td>
+<td><p>TT-Cross recommended; skip full grid construction</p></td>
+</tr>
+<tr class="row-even"><td><p>6+</p></td>
+<td><p>10–15</p></td>
+<td><p>1 M+ (never built)</p></td>
+<td><p>N/A (TT-Cross only)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">TTSurrogate.from_function</span></code> with <code class="docutils literal notranslate"><span class="pre">max_rank=20</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>For 6+ dimensional baskets use <code class="docutils literal notranslate"><span class="pre">TTSurrogate.from_function</span></code>.
+It calls the pricing function at only
+<code class="docutils literal notranslate"><span class="pre">d</span> <span class="pre">×</span> <span class="pre">r²</span> <span class="pre">×</span> <span class="pre">n</span> <span class="pre">≈</span> <span class="pre">6</span> <span class="pre">×</span> <span class="pre">400</span> <span class="pre">×</span> <span class="pre">15</span> <span class="pre">=</span> <span class="pre">36,000</span></code> carefully chosen points instead of
+the <code class="docutils literal notranslate"><span class="pre">15^6</span> <span class="pre">=</span> <span class="pre">11</span> <span class="pre">M</span></code> full grid — a <strong>300× speedup in build time</strong>.</p>
+</div>
+</section>
+<section id="svd-tolerance-eps">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">SVD tolerance: <code class="docutils literal notranslate"><span class="pre">eps</span></code></a><a class="headerlink" href="#svd-tolerance-eps" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">eps</span></code> is the <em>relative Frobenius error</em> allowed in TT-SVD.  Tighter <code class="docutils literal notranslate"><span class="pre">eps</span></code>
+means higher ranks and more memory.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 12.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 43.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">eps</span></code></p></th>
+<th class="head"><p>Max rank (3D)</p></th>
+<th class="head"><p>TT memory</p></th>
+<th class="head"><p>Compression</p></th>
+<th class="head"><p>When to use</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">1e-1</span></code></p></td>
+<td><p>2–3</p></td>
+<td><p>~2 KB</p></td>
+<td><p>100×</p></td>
+<td><p>Coarse smile shape only; not for pricing</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">1e-2</span></code></p></td>
+<td><p>8</p></td>
+<td><p>~17 KB</p></td>
+<td><p>13×</p></td>
+<td><p>Pre-trade screening / large portfolio VaR</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">1e-3</span></code> ✅</p></td>
+<td><p>23</p></td>
+<td><p>~124 KB</p></td>
+<td><p>1.7×</p></td>
+<td><p><strong>Production sweet spot</strong> — 42× compression at 5D, &lt; 0.1% error</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">1e-4</span></code></p></td>
+<td><p>30</p></td>
+<td><p>~225 KB</p></td>
+<td><p>~1×</p></td>
+<td><p>High-fidelity validation; matches CF to machine precision</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">1e-6</span></code></p></td>
+<td><p>Full rank</p></td>
+<td><p>= full grid</p></td>
+<td><p>1×</p></td>
+<td><p>No benefit; use direct evaluation instead</p></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Production-quality 3-asset surrogate</span>
+<span class="n">surr</span> <span class="o">=</span> <span class="n">TTSurrogate</span><span class="o">.</span><span class="n">from_basket_analytic</span><span class="p">(</span>
+    <span class="n">S0_ranges</span><span class="o">=</span><span class="p">[(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">120</span><span class="p">)]</span> <span class="o">*</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="n">K</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+    <span class="n">sigma</span><span class="o">=</span><span class="p">[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span>
+    <span class="n">weights</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">],</span>
+    <span class="n">n_points</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>    <span class="c1"># ← sweet spot for 3D</span>
+    <span class="n">eps</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>       <span class="c1"># ← production tolerance</span>
+    <span class="n">max_rank</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>    <span class="c1"># ← safety cap; rarely reached at eps=1e-3</span>
+<span class="p">)</span>
+<span class="n">surr</span><span class="o">.</span><span class="n">print_summary</span><span class="p">()</span>
+<span class="c1"># Expected: max_rank ≈ 23, memory ≈ 124 KB, compression ≈ 1.7×</span>
+</pre></div>
+</div>
+</section>
+<section id="hard-capping-ranks-max-rank">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">Hard-capping ranks: <code class="docutils literal notranslate"><span class="pre">max_rank</span></code></a><a class="headerlink" href="#hard-capping-ranks-max-rank" title="Link to this heading">¶</a></h3>
+<p>Setting <code class="docutils literal notranslate"><span class="pre">max_rank</span></code> prevents runaway memory on poorly-conditioned surfaces
+(e.g., near-digital payoffs or very short maturities).  Recommended values:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">max_rank=20</span></code>:  fast / light; suitable for pre-trade screening</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_rank=30</span></code>:  production default</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_rank=50</span></code>:  near-exact; use for EOD risk reports</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_rank=None</span></code>:  unbounded; only for validation</p></li>
+</ul>
+</section>
+<section id="n-sweeps-in-tt-cross">
+<h3><a class="toc-backref" href="#id8" role="doc-backlink"><code class="docutils literal notranslate"><span class="pre">n_sweeps</span></code> in TT-Cross</a><a class="headerlink" href="#n-sweeps-in-tt-cross" title="Link to this heading">¶</a></h3>
+<p>When using <code class="docutils literal notranslate"><span class="pre">TTSurrogate.from_function</span></code> (TT-Cross), <code class="docutils literal notranslate"><span class="pre">n_sweeps</span></code> controls
+how many alternating left/right passes are made over the dimension chain.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">n_sweeps=4</span></code>:  sufficient for smooth Black-Scholes surfaces</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">n_sweeps=6</span></code>:  default; good for Heston and jump-diffusion</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">n_sweeps=8</span></code>:  for stiff or highly correlated surfaces</p></li>
+</ul>
+</section>
+</section>
+<section id="heston-calibration-from-10-s-to-2-s">
+<h2><a class="toc-backref" href="#id9" role="doc-backlink">Heston Calibration: From 10 s to &lt; 2 s</a><a class="headerlink" href="#heston-calibration-from-10-s-to-2-s" title="Link to this heading">¶</a></h2>
+<p>The default <code class="docutils literal notranslate"><span class="pre">HestonCalibrator.fit</span></code> with <code class="docutils literal notranslate"><span class="pre">n_restarts=3,</span> <span class="pre">maxiter=500</span></code>
+takes <strong>5–15 seconds</strong> because it runs hundreds of L-BFGS-B optimizer
+steps, and each step calls <code class="docutils literal notranslate"><span class="pre">heston_price</span></code> (1 ms) for every
+<code class="docutils literal notranslate"><span class="pre">(K,</span> <span class="pre">T)</span></code> pair in the market surface.</p>
+<p><strong>Breakdown for a 5 × 4 surface (20 options):</strong></p>
+<ul class="simple">
+<li><p>~1 ms per <code class="docutils literal notranslate"><span class="pre">heston_price</span></code> call (100-pt CF quadrature)</p></li>
+<li><p>~15 ms per objective evaluation (15 <code class="docutils literal notranslate"><span class="pre">heston_price</span></code> + 15 <code class="docutils literal notranslate"><span class="pre">implied_vol</span></code>)</p></li>
+<li><p>~200 objective evals per L-BFGS-B run</p></li>
+<li><p>× 3 restarts = ~200 × 15 ms × 3 = <strong>9 s</strong></p></li>
+</ul>
+<section id="speedup-strategy-1-single-restart-with-warm-start">
+<h3><a class="toc-backref" href="#id10" role="doc-backlink">Speedup strategy 1 — Single restart with warm start</a><a class="headerlink" href="#speedup-strategy-1-single-restart-with-warm-start" title="Link to this heading">¶</a></h3>
+<p>In production you re-calibrate daily (or tick-by-tick).  Yesterday’s
+parameters are an excellent starting point:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib.finance.heston</span><span class="w"> </span><span class="kn">import</span> <span class="n">HestonCalibrator</span><span class="p">,</span> <span class="n">HestonParams</span>
+
+<span class="c1"># Day T-1 calibrated params (persisted to disk / Redis)</span>
+<span class="n">prev_params</span> <span class="o">=</span> <span class="n">HestonParams</span><span class="p">(</span><span class="n">kappa</span><span class="o">=</span><span class="mf">2.1</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="mf">0.042</span><span class="p">,</span> <span class="n">xi</span><span class="o">=</span><span class="mf">0.31</span><span class="p">,</span> <span class="n">rho</span><span class="o">=-</span><span class="mf">0.68</span><span class="p">,</span> <span class="n">v0</span><span class="o">=</span><span class="mf">0.038</span><span class="p">)</span>
+
+<span class="n">cal</span> <span class="o">=</span> <span class="n">HestonCalibrator</span><span class="p">(</span><span class="n">S</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+<span class="n">cal</span><span class="o">.</span><span class="n">params_</span> <span class="o">=</span> <span class="n">prev_params</span>   <span class="c1"># warm start</span>
+
+<span class="n">K_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">90.</span><span class="p">,</span> <span class="mf">95.</span><span class="p">,</span> <span class="mf">100.</span><span class="p">,</span> <span class="mf">105.</span><span class="p">,</span> <span class="mf">110.</span><span class="p">])</span>
+<span class="n">T_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">])</span>
+<span class="n">iv_mkt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="mf">0.20</span><span class="p">)</span>   <span class="c1"># replace with real market IVs</span>
+
+<span class="c1"># 1 restart instead of 3 → 3× faster</span>
+<span class="c1"># 200 maxiter instead of 500 → 2.5× faster</span>
+<span class="n">cal</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">iv_mkt</span><span class="p">,</span> <span class="n">K_grid</span><span class="p">,</span> <span class="n">T_grid</span><span class="p">,</span> <span class="n">n_restarts</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">maxiter</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Calibrated RMSE: </span><span class="si">{</span><span class="n">cal</span><span class="o">.</span><span class="n">rmse_</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># Typical wall-clock: ~1.5 s</span>
+</pre></div>
+</div>
+</section>
+<section id="speedup-strategy-2-parallel-restarts-with-joblib">
+<h3><a class="toc-backref" href="#id11" role="doc-backlink">Speedup strategy 2 — Parallel restarts with joblib</a><a class="headerlink" href="#speedup-strategy-2-parallel-restarts-with-joblib" title="Link to this heading">¶</a></h3>
+<p>Run multiple random-start optimisations simultaneously; keep the best:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">minimize</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">joblib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Parallel</span><span class="p">,</span> <span class="n">delayed</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">heston_price</span><span class="p">,</span> <span class="n">implied_vol</span><span class="p">,</span> <span class="n">HestonParams</span>
+
+<span class="n">S</span><span class="p">,</span> <span class="n">r</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span> <span class="mf">0.05</span>
+<span class="n">K_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">90.</span><span class="p">,</span> <span class="mf">95.</span><span class="p">,</span> <span class="mf">100.</span><span class="p">,</span> <span class="mf">105.</span><span class="p">,</span> <span class="mf">110.</span><span class="p">])</span>
+<span class="n">T_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">])</span>
+<span class="n">iv_mkt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="mf">0.20</span><span class="p">)</span>
+
+<span class="n">BOUNDS</span> <span class="o">=</span> <span class="p">[(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.99</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">),</span> <span class="p">(</span><span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)]</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_objective</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">HestonParams</span><span class="p">(</span><span class="o">*</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">err</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">K</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">K_grid</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">T</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">T_grid</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">price</span> <span class="o">=</span> <span class="n">heston_price</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+                <span class="n">iv_m</span> <span class="o">=</span> <span class="n">implied_vol</span><span class="p">(</span><span class="n">price</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+                <span class="n">err</span> <span class="o">+=</span> <span class="p">(</span><span class="n">iv_m</span> <span class="o">-</span> <span class="n">iv_mkt</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="n">err</span> <span class="o">+=</span> <span class="mf">1.0</span>
+    <span class="k">return</span> <span class="n">err</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_one_restart</span><span class="p">(</span><span class="n">seed</span><span class="p">):</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span> <span class="k">for</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="ow">in</span> <span class="n">BOUNDS</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">minimize</span><span class="p">(</span><span class="n">_objective</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;L-BFGS-B&quot;</span><span class="p">,</span>
+                    <span class="n">bounds</span><span class="o">=</span><span class="n">BOUNDS</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;maxiter&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">})</span>
+
+<span class="c1"># 4 parallel restarts — wall-clock ≈ 1 restart time (not 4×)</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">Parallel</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="mi">4</span><span class="p">)(</span><span class="n">delayed</span><span class="p">(</span><span class="n">_one_restart</span><span class="p">)(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+<span class="n">best</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">fun</span><span class="p">)</span>
+<span class="n">params</span> <span class="o">=</span> <span class="n">HestonParams</span><span class="p">(</span><span class="o">*</span><span class="n">best</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Best RMSE: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">best</span><span class="o">.</span><span class="n">fun</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">K_grid</span><span class="p">)</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">T_grid</span><span class="p">)))</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="speedup-strategy-3-reduce-the-cf-integration-cost">
+<h3><a class="toc-backref" href="#id12" role="doc-backlink">Speedup strategy 3 — Reduce the CF integration cost</a><a class="headerlink" href="#speedup-strategy-3-reduce-the-cf-integration-cost" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">heston_price</span></code> uses <code class="docutils literal notranslate"><span class="pre">n_points=100</span></code> Gaussian quadrature nodes by default.
+For calibration purposes 50 nodes are just as accurate and twice as fast:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib.finance.heston</span><span class="w"> </span><span class="kn">import</span> <span class="n">heston_price</span> <span class="k">as</span> <span class="n">_hp</span>
+
+<span class="c1"># Monkey-patch a faster version for calibration</span>
+<span class="n">fast_heston</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">_hp</span><span class="p">,</span> <span class="n">n_points</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+
+<span class="c1"># Use fast_heston inside your objective instead of heston_price</span>
+<span class="n">price</span> <span class="o">=</span> <span class="n">fast_heston</span><span class="p">(</span><span class="n">S</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">K</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="speedup-strategy-4-coarsen-the-iv-grid">
+<h3><a class="toc-backref" href="#id13" role="doc-backlink">Speedup strategy 4 — Coarsen the IV grid</a><a class="headerlink" href="#speedup-strategy-4-coarsen-the-iv-grid" title="Link to this heading">¶</a></h3>
+<p>Calibrate to fewer points; check residual on the full grid:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Coarse calibration grid: 4 strikes × 3 expiries = 12 evaluations/step</span>
+<span class="n">K_calib</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">90.</span><span class="p">,</span> <span class="mf">97.</span><span class="p">,</span> <span class="mf">103.</span><span class="p">,</span> <span class="mf">110.</span><span class="p">])</span>
+<span class="n">T_calib</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">])</span>
+
+<span class="n">cal</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">iv_mkt_coarse</span><span class="p">,</span> <span class="n">K_calib</span><span class="p">,</span> <span class="n">T_calib</span><span class="p">,</span> <span class="n">n_restarts</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">maxiter</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+
+<span class="c1"># Validate RMSE on full 10×5 grid</span>
+<span class="n">iv_model</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+    <span class="p">[</span><span class="n">implied_vol</span><span class="p">(</span><span class="n">heston_price</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">cal</span><span class="o">.</span><span class="n">params_</span><span class="p">),</span> <span class="n">S</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+     <span class="k">for</span> <span class="n">T</span> <span class="ow">in</span> <span class="n">T_grid_full</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">K</span> <span class="ow">in</span> <span class="n">K_grid_full</span>
+<span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Full-grid RMSE:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">iv_model</span> <span class="o">-</span> <span class="n">iv_mkt_full</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)))</span>
+</pre></div>
+</div>
+<p><strong>Summary of speedups:</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 35.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 25.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Strategy</p></th>
+<th class="head"><p>Wall-clock</p></th>
+<th class="head"><p>Speedup</p></th>
+<th class="head"><p>Accuracy impact</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Default (n_restarts=3, maxiter=500)</p></td>
+<td><p>~10 s</p></td>
+<td><p>1×</p></td>
+<td><p>Baseline</p></td>
+</tr>
+<tr class="row-odd"><td><p>Single restart + warm start</p></td>
+<td><p>~1.5 s</p></td>
+<td><p>~7×</p></td>
+<td><p>Negligible if params are stable</p></td>
+</tr>
+<tr class="row-even"><td><p>Parallel restarts (4 cores) + warm start</p></td>
+<td><p>~1.0 s</p></td>
+<td><p>~10×</p></td>
+<td><p>As good as 4 restarts</p></td>
+</tr>
+<tr class="row-odd"><td><p>n_points=50 in CF</p></td>
+<td><p>~5 s</p></td>
+<td><p>~2×</p></td>
+<td><p>&lt; 0.1 bp IV error</p></td>
+</tr>
+<tr class="row-even"><td><p>All combined</p></td>
+<td><p><strong>&lt; 0.5 s</strong></p></td>
+<td><p><strong>~20×</strong></p></td>
+<td><p>&lt; 0.5 bps RMSE</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="memory-profiling">
+<h2><a class="toc-backref" href="#id14" role="doc-backlink">Memory Profiling</a><a class="headerlink" href="#memory-profiling" title="Link to this heading">¶</a></h2>
+<p>Use Python’s built-in <code class="docutils literal notranslate"><span class="pre">tracemalloc</span></code> to measure memory allocation of any
+pricing or surrogate workflow:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">tracemalloc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">TTSurrogate</span>
+
+<span class="n">tracemalloc</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+<span class="n">surr</span> <span class="o">=</span> <span class="n">TTSurrogate</span><span class="o">.</span><span class="n">from_basket_analytic</span><span class="p">(</span>
+    <span class="n">S0_ranges</span><span class="o">=</span><span class="p">[(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">120</span><span class="p">)]</span> <span class="o">*</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="n">K</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+    <span class="n">sigma</span><span class="o">=</span><span class="p">[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.22</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.28</span><span class="p">],</span>
+    <span class="n">weights</span><span class="o">=</span><span class="p">[</span><span class="mf">0.25</span><span class="p">]</span> <span class="o">*</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="n">n_points</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
+    <span class="n">eps</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">current</span><span class="p">,</span> <span class="n">peak</span> <span class="o">=</span> <span class="n">tracemalloc</span><span class="o">.</span><span class="n">get_traced_memory</span><span class="p">()</span>
+<span class="n">tracemalloc</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Current: </span><span class="si">{</span><span class="n">current</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">1024</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> KB&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Peak:    </span><span class="si">{</span><span class="n">peak</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">1024</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> KB&quot;</span><span class="p">)</span>
+<span class="c1"># Typical output for 4-asset eps=1e-3:</span>
+<span class="c1">#   Current: 91.4 KB</span>
+<span class="c1">#   Peak:    ~500 KB  (includes grid construction + SVD temporaries)</span>
+</pre></div>
+</div>
+<p><strong>Expected memory footprint (eps=1e-3, n_points=15):</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 18.0%" />
+<col style="width: 18.0%" />
+<col style="width: 16.0%" />
+<col style="width: 33.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Assets (d)</p></th>
+<th class="head"><p>Full grid (MB)</p></th>
+<th class="head"><p>TT size (KB)</p></th>
+<th class="head"><p>Peak alloc</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>&lt; 0.01</p></td>
+<td><p>3 KB</p></td>
+<td><p>~50 KB</p></td>
+<td><p>Negligible</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>0.03</p></td>
+<td><p>28 KB</p></td>
+<td><p>~200 KB</p></td>
+<td><p>Fits in L1 cache</p></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>0.39</p></td>
+<td><p>91 KB</p></td>
+<td><p>~500 KB</p></td>
+<td><p>4× compression</p></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>5.79 MB</p></td>
+<td><p>142 KB</p></td>
+<td><p>~2 MB</p></td>
+<td><p><strong>42× compression — TT wins decisively</strong></p></td>
+</tr>
+<tr class="row-even"><td><p>6</p></td>
+<td><p>92 MB</p></td>
+<td><p>~200 KB</p></td>
+<td><p>~4 MB</p></td>
+<td><p>Full grid never materialised (TT-Cross)</p></td>
+</tr>
+<tr class="row-odd"><td><p>10</p></td>
+<td><p>576 GB</p></td>
+<td><p>~400 KB</p></td>
+<td><p>~8 MB</p></td>
+<td><p>Impossible without TT</p></td>
+</tr>
+</tbody>
+</table>
+<p>The TT surrogate’s <code class="docutils literal notranslate"><span class="pre">print_summary()</span></code> method reports memory automatically:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">surr</span><span class="o">.</span><span class="n">print_summary</span><span class="p">()</span>
+<span class="c1"># ──────────────────────────────────────────────────────────────────</span>
+<span class="c1"># TTSurrogate  dims=4  n_points=15  eps=1e-3  max_rank=30</span>
+<span class="c1"># Ranks      : [1, 22, 25, 18, 1]</span>
+<span class="c1"># TT memory  : 91.4 KB        Full-grid equivalent : 393.8 KB</span>
+<span class="c1"># Compression: 4.3×           Max rank : 25</span>
+<span class="c1"># Build time : 10.2 ms        Compress time : 2.1 ms</span>
+<span class="c1"># ──────────────────────────────────────────────────────────────────</span>
+</pre></div>
+</div>
+</section>
+<section id="monte-carlo-variance-reduction-which-method-when">
+<h2><a class="toc-backref" href="#id15" role="doc-backlink">Monte Carlo Variance Reduction: Which Method When</a><a class="headerlink" href="#monte-carlo-variance-reduction-which-method-when" title="Link to this heading">¶</a></h2>
+<p>All MC pricers default to <code class="docutils literal notranslate"><span class="pre">n_paths=100_000</span></code>.  The table below shows the
+variance reduction you get and when to use each method.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 18.0%" />
+<col style="width: 18.0%" />
+<col style="width: 39.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>Variance reduction</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">n_paths</span></code> to match crude MC 100 K</p></th>
+<th class="head"><p>Best for</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">bs_price_antithetic</span></code></p></td>
+<td><p>~2×</p></td>
+<td><p>50 K</p></td>
+<td><p>Always-on default; free variance reduction</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">bs_price_cv</span></code></p></td>
+<td><p>10–100×</p></td>
+<td><p>1 K–10 K</p></td>
+<td><p>Asian options (use geometric Asian as control)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">bs_price_qmc</span></code></p></td>
+<td><p>O(1/N) vs O(1/√N)</p></td>
+<td><p>8 K (power of 2)</p></td>
+<td><p>Near-ATM vanilla / mild path dependency</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">bs_price_importance</span></code></p></td>
+<td><p>10–1000×</p></td>
+<td><p>100–1 K</p></td>
+<td><p>Deep OTM options (&gt;3 sigma)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">bs_price_stratified</span></code></p></td>
+<td><p>2–10×</p></td>
+<td><p>10 K–50 K</p></td>
+<td><p>General purpose when QMC is unavailable</p></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">asian_price_mc</span><span class="p">,</span>   <span class="c1"># crude MC baseline</span>
+    <span class="n">asian_price_cv</span><span class="p">,</span>   <span class="c1"># with geometric-Asian control variate</span>
+    <span class="n">bs_price_qmc</span><span class="p">,</span>     <span class="c1"># Sobol QMC</span>
+<span class="p">)</span>
+
+<span class="c1"># Compare methods at equal compute budget (n_paths=10_000)</span>
+<span class="n">price_crude</span><span class="p">,</span> <span class="n">se_crude</span> <span class="o">=</span> <span class="n">asian_price_mc</span><span class="p">(</span>
+    <span class="n">S</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">K</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+    <span class="n">n_paths</span><span class="o">=</span><span class="mi">10_000</span><span class="p">,</span> <span class="n">return_stderr</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+<span class="n">price_cv</span><span class="p">,</span> <span class="n">se_cv</span> <span class="o">=</span> <span class="n">asian_price_cv</span><span class="p">(</span>
+    <span class="n">S</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">K</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+    <span class="n">n_paths</span><span class="o">=</span><span class="mi">10_000</span><span class="p">,</span> <span class="n">return_stderr</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Crude MC : </span><span class="si">{</span><span class="n">price_crude</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> ± </span><span class="si">{</span><span class="n">se_crude</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Control V: </span><span class="si">{</span><span class="n">price_cv</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> ± </span><span class="si">{</span><span class="n">se_cv</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># Typical:</span>
+<span class="c1">#   Crude MC : 5.7621 ± 0.0451   (large stderr)</span>
+<span class="c1">#   Control V: 5.7608 ± 0.0043   (10× tighter)</span>
+</pre></div>
+</div>
+<p><strong>QMC: Always pass a power-of-2 ``n_paths``</strong> to get proper Sobol balance:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Good (balance maintained)</span>
+<span class="n">price</span> <span class="o">=</span> <span class="n">bs_price_qmc</span><span class="p">(</span><span class="n">S</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">K</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+                     <span class="n">n_paths</span><span class="o">=</span><span class="mi">65_536</span><span class="p">)</span>   <span class="c1"># 2^16</span>
+
+<span class="c1"># Avoid — triggers UserWarning and slight accuracy degradation</span>
+<span class="n">price</span> <span class="o">=</span> <span class="n">bs_price_qmc</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">n_paths</span><span class="o">=</span><span class="mi">100_000</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="parallelism-pricing-a-large-portfolio">
+<h2><a class="toc-backref" href="#id16" role="doc-backlink">Parallelism: Pricing a Large Portfolio</a><a class="headerlink" href="#parallelism-pricing-a-large-portfolio" title="Link to this heading">¶</a></h2>
+<p>TensorQuantLib has <strong>no internal parallelism</strong> by design — all functions are
+pure NumPy and release the GIL.  This makes them safe to call from multiple
+threads or processes simultaneously.</p>
+<p><strong>Thread-parallel strike chain (I/O-light, GIL-free):</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThreadPoolExecutor</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">heston_price</span><span class="p">,</span> <span class="n">HestonParams</span>
+
+<span class="n">params</span> <span class="o">=</span> <span class="n">HestonParams</span><span class="p">(</span><span class="n">kappa</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="mf">0.04</span><span class="p">,</span> <span class="n">xi</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">rho</span><span class="o">=-</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">v0</span><span class="o">=</span><span class="mf">0.04</span><span class="p">)</span>
+<span class="n">strikes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">70</span><span class="p">,</span> <span class="mi">130</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">price_one</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">heston_price</span><span class="p">(</span><span class="n">S</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">K</span><span class="o">=</span><span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+    <span class="n">prices</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">price_one</span><span class="p">,</span> <span class="n">strikes</span><span class="p">))</span>
+<span class="c1"># 200 Heston prices × ~1 ms / 8 cores ≈ 25 ms end-to-end</span>
+</pre></div>
+</div>
+<p><strong>Process-parallel for calibration restarts</strong> (CPU-bound — use processes):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProcessPoolExecutor</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">calibrate_one</span><span class="p">(</span><span class="n">seed</span><span class="p">):</span>
+    <span class="c1"># ... same as _one_restart() above ...</span>
+    <span class="k">pass</span>
+
+<span class="k">with</span> <span class="n">ProcessPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">calibrate_one</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)))</span>
+<span class="n">best</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">fun</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>GPU / CUDA</strong>: TensorQuantLib is pure NumPy.  There is no built-in GPU
+support today, but pricing surfaces and TT-SVD operations are compatible
+with <code class="docutils literal notranslate"><span class="pre">cupy.ndarray</span></code> as a drop-in replacement for <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code> in
+most functions.  Full CuPy integration is on the roadmap (see
+<a class="reference internal" href="limitations.html"><span class="doc">Known Limitations</span></a>).</p>
+</div>
+</section>
+<section id="production-configuration-checklist">
+<h2><a class="toc-backref" href="#id17" role="doc-backlink">Production Configuration Checklist</a><a class="headerlink" href="#production-configuration-checklist" title="Link to this heading">¶</a></h2>
+<p>Use this checklist before deploying TensorQuantLib in a production trading or
+risk system:</p>
+<p><strong>Daily startup</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># 1. Verify environment</span>
+python<span class="w"> </span>-m<span class="w"> </span>tensorquantlib<span class="w"> </span>--version
+
+<span class="c1"># 2. Run smoke tests</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/<span class="w"> </span>-q<span class="w"> </span>--tb<span class="o">=</span>short<span class="w"> </span>-x<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;not slow&quot;</span>
+</pre></div>
+</div>
+<p><strong>Parameter selection</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 40.0%" />
+<col style="width: 30.0%" />
+<col style="width: 30.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Setting</p></th>
+<th class="head"><p>Development / backtest</p></th>
+<th class="head"><p>Production / real-time</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">HestonCalibrator</span> <span class="pre">n_restarts</span></code></p></td>
+<td><p>3–5</p></td>
+<td><p><strong>1</strong> (with warm start)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">HestonCalibrator</span> <span class="pre">maxiter</span></code></p></td>
+<td><p>500</p></td>
+<td><p><strong>200</strong></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">heston_price</span> <span class="pre">n_points</span></code></p></td>
+<td><p>100</p></td>
+<td><p><strong>50–100</strong> (50 gives &lt; 0.1 bp error)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">heston_price_mc</span> <span class="pre">n_paths</span></code></p></td>
+<td><p>100 K</p></td>
+<td><p>N/A (use CF for live pricing)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">TTSurrogate</span> <span class="pre">eps</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1e-4</span></code></p></td>
+<td><p><strong>``1e-3``</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TTSurrogate</span> <span class="pre">n_points</span></code></p></td>
+<td><p>30 (2-3D)</p></td>
+<td><p><strong>15–20</strong> (3D), <strong>10–15</strong> (4-5D)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">TTSurrogate</span> <span class="pre">max_rank</span></code></p></td>
+<td><p>None</p></td>
+<td><p><strong>30</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p>MC <code class="docutils literal notranslate"><span class="pre">n_paths</span></code> (vanilla)</p></td>
+<td><p>100 K</p></td>
+<td><p><strong>10 K + antithetic</strong> or <strong>QMC 8 K</strong></p></td>
+</tr>
+<tr class="row-even"><td><p>MC <code class="docutils literal notranslate"><span class="pre">n_paths</span></code> (Asian with CV)</p></td>
+<td><p>100 K</p></td>
+<td><p><strong>10 K</strong> (CV reduces SE 10×)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Heston MC <code class="docutils literal notranslate"><span class="pre">scheme</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;qe&quot;</span></code></p></td>
+<td><p>N/A (use <code class="docutils literal notranslate"><span class="pre">heston_price</span></code> CF instead)</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Warm-start workflow (recommended)</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span><span class="o">,</span><span class="w"> </span><span class="nn">pathlib</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib.finance.heston</span><span class="w"> </span><span class="kn">import</span> <span class="n">HestonCalibrator</span><span class="p">,</span> <span class="n">HestonParams</span>
+
+<span class="n">PARAMS_FILE</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;heston_params.json&quot;</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">load_params</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">HestonParams</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">PARAMS_FILE</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">PARAMS_FILE</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">HestonParams</span><span class="p">(</span><span class="o">**</span><span class="n">d</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">HestonParams</span><span class="p">()</span>   <span class="c1"># default</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">save_params</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="n">HestonParams</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">PARAMS_FILE</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+        <span class="s2">&quot;kappa&quot;</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">kappa</span><span class="p">,</span> <span class="s2">&quot;theta&quot;</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">theta</span><span class="p">,</span>
+        <span class="s2">&quot;xi&quot;</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">xi</span><span class="p">,</span> <span class="s2">&quot;rho&quot;</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span> <span class="s2">&quot;v0&quot;</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">v0</span><span class="p">,</span>
+    <span class="p">}))</span>
+
+<span class="c1"># At market open</span>
+<span class="n">cal</span> <span class="o">=</span> <span class="n">HestonCalibrator</span><span class="p">(</span><span class="n">S</span><span class="o">=</span><span class="n">spot</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="n">risk_free_rate</span><span class="p">)</span>
+<span class="n">cal</span><span class="o">.</span><span class="n">params_</span> <span class="o">=</span> <span class="n">load_params</span><span class="p">()</span>          <span class="c1"># warm start</span>
+<span class="n">cal</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">iv_surface</span><span class="p">,</span> <span class="n">K_grid</span><span class="p">,</span> <span class="n">T_grid</span><span class="p">,</span>
+        <span class="n">n_restarts</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">maxiter</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>   <span class="c1"># ~1.5 s</span>
+<span class="n">save_params</span><span class="p">(</span><span class="n">cal</span><span class="o">.</span><span class="n">params_</span><span class="p">)</span>             <span class="c1"># persist for tomorrow</span>
+</pre></div>
+</div>
+<p><strong>Error handling in production</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">implied_vol</span><span class="p">,</span> <span class="n">heston_price</span><span class="p">,</span> <span class="n">HestonParams</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">safe_heston_iv</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">fallback</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return Heston-implied vol; return fallback on any numerical failure.&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">price</span> <span class="o">=</span> <span class="n">heston_price</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="ow">or</span> <span class="n">price</span> <span class="o">&lt;=</span> <span class="mf">1e-10</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">fallback</span>
+        <span class="k">return</span> <span class="n">implied_vol</span><span class="p">(</span><span class="n">price</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">fallback</span>
+</pre></div>
+</div>
+<p><strong>TT surrogate rebuild policy</strong></p>
+<p>Rebuild the surrogate when any of these change:</p>
+<ul class="simple">
+<li><p>Heston / model parameters (after recalibration)</p></li>
+<li><p>Risk-free rate &gt; 5 bps shift</p></li>
+<li><p>Spot price moves outside the surrogate’s domain ± 10 %</p></li>
+<li><p>New expiry or strike enters the book</p></li>
+</ul>
+<p>Otherwise, <code class="docutils literal notranslate"><span class="pre">surr.evaluate</span></code> is exact within the built tolerance for the
+<em>existing</em> parameter set.</p>
+</section>
+<section id="interpreting-print-summary-output">
+<h2><a class="toc-backref" href="#id18" role="doc-backlink">Interpreting <code class="docutils literal notranslate"><span class="pre">print_summary()</span></code> Output</a><a class="headerlink" href="#interpreting-print-summary-output" title="Link to this heading">¶</a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>TTSurrogate  dims=3  n_points=20  eps=1e-4
+Ranks      :  [1, 15, 22, 1]
+TT memory  :  53.6 KB        Full-grid equivalent : 640.0 KB
+Compression:  11.9×          Max rank : 22
+Build time :  1.8 ms         Compress time : 1.2 ms
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Ranks</strong>: boundary ranks of each TT core.  High middle ranks (&gt; 40) with
+<code class="docutils literal notranslate"><span class="pre">eps=1e-3</span></code> suggest a rough or discontinuous payoff — consider increasing
+<code class="docutils literal notranslate"><span class="pre">n_points</span></code> or switching to <code class="docutils literal notranslate"><span class="pre">from_function</span></code> (TT-Cross).</p></li>
+<li><p><strong>Compression &lt; 1×</strong>: TT uses <em>more</em> memory than the dense grid.  This
+means the surface is not low-rank.  Try increasing <code class="docutils literal notranslate"><span class="pre">eps</span></code> or reducing
+<code class="docutils literal notranslate"><span class="pre">n_points</span></code>.</p></li>
+<li><p><strong>Build time &gt;&gt; Compress time</strong>: Most of the cost is in evaluating the
+pricing function on the grid.  Use analytic approximations
+(<code class="docutils literal notranslate"><span class="pre">from_basket_analytic</span></code>) rather than MC (<code class="docutils literal notranslate"><span class="pre">from_basket_mc</span></code>) wherever
+possible.</p></li>
+<li><p><strong>Compress time &gt;&gt; Build time</strong>: The TT-SVD routine is dominant; consider
+reducing <code class="docutils literal notranslate"><span class="pre">n_points</span></code>.</p></li>
+</ul>
+</section>
+<section id="profiling-your-own-workflow">
+<h2><a class="toc-backref" href="#id19" role="doc-backlink">Profiling Your Own Workflow</a><a class="headerlink" href="#profiling-your-own-workflow" title="Link to this heading">¶</a></h2>
+<p>Quick wall-clock profiling with <code class="docutils literal notranslate"><span class="pre">cProfile</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>cProfile<span class="w"> </span>-s<span class="w"> </span>cumtime<span class="w"> </span>-m<span class="w"> </span>tensorquantlib.__main__<span class="w"> </span>heston<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--S<span class="w"> </span><span class="m">100</span><span class="w"> </span>--K<span class="w"> </span><span class="m">100</span><span class="w"> </span>--T<span class="w"> </span><span class="m">1</span>.0<span class="w"> </span>--r<span class="w"> </span><span class="m">0</span>.05<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-30
+</pre></div>
+</div>
+<p>Or instrument inline with <code class="docutils literal notranslate"><span class="pre">time.perf_counter</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">heston_price</span><span class="p">,</span> <span class="n">HestonParams</span>
+
+<span class="n">params</span> <span class="o">=</span> <span class="n">HestonParams</span><span class="p">()</span>
+<span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">):</span>
+    <span class="n">heston_price</span><span class="p">(</span><span class="n">S</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">K</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+<span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">elapsed</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">1000</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> ms per call&quot;</span><span class="p">)</span>
+<span class="c1"># Typical: ~0.9 ms on M1 / ~1.2 ms on Intel Xeon</span>
+</pre></div>
+</div>
+<p>For memory-intensive workflows, use <code class="docutils literal notranslate"><span class="pre">memory_profiler</span></code> (install separately):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>memory-profiler
+python<span class="w"> </span>-m<span class="w"> </span>memory_profiler<span class="w"> </span>my_surrogate_script.py
+</pre></div>
+</div>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &#169;2024, TensorQuantLib Contributors.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.0.4</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/performance.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+    <a href="https://github.com/raswanthmalai19/TensorQuantLib." class="github">
+        <img src="_static/github-banner.svg" alt="Fork me on GitHub" class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

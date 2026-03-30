@@ -48,8 +48,19 @@ Autograd Engine
 Financial Models
 ----------------
 
-- **European options only**: No American, Bermudan, Asian, or barrier support.
-- **Constant parameters**: No term structure or stochastic volatility.
+**What IS Implemented:**
+
+- **Black-Scholes**: closed-form pricing and all analytical Greeks
+- **American options**: Longstaff-Schwartz LSM with polynomial regression
+- **Asian options**: Monte Carlo with variance reduction techniques
+- **Exotic options**: Barrier (8 types), Digital, Lookback, Cliquet, Rainbow
+- **Heston stochastic volatility**: semi-analytic CF (fast) + QE Monte Carlo
+
+**Important Note**: Tensor-Train speedup (100-1000x) does NOT apply to Monte Carlo methods (American, Asian, Exotic). TT acceleration works only for smooth analytic surfaces (BS, Heston CF).
+
+**Model Limitations:**
+
+- **Constant parameters**: No term structure or stochastic volatility (except Heston).
 - **Basket approximation**: ``from_basket_analytic`` uses a weighted BS
   approximation. For accurate basket prices, use ``from_basket_mc``.
 
@@ -67,11 +78,19 @@ TT Compression
 Roadmap
 -------
 
+Completed ✅ (v0.3.0):
+
+✅ Reverse-mode autodiff (23+ differentiable ops)
+✅ American option support (Longstaff-Schwartz LSM)
+✅ Stochastic volatility (Heston semi-analytic CF + QE)
+✅ Exotic options (all types via MC + variance reduction)
+✅ Second-order Greeks (Gamma, Vanna, Volga via autodiff)
+✅ 698 test cases, 98% code coverage
+
 Potential improvements (contributions welcome):
 
 1. GPU acceleration via CuPy/JAX backends
-2. Second-order autodiff (Hessian-vector products)
-3. American option support via Longstaff-Schwartz
-4. Adaptive grid refinement near the strike
-5. Stochastic volatility models (Heston)
-6. Higher-dimensional support (d > 5) via cross-approximation
+2. Adaptive grid refinement near the strike
+3. Higher-dimensional support (d > 5) via cross-approximation
+4. Streaming/online TT updates for live pricing
+5. Stochastic correlation models

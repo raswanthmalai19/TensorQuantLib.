@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>tensorquantlib.viz.plots &#8212; TensorQuantLib 0.3.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=f6a572b4" />
     <script src="../../../_static/documentation_options.js?v=e259d695"></script>
@@ -35,7 +35,7 @@
 
 
 <p>
-<iframe src="https://ghbtns.com/github-btn.html?user=raswanthmalai19&repo=TensorQuantLib&type=watch&count=true&size=large&v=2"
+<iframe src="https://ghbtns.com/github-btn.html?user=raswanthmalai19&repo=TensorQuantLib.&type=watch&count=true&size=large&v=2"
   allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
 </p>
 
@@ -56,6 +56,7 @@
 <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../performance.html">Performance &amp; Production Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../theory.html">Theory &amp; Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../limitations.html">Known Limitations</a></li>
@@ -94,39 +95,40 @@
 <span class="sd">Matplotlib is imported lazily — the rest of the library works without it.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
-    <span class="kn">import</span> <span class="nn">matplotlib.axes</span>
-    <span class="kn">import</span> <span class="nn">matplotlib.figure</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.axes</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.figure</span>
 
 
-<span class="k">def</span> <span class="nf">_import_mpl</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_import_mpl</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Lazy-import matplotlib and return (plt, mpl) or raise ImportError.&quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="kn">import</span> <span class="nn">matplotlib</span>
-        <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 
         <span class="k">return</span> <span class="n">plt</span><span class="p">,</span> <span class="n">matplotlib</span>
     <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
             <span class="s2">&quot;matplotlib is required for plotting.  &quot;</span>
             <span class="s2">&quot;Install it with:  pip install &#39;tensorquantlib[dev]&#39;&quot;</span>
-        <span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span>
+        <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
 
 
 <span class="c1"># ====================================================================== #</span>
 <span class="c1"># Pricing Surface</span>
 <span class="c1"># ====================================================================== #</span>
 
+
 <div class="viewcode-block" id="plot_pricing_surface">
 <a class="viewcode-back" href="../../../api.html#tensorquantlib.viz.plots.plot_pricing_surface">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_pricing_surface</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_pricing_surface</span><span class="p">(</span>
     <span class="n">grid</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">axis_values</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
     <span class="n">dims</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
@@ -180,7 +182,7 @@
     <span class="n">ylabel</span> <span class="o">=</span> <span class="n">ylabel</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">&quot;Axis </span><span class="si">{</span><span class="n">dims</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
 
     <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;surface&quot;</span><span class="p">:</span>
-        <span class="kn">from</span> <span class="nn">mpl_toolkits.mplot3d</span> <span class="kn">import</span> <span class="n">Axes3D</span>  <span class="c1"># noqa: F401</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">mpl_toolkits.mplot3d</span><span class="w"> </span><span class="kn">import</span> <span class="n">Axes3D</span>  <span class="c1"># noqa: F401</span>
 
         <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">)</span>
         <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s2">&quot;3d&quot;</span><span class="p">)</span>
@@ -212,9 +214,10 @@
 <span class="c1"># Greeks Surface</span>
 <span class="c1"># ====================================================================== #</span>
 
+
 <div class="viewcode-block" id="plot_greeks_surface">
 <a class="viewcode-back" href="../../../api.html#tensorquantlib.viz.plots.plot_greeks_surface">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_greeks_surface</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_greeks_surface</span><span class="p">(</span>
     <span class="n">greek_grids</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
     <span class="n">axis_values</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
     <span class="n">dims</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
@@ -279,9 +282,10 @@
 <span class="c1"># TT Rank Profile</span>
 <span class="c1"># ====================================================================== #</span>
 
+
 <div class="viewcode-block" id="plot_tt_ranks">
 <a class="viewcode-back" href="../../../api.html#tensorquantlib.viz.plots.plot_tt_ranks">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_tt_ranks</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_tt_ranks</span><span class="p">(</span>
     <span class="n">cores</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;TT-Rank Profile&quot;</span><span class="p">,</span>
     <span class="n">figsize</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
@@ -299,7 +303,7 @@
 <span class="sd">        ``(fig, ax)`` tuple.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">plt</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_import_mpl</span><span class="p">()</span>
-    <span class="kn">from</span> <span class="nn">tensorquantlib.tt.ops</span> <span class="kn">import</span> <span class="n">tt_ranks</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib.tt.ops</span><span class="w"> </span><span class="kn">import</span> <span class="n">tt_ranks</span>
 
     <span class="n">ranks</span> <span class="o">=</span> <span class="n">tt_ranks</span><span class="p">(</span><span class="n">cores</span><span class="p">)</span>
     <span class="n">bonds</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ranks</span><span class="p">)))</span>
@@ -316,7 +320,7 @@
 
 <div class="viewcode-block" id="plot_rank_profile">
 <a class="viewcode-back" href="../../../api.html#tensorquantlib.viz.plots.plot_rank_profile">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_rank_profile</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_rank_profile</span><span class="p">(</span>
     <span class="n">rank_lists</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Rank Profiles&quot;</span><span class="p">,</span>
     <span class="n">figsize</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
@@ -348,9 +352,10 @@
 <span class="c1"># Compression vs Tolerance</span>
 <span class="c1"># ====================================================================== #</span>
 
+
 <div class="viewcode-block" id="plot_compression_vs_tolerance">
 <a class="viewcode-back" href="../../../api.html#tensorquantlib.viz.plots.plot_compression_vs_tolerance">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_compression_vs_tolerance</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_compression_vs_tolerance</span><span class="p">(</span>
     <span class="n">epsilons</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
     <span class="n">compression_ratios</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
     <span class="n">errors</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -401,9 +406,10 @@
 <span class="c1"># Convergence</span>
 <span class="c1"># ====================================================================== #</span>
 
+
 <div class="viewcode-block" id="plot_convergence">
 <a class="viewcode-back" href="../../../api.html#tensorquantlib.viz.plots.plot_convergence">[docs]</a>
-<span class="k">def</span> <span class="nf">plot_convergence</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_convergence</span><span class="p">(</span>
     <span class="n">iterations</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
     <span class="n">values</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
     <span class="n">ylabel</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Error&quot;</span><span class="p">,</span>
@@ -455,7 +461,7 @@
     </div>
 
     
-    <a href="https://github.com/raswanthmalai19/TensorQuantLib" class="github">
+    <a href="https://github.com/raswanthmalai19/TensorQuantLib." class="github">
         <img src="../../../_static/github-banner.svg" alt="Fork me on GitHub" class="github"/>
     </a>
     

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Known Limitations &#8212; TensorQuantLib 0.3.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=f6a572b4" />
     <script src="_static/documentation_options.js?v=e259d695"></script>
@@ -38,7 +38,7 @@
 
 
 <p>
-<iframe src="https://ghbtns.com/github-btn.html?user=raswanthmalai19&repo=TensorQuantLib&type=watch&count=true&size=large&v=2"
+<iframe src="https://ghbtns.com/github-btn.html?user=raswanthmalai19&repo=TensorQuantLib.&type=watch&count=true&size=large&v=2"
   allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
 </p>
 
@@ -59,6 +59,7 @@
 <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="performance.html">Performance &amp; Production Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="theory.html">Theory &amp; Background</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Known Limitations</a><ul>
@@ -171,9 +172,18 @@ Gamma is computed via finite differences.</p></li>
 </section>
 <section id="financial-models">
 <h2>Financial Models<a class="headerlink" href="#financial-models" title="Link to this heading">¶</a></h2>
+<p><strong>What IS Implemented:</strong></p>
 <ul class="simple">
-<li><p><strong>European options only</strong>: No American, Bermudan, Asian, or barrier support.</p></li>
-<li><p><strong>Constant parameters</strong>: No term structure or stochastic volatility.</p></li>
+<li><p><strong>Black-Scholes</strong>: closed-form pricing and all analytical Greeks</p></li>
+<li><p><strong>American options</strong>: Longstaff-Schwartz LSM with polynomial regression</p></li>
+<li><p><strong>Asian options</strong>: Monte Carlo with variance reduction techniques</p></li>
+<li><p><strong>Exotic options</strong>: Barrier (8 types), Digital, Lookback, Cliquet, Rainbow</p></li>
+<li><p><strong>Heston stochastic volatility</strong>: semi-analytic CF (fast) + QE Monte Carlo</p></li>
+</ul>
+<p><strong>Important Note</strong>: Tensor-Train speedup (100-1000x) does NOT apply to Monte Carlo methods (American, Asian, Exotic). TT acceleration works only for smooth analytic surfaces (BS, Heston CF).</p>
+<p><strong>Model Limitations:</strong></p>
+<ul class="simple">
+<li><p><strong>Constant parameters</strong>: No term structure or stochastic volatility (except Heston).</p></li>
 <li><p><strong>Basket approximation</strong>: <code class="docutils literal notranslate"><span class="pre">from_basket_analytic</span></code> uses a weighted BS
 approximation. For accurate basket prices, use <code class="docutils literal notranslate"><span class="pre">from_basket_mc</span></code>.</p></li>
 </ul>
@@ -190,14 +200,20 @@ Frobenius norm, not pointwise error.</p></li>
 </section>
 <section id="roadmap">
 <h2>Roadmap<a class="headerlink" href="#roadmap" title="Link to this heading">¶</a></h2>
+<p>Completed ✅ (v0.3.0):</p>
+<p>✅ Reverse-mode autodiff (23+ differentiable ops)
+✅ American option support (Longstaff-Schwartz LSM)
+✅ Stochastic volatility (Heston semi-analytic CF + QE)
+✅ Exotic options (all types via MC + variance reduction)
+✅ Second-order Greeks (Gamma, Vanna, Volga via autodiff)
+✅ 698 test cases, 98% code coverage</p>
 <p>Potential improvements (contributions welcome):</p>
 <ol class="arabic simple">
 <li><p>GPU acceleration via CuPy/JAX backends</p></li>
-<li><p>Second-order autodiff (Hessian-vector products)</p></li>
-<li><p>American option support via Longstaff-Schwartz</p></li>
 <li><p>Adaptive grid refinement near the strike</p></li>
-<li><p>Stochastic volatility models (Heston)</p></li>
 <li><p>Higher-dimensional support (d &gt; 5) via cross-approximation</p></li>
+<li><p>Streaming/online TT updates for live pricing</p></li>
+<li><p>Stochastic correlation models</p></li>
 </ol>
 </section>
 </section>
@@ -222,7 +238,7 @@ Frobenius norm, not pointwise error.</p></li>
     </div>
 
     
-    <a href="https://github.com/raswanthmalai19/TensorQuantLib" class="github">
+    <a href="https://github.com/raswanthmalai19/TensorQuantLib." class="github">
         <img src="_static/github-banner.svg" alt="Fork me on GitHub" class="github"/>
     </a>
     

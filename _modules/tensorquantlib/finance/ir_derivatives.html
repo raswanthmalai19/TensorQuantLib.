@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>tensorquantlib.finance.ir_derivatives &#8212; TensorQuantLib 0.3.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=f6a572b4" />
     <script src="../../../_static/documentation_options.js?v=e259d695"></script>
@@ -35,7 +35,7 @@
 
 
 <p>
-<iframe src="https://ghbtns.com/github-btn.html?user=raswanthmalai19&repo=TensorQuantLib&type=watch&count=true&size=large&v=2"
+<iframe src="https://ghbtns.com/github-btn.html?user=raswanthmalai19&repo=TensorQuantLib.&type=watch&count=true&size=large&v=2"
   allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
 </p>
 
@@ -56,6 +56,7 @@
 <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../performance.html">Performance &amp; Production Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../theory.html">Theory &amp; Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../limitations.html">Known Limitations</a></li>
@@ -92,21 +93,28 @@
 
 <span class="sd">Pricing under the Black (1976) model for European swaptions and caplets.</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">norm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">norm</span>
 
 <span class="c1"># ---------------------------------------------------------------------------</span>
 <span class="c1"># Cap / Floor pricing (Black 76)</span>
 <span class="c1"># ---------------------------------------------------------------------------</span>
 
+
 <div class="viewcode-block" id="black76_caplet">
 <a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.ir_derivatives.black76_caplet">[docs]</a>
-<span class="k">def</span> <span class="nf">black76_caplet</span><span class="p">(</span><span class="n">forward</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">strike</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-                   <span class="n">df</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">notional</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
-                   <span class="n">tau</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.25</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">black76_caplet</span><span class="p">(</span>
+    <span class="n">forward</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">strike</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">df</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">notional</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">tau</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.25</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Price a single caplet using the Black (1976) model.</span>
 
 <span class="sd">    Parameters</span>
@@ -141,9 +149,15 @@
 
 <div class="viewcode-block" id="black76_floorlet">
 <a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.ir_derivatives.black76_floorlet">[docs]</a>
-<span class="k">def</span> <span class="nf">black76_floorlet</span><span class="p">(</span><span class="n">forward</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">strike</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-                     <span class="n">df</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">notional</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
-                     <span class="n">tau</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.25</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">black76_floorlet</span><span class="p">(</span>
+    <span class="n">forward</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">strike</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">df</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">notional</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">tau</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.25</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Price a single floorlet using Black (1976).</span>
 
 <span class="sd">    Parameters</span>
@@ -166,9 +180,15 @@
 
 <div class="viewcode-block" id="cap_price">
 <a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.ir_derivatives.cap_price">[docs]</a>
-<span class="k">def</span> <span class="nf">cap_price</span><span class="p">(</span><span class="n">forwards</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">strike</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">expiries</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-              <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dfs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-              <span class="n">notional</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">tau</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.25</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cap_price</span><span class="p">(</span>
+    <span class="n">forwards</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">strike</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">expiries</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">dfs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">notional</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">tau</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.25</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Price an interest rate cap (sum of caplets).</span>
 
 <span class="sd">    Parameters</span>
@@ -196,17 +216,22 @@
     <span class="n">sigmas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sigma</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">),</span> <span class="n">forwards</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
     <span class="n">total</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">forwards</span><span class="p">)):</span>
-        <span class="n">total</span> <span class="o">+=</span> <span class="n">black76_caplet</span><span class="p">(</span><span class="n">forwards</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">strike</span><span class="p">,</span> <span class="n">expiries</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                                <span class="n">sigmas</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">dfs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">notional</span><span class="p">,</span> <span class="n">tau</span><span class="p">)</span>
+        <span class="n">total</span> <span class="o">+=</span> <span class="n">black76_caplet</span><span class="p">(</span><span class="n">forwards</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">strike</span><span class="p">,</span> <span class="n">expiries</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">sigmas</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">dfs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">notional</span><span class="p">,</span> <span class="n">tau</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">total</span></div>
 
 
 
 <div class="viewcode-block" id="floor_price">
 <a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.ir_derivatives.floor_price">[docs]</a>
-<span class="k">def</span> <span class="nf">floor_price</span><span class="p">(</span><span class="n">forwards</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">strike</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">expiries</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-                <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dfs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-                <span class="n">notional</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">tau</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.25</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">floor_price</span><span class="p">(</span>
+    <span class="n">forwards</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">strike</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">expiries</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">dfs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">notional</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">tau</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.25</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Price an interest rate floor (sum of floorlets).</span>
 
 <span class="sd">    Parameters same as :func:`cap_price`.</span>
@@ -214,8 +239,9 @@
     <span class="n">sigmas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sigma</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">),</span> <span class="n">forwards</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
     <span class="n">total</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">forwards</span><span class="p">)):</span>
-        <span class="n">total</span> <span class="o">+=</span> <span class="n">black76_floorlet</span><span class="p">(</span><span class="n">forwards</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">strike</span><span class="p">,</span> <span class="n">expiries</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                                  <span class="n">sigmas</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">dfs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">notional</span><span class="p">,</span> <span class="n">tau</span><span class="p">)</span>
+        <span class="n">total</span> <span class="o">+=</span> <span class="n">black76_floorlet</span><span class="p">(</span>
+            <span class="n">forwards</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">strike</span><span class="p">,</span> <span class="n">expiries</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">sigmas</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">dfs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">notional</span><span class="p">,</span> <span class="n">tau</span>
+        <span class="p">)</span>
     <span class="k">return</span> <span class="n">total</span></div>
 
 
@@ -224,9 +250,10 @@
 <span class="c1"># Swaption pricing (Black 76)</span>
 <span class="c1"># ---------------------------------------------------------------------------</span>
 
+
 <div class="viewcode-block" id="swap_rate">
 <a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.ir_derivatives.swap_rate">[docs]</a>
-<span class="k">def</span> <span class="nf">swap_rate</span><span class="p">(</span><span class="n">dfs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">tau</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">swap_rate</span><span class="p">(</span><span class="n">dfs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">tau</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Par swap rate from discount factors.</span>
 
 <span class="sd">    S = (df_0 - df_n) / (tau * sum(df_i))</span>
@@ -252,10 +279,15 @@
 
 <div class="viewcode-block" id="swaption_price">
 <a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.ir_derivatives.swaption_price">[docs]</a>
-<span class="k">def</span> <span class="nf">swaption_price</span><span class="p">(</span><span class="n">swap_r</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">strike</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T_option</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-                   <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">annuity</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-                   <span class="n">notional</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
-                   <span class="n">payer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">swaption_price</span><span class="p">(</span>
+    <span class="n">swap_r</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">strike</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">T_option</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">annuity</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">notional</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">payer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Price a European swaption using Black (1976).</span>
 
 <span class="sd">    Parameters</span>
@@ -300,9 +332,14 @@
 
 <div class="viewcode-block" id="swaption_parity">
 <a class="viewcode-back" href="../../../api.html#tensorquantlib.finance.ir_derivatives.swaption_parity">[docs]</a>
-<span class="k">def</span> <span class="nf">swaption_parity</span><span class="p">(</span><span class="n">payer</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">receiver</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">swap_r</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-                    <span class="n">strike</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">annuity</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-                    <span class="n">notional</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">swaption_parity</span><span class="p">(</span>
+    <span class="n">payer</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">receiver</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">swap_r</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">strike</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">annuity</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">notional</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check put-call parity for swaptions.</span>
 
 <span class="sd">    Payer - Receiver = (S - K) * A * N</span>
@@ -330,7 +367,7 @@
     </div>
 
     
-    <a href="https://github.com/raswanthmalai19/TensorQuantLib" class="github">
+    <a href="https://github.com/raswanthmalai19/TensorQuantLib." class="github">
         <img src="../../../_static/github-banner.svg" alt="Fork me on GitHub" class="github"/>
     </a>
     

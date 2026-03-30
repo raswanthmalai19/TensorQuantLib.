@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Index &#8212; TensorQuantLib 0.3.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=f6a572b4" />
     <script src="_static/documentation_options.js?v=e259d695"></script>
@@ -35,7 +35,7 @@
 
 
 <p>
-<iframe src="https://ghbtns.com/github-btn.html?user=raswanthmalai19&repo=TensorQuantLib&type=watch&count=true&size=large&v=2"
+<iframe src="https://ghbtns.com/github-btn.html?user=raswanthmalai19&repo=TensorQuantLib.&type=watch&count=true&size=large&v=2"
   allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
 </p>
 
@@ -56,6 +56,7 @@
 <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="performance.html">Performance &amp; Production Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="theory.html">Theory &amp; Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="limitations.html">Known Limitations</a></li>
@@ -132,6 +133,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#tensorquantlib.tt.pricing.american_surrogate">american_surrogate() (in module tensorquantlib.tt.pricing)</a>
 </li>
+      <li><a href="api.html#tensorquantlib.backtest.metrics.annualized_return">annualized_return() (in module tensorquantlib.backtest.metrics)</a>
+</li>
       <li><a href="api.html#tensorquantlib.finance.exotics.asian_geometric_price">asian_geometric_price() (in module tensorquantlib.finance.exotics)</a>
 </li>
       <li><a href="api.html#tensorquantlib.finance.variance_reduction.asian_price_cv">asian_price_cv() (in module tensorquantlib.finance.variance_reduction)</a>
@@ -200,6 +203,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#tensorquantlib.finance.risk.PortfolioRisk.calmar">calmar() (tensorquantlib.finance.risk.PortfolioRisk method)</a>
 </li>
+      <li><a href="api.html#tensorquantlib.backtest.metrics.calmar_ratio">calmar_ratio() (in module tensorquantlib.backtest.metrics)</a>
+</li>
       <li><a href="api.html#tensorquantlib.finance.ir_derivatives.cap_price">cap_price() (in module tensorquantlib.finance.ir_derivatives)</a>
 </li>
       <li><a href="api.html#tensorquantlib.finance.credit.cds_price">cds_price() (in module tensorquantlib.finance.credit)</a>
@@ -216,9 +221,11 @@
 </li>
       <li><a href="api.html#tensorquantlib.core.tensor.Tensor.clip">clip() (tensorquantlib.core.tensor.Tensor method)</a>
 </li>
+      <li><a href="api.html#tensorquantlib.finance.exotics.cliquet_price_mc">cliquet_price_mc() (in module tensorquantlib.finance.exotics)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#tensorquantlib.finance.exotics.cliquet_price_mc">cliquet_price_mc() (in module tensorquantlib.finance.exotics)</a>
+      <li><a href="api.html#tensorquantlib.backtest.engine.CommissionModel">CommissionModel (class in tensorquantlib.backtest.engine)</a>
 </li>
       <li><a href="api.html#tensorquantlib.finance.variance_reduction.compare_variance_reduction">compare_variance_reduction() (in module tensorquantlib.finance.variance_reduction)</a>
 </li>
@@ -232,6 +239,12 @@
 </li>
       <li><a href="api.html#tensorquantlib.core.tensor.Tensor.cos">cos() (tensorquantlib.core.tensor.Tensor method)</a>
 </li>
+      <li><a href="api.html#tensorquantlib.backtest.engine.CommissionModel.cost">cost() (tensorquantlib.backtest.engine.CommissionModel method)</a>
+
+      <ul>
+        <li><a href="api.html#tensorquantlib.backtest.engine.SlippageModel.cost">(tensorquantlib.backtest.engine.SlippageModel method)</a>
+</li>
+      </ul></li>
       <li><a href="api.html#tensorquantlib.finance.risk.cvar">cvar() (in module tensorquantlib.finance.risk)</a>
 
       <ul>
@@ -246,12 +259,16 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#tensorquantlib.core.tensor.Tensor.data">data (tensorquantlib.core.tensor.Tensor attribute)</a>
 </li>
+      <li><a href="api.html#tensorquantlib.backtest.strategy.DeltaGammaHedgeStrategy">DeltaGammaHedgeStrategy (class in tensorquantlib.backtest.strategy)</a>
+</li>
       <li><a href="api.html#tensorquantlib.backtest.strategy.DeltaHedgeStrategy">DeltaHedgeStrategy (class in tensorquantlib.backtest.strategy)</a>
 </li>
-      <li><a href="api.html#tensorquantlib.finance.exotics.digital_greeks">digital_greeks() (in module tensorquantlib.finance.exotics)</a>
+      <li><a href="api.html#tensorquantlib.core.tensor.Tensor.detach">detach() (tensorquantlib.core.tensor.Tensor method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#tensorquantlib.finance.exotics.digital_greeks">digital_greeks() (in module tensorquantlib.finance.exotics)</a>
+</li>
       <li><a href="api.html#tensorquantlib.finance.exotics.digital_price">digital_price() (in module tensorquantlib.finance.exotics)</a>
 </li>
       <li><a href="api.html#tensorquantlib.finance.exotics.digital_price_mc">digital_price_mc() (in module tensorquantlib.finance.exotics)</a>
@@ -268,12 +285,16 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#tensorquantlib.tt.surrogate.TTSurrogate.eps">eps (tensorquantlib.tt.surrogate.TTSurrogate attribute)</a>
 </li>
+      <li><a href="api.html#tensorquantlib.backtest.engine.EQUITY_COMM">EQUITY_COMM (in module tensorquantlib.backtest.engine)</a>
+</li>
       <li><a href="api.html#tensorquantlib.backtest.engine.BacktestResult.equity_curve">equity_curve (tensorquantlib.backtest.engine.BacktestResult attribute)</a>
 </li>
-      <li><a href="api.html#tensorquantlib.tt.surrogate.TTSurrogate.evaluate">evaluate() (tensorquantlib.tt.surrogate.TTSurrogate method)</a>
+      <li><a href="api.html#tensorquantlib.backtest.engine.EQUITY_SLIP">EQUITY_SLIP (in module tensorquantlib.backtest.engine)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#tensorquantlib.tt.surrogate.TTSurrogate.evaluate">evaluate() (tensorquantlib.tt.surrogate.TTSurrogate method)</a>
+</li>
       <li><a href="api.html#tensorquantlib.tt.surrogate.TTSurrogate.evaluate_tensor">evaluate_tensor() (tensorquantlib.tt.surrogate.TTSurrogate method)</a>
 </li>
       <li><a href="api.html#tensorquantlib.tt.pricing.exotic_surrogate">exotic_surrogate() (in module tensorquantlib.tt.pricing)</a>
@@ -294,15 +315,21 @@
 </li>
       <li><a href="api.html#tensorquantlib.finance.heston.HestonCalibrator.fit">fit() (tensorquantlib.finance.heston.HestonCalibrator method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#tensorquantlib.finance.ir_derivatives.floor_price">floor_price() (in module tensorquantlib.finance.ir_derivatives)</a>
 </li>
+      <li><a href="api.html#tensorquantlib.core.tensor.Tensor.free_graph">free_graph() (tensorquantlib.core.tensor.Tensor method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#tensorquantlib.tt.surrogate.TTSurrogate.from_basket_analytic">from_basket_analytic() (tensorquantlib.tt.surrogate.TTSurrogate class method)</a>
 </li>
       <li><a href="api.html#tensorquantlib.tt.surrogate.TTSurrogate.from_basket_mc">from_basket_mc() (tensorquantlib.tt.surrogate.TTSurrogate class method)</a>
 </li>
+      <li><a href="api.html#tensorquantlib.tt.surrogate.TTSurrogate.from_function">from_function() (tensorquantlib.tt.surrogate.TTSurrogate class method)</a>
+</li>
       <li><a href="api.html#tensorquantlib.tt.surrogate.TTSurrogate.from_grid">from_grid() (tensorquantlib.tt.surrogate.TTSurrogate class method)</a>
+</li>
+      <li><a href="api.html#tensorquantlib.backtest.engine.FX_COMM">FX_COMM (in module tensorquantlib.backtest.engine)</a>
 </li>
       <li><a href="api.html#tensorquantlib.finance.fx.fx_forward">fx_forward() (in module tensorquantlib.finance.fx)</a>
 </li>
@@ -312,6 +339,8 @@
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#tensorquantlib.backtest.strategy.GammaScalpingStrategy">GammaScalpingStrategy (class in tensorquantlib.backtest.strategy)</a>
+</li>
       <li><a href="api.html#tensorquantlib.finance.fx.garman_kohlhagen">garman_kohlhagen() (in module tensorquantlib.finance.fx)</a>
 </li>
       <li><a href="api.html#tensorquantlib.data.market.get_historical_prices">get_historical_prices() (in module tensorquantlib.data.market)</a>
@@ -330,6 +359,8 @@
 </li>
       <li><a href="api.html#tensorquantlib.tt.surrogate.TTSurrogate.greeks">greeks() (tensorquantlib.tt.surrogate.TTSurrogate method)</a>
 </li>
+      <li><a href="api.html#tensorquantlib.backtest.engine.BacktestResult.greeks_history">greeks_history (tensorquantlib.backtest.engine.BacktestResult attribute)</a>
+</li>
       <li><a href="api.html#tensorquantlib.finance.risk.greeks_portfolio">greeks_portfolio() (in module tensorquantlib.finance.risk)</a>
 </li>
   </ul></td>
@@ -340,14 +371,18 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#tensorquantlib.finance.credit.hazard_rate_from_spread">hazard_rate_from_spread() (in module tensorquantlib.finance.credit)</a>
 </li>
+      <li><a href="api.html#tensorquantlib.backtest.metrics.hedge_efficiency">hedge_efficiency() (in module tensorquantlib.backtest.metrics)</a>
+</li>
+      <li><a href="api.html#tensorquantlib.backtest.metrics.hedge_pnl_attribution">hedge_pnl_attribution() (in module tensorquantlib.backtest.metrics)</a>
+</li>
       <li><a href="api.html#tensorquantlib.finance.heston.heston_greeks">heston_greeks() (in module tensorquantlib.finance.heston)</a>
 </li>
       <li><a href="api.html#tensorquantlib.finance.heston.heston_price">heston_price() (in module tensorquantlib.finance.heston)</a>
 </li>
-      <li><a href="api.html#tensorquantlib.finance.heston.heston_price_mc">heston_price_mc() (in module tensorquantlib.finance.heston)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#tensorquantlib.finance.heston.heston_price_mc">heston_price_mc() (in module tensorquantlib.finance.heston)</a>
+</li>
       <li><a href="api.html#tensorquantlib.tt.pricing.heston_surrogate">heston_surrogate() (in module tensorquantlib.tt.pricing)</a>
 </li>
       <li><a href="api.html#tensorquantlib.finance.heston.HestonCalibrator">HestonCalibrator (class in tensorquantlib.finance.heston)</a>
@@ -362,6 +397,8 @@
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#tensorquantlib.backtest.engine.ILLIQUID_SLIP">ILLIQUID_SLIP (in module tensorquantlib.backtest.engine)</a>
+</li>
       <li><a href="api.html#tensorquantlib.finance.implied_vol.implied_vol">implied_vol() (in module tensorquantlib.finance.implied_vol)</a>
 </li>
       <li><a href="api.html#tensorquantlib.finance.implied_vol.implied_vol_batch">implied_vol_batch() (in module tensorquantlib.finance.implied_vol)</a>
@@ -371,6 +408,8 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#tensorquantlib.finance.heston.HestonCalibrator.implied_vol_surface">implied_vol_surface() (tensorquantlib.finance.heston.HestonCalibrator method)</a>
+</li>
+      <li><a href="api.html#tensorquantlib.backtest.metrics.information_ratio">information_ratio() (in module tensorquantlib.backtest.metrics)</a>
 </li>
       <li><a href="api.html#tensorquantlib.core.tensor.Tensor.item">item() (tensorquantlib.core.tensor.Tensor method)</a>
 </li>
@@ -509,6 +548,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#tensorquantlib.tt.surrogate.TTSurrogate.n_assets">n_assets (tensorquantlib.tt.surrogate.TTSurrogate attribute)</a>
 </li>
+      <li><a href="api.html#tensorquantlib.backtest.engine.BacktestResult.n_trades">n_trades (tensorquantlib.backtest.engine.BacktestResult attribute)</a>
+</li>
       <li><a href="api.html#tensorquantlib.core.tensor.Tensor.ndim">ndim (tensorquantlib.core.tensor.Tensor property)</a>
 </li>
   </ul></td>
@@ -516,6 +557,8 @@
       <li><a href="api.html#tensorquantlib.finance.rates.nelson_siegel">nelson_siegel() (in module tensorquantlib.finance.rates)</a>
 </li>
       <li><a href="api.html#tensorquantlib.finance.rates.nelson_siegel_calibrate">nelson_siegel_calibrate() (in module tensorquantlib.finance.rates)</a>
+</li>
+      <li><a href="api.html#tensorquantlib.backtest.strategy.Trade.notional">notional (tensorquantlib.backtest.strategy.Trade property)</a>
 </li>
       <li><a href="api.html#tensorquantlib.utils.validation.numerical_gradient">numerical_gradient() (in module tensorquantlib.utils.validation)</a>
 </li>
@@ -525,9 +568,13 @@
 <h2 id="O">O</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#tensorquantlib.backtest.strategy.DeltaHedgeStrategy.on_data">on_data() (tensorquantlib.backtest.strategy.DeltaHedgeStrategy method)</a>
+      <li><a href="api.html#tensorquantlib.backtest.strategy.DeltaGammaHedgeStrategy.on_data">on_data() (tensorquantlib.backtest.strategy.DeltaGammaHedgeStrategy method)</a>
 
       <ul>
+        <li><a href="api.html#tensorquantlib.backtest.strategy.DeltaHedgeStrategy.on_data">(tensorquantlib.backtest.strategy.DeltaHedgeStrategy method)</a>
+</li>
+        <li><a href="api.html#tensorquantlib.backtest.strategy.GammaScalpingStrategy.on_data">(tensorquantlib.backtest.strategy.GammaScalpingStrategy method)</a>
+</li>
         <li><a href="api.html#tensorquantlib.backtest.strategy.StraddleStrategy.on_data">(tensorquantlib.backtest.strategy.StraddleStrategy method)</a>
 </li>
         <li><a href="api.html#tensorquantlib.backtest.strategy.Strategy.on_data">(tensorquantlib.backtest.strategy.Strategy method)</a>
@@ -553,6 +600,8 @@
 </li>
       <li><a href="api.html#tensorquantlib.viz.plots.plot_convergence">plot_convergence() (in module tensorquantlib.viz.plots)</a>
 </li>
+      <li><a href="api.html#tensorquantlib.tt.surrogate.TTSurrogate.plot_greeks">plot_greeks() (tensorquantlib.tt.surrogate.TTSurrogate method)</a>
+</li>
       <li><a href="api.html#tensorquantlib.viz.plots.plot_greeks_surface">plot_greeks_surface() (in module tensorquantlib.viz.plots)</a>
 </li>
       <li><a href="api.html#tensorquantlib.viz.plots.plot_pricing_surface">plot_pricing_surface() (in module tensorquantlib.viz.plots)</a>
@@ -560,6 +609,10 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#tensorquantlib.viz.plots.plot_rank_profile">plot_rank_profile() (in module tensorquantlib.viz.plots)</a>
+</li>
+      <li><a href="api.html#tensorquantlib.tt.surrogate.TTSurrogate.plot_ranks">plot_ranks() (tensorquantlib.tt.surrogate.TTSurrogate method)</a>
+</li>
+      <li><a href="api.html#tensorquantlib.tt.surrogate.TTSurrogate.plot_surface">plot_surface() (tensorquantlib.tt.surrogate.TTSurrogate method)</a>
 </li>
       <li><a href="api.html#tensorquantlib.viz.plots.plot_tt_ranks">plot_tt_ranks() (in module tensorquantlib.viz.plots)</a>
 </li>
@@ -641,12 +694,14 @@
 </li>
       <li><a href="api.html#tensorquantlib.core.tensor.Tensor.size">size (tensorquantlib.core.tensor.Tensor property)</a>
 </li>
-      <li><a href="api.html#tensorquantlib.backtest.metrics.sortino_ratio">sortino_ratio() (in module tensorquantlib.backtest.metrics)</a>
+      <li><a href="api.html#tensorquantlib.backtest.engine.SlippageModel">SlippageModel (class in tensorquantlib.backtest.engine)</a>
 </li>
-      <li><a href="api.html#tensorquantlib.core.tensor.Tensor.sqrt">sqrt() (tensorquantlib.core.tensor.Tensor method)</a>
+      <li><a href="api.html#tensorquantlib.backtest.metrics.sortino_ratio">sortino_ratio() (in module tensorquantlib.backtest.metrics)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#tensorquantlib.core.tensor.Tensor.sqrt">sqrt() (tensorquantlib.core.tensor.Tensor method)</a>
+</li>
       <li><a href="api.html#tensorquantlib.backtest.strategy.StraddleStrategy">StraddleStrategy (class in tensorquantlib.backtest.strategy)</a>
 </li>
       <li><a href="api.html#tensorquantlib.backtest.strategy.Strategy">Strategy (class in tensorquantlib.backtest.strategy)</a>
@@ -702,6 +757,8 @@
       <li><a href="api.html#tensorquantlib.core.tensor.tensor_div">tensor_div() (in module tensorquantlib.core.tensor)</a>
 </li>
       <li><a href="api.html#tensorquantlib.core.tensor.tensor_exp">tensor_exp() (in module tensorquantlib.core.tensor)</a>
+</li>
+      <li><a href="api.html#tensorquantlib.core.tensor.tensor_getitem">tensor_getitem() (in module tensorquantlib.core.tensor)</a>
 </li>
       <li><a href="api.html#tensorquantlib.core.tensor.tensor_log">tensor_log() (in module tensorquantlib.core.tensor)</a>
 </li>
@@ -814,8 +871,6 @@
         <li><a href="api.html#module-tensorquantlib.finance.fx">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     tensorquantlib.finance.greeks
 
@@ -830,6 +885,8 @@
         <li><a href="api.html#module-tensorquantlib.finance.heston">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     tensorquantlib.finance.implied_vol
 
@@ -930,6 +987,14 @@
       </ul></li>
       <li><a href="api.html#tensorquantlib.finance.heston.HestonParams.theta">theta (tensorquantlib.finance.heston.HestonParams attribute)</a>
 </li>
+      <li><a href="api.html#tensorquantlib.backtest.engine.BacktestResult.total_commission">total_commission (tensorquantlib.backtest.engine.BacktestResult attribute)</a>
+</li>
+      <li><a href="api.html#tensorquantlib.backtest.strategy.Trade.total_cost">total_cost (tensorquantlib.backtest.strategy.Trade property)</a>
+</li>
+      <li><a href="api.html#tensorquantlib.backtest.engine.BacktestResult.total_slippage">total_slippage (tensorquantlib.backtest.engine.BacktestResult attribute)</a>
+</li>
+      <li><a href="api.html#tensorquantlib.backtest.engine.BacktestResult.total_turnover">total_turnover (tensorquantlib.backtest.engine.BacktestResult attribute)</a>
+</li>
       <li><a href="api.html#tensorquantlib.backtest.strategy.Trade">Trade (class in tensorquantlib.backtest.strategy)</a>
 </li>
       <li><a href="api.html#tensorquantlib.backtest.engine.BacktestResult.trades">trades (tensorquantlib.backtest.engine.BacktestResult attribute)</a>
@@ -937,6 +1002,8 @@
       <li><a href="api.html#tensorquantlib.tt.ops.tt_add">tt_add() (in module tensorquantlib.tt.ops)</a>
 </li>
       <li><a href="api.html#tensorquantlib.tt.ops.tt_compression_ratio">tt_compression_ratio() (in module tensorquantlib.tt.ops)</a>
+</li>
+      <li><a href="api.html#tensorquantlib.tt.decompose.tt_cross">tt_cross() (in module tensorquantlib.tt.decompose)</a>
 </li>
       <li><a href="api.html#tensorquantlib.tt.ops.tt_dot">tt_dot() (in module tensorquantlib.tt.ops)</a>
 </li>
@@ -963,6 +1030,8 @@
       <li><a href="api.html#tensorquantlib.tt.ops.tt_to_full">tt_to_full() (in module tensorquantlib.tt.ops)</a>
 </li>
       <li><a href="api.html#tensorquantlib.tt.surrogate.TTSurrogate">TTSurrogate (class in tensorquantlib.tt.surrogate)</a>
+</li>
+      <li><a href="api.html#tensorquantlib.backtest.metrics.turnover">turnover() (in module tensorquantlib.backtest.metrics)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1014,6 +1083,10 @@
 <h2 id="Z">Z</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#tensorquantlib.backtest.engine.ZERO_COST">ZERO_COST (in module tensorquantlib.backtest.engine)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#tensorquantlib.core.tensor.Tensor.zero_grad">zero_grad() (tensorquantlib.core.tensor.Tensor method)</a>
 </li>
   </ul></td>
@@ -1037,7 +1110,7 @@
     </div>
 
     
-    <a href="https://github.com/raswanthmalai19/TensorQuantLib" class="github">
+    <a href="https://github.com/raswanthmalai19/TensorQuantLib." class="github">
         <img src="_static/github-banner.svg" alt="Fork me on GitHub" class="github"/>
     </a>
     

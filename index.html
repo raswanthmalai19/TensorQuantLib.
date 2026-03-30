@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>TensorQuantLib Documentation &#8212; TensorQuantLib 0.3.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=f6a572b4" />
     <script src="_static/documentation_options.js?v=e259d695"></script>
@@ -37,7 +37,7 @@
 
 
 <p>
-<iframe src="https://ghbtns.com/github-btn.html?user=raswanthmalai19&repo=TensorQuantLib&type=watch&count=true&size=large&v=2"
+<iframe src="https://ghbtns.com/github-btn.html?user=raswanthmalai19&repo=TensorQuantLib.&type=watch&count=true&size=large&v=2"
   allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
 </p>
 
@@ -58,6 +58,7 @@
 <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="performance.html">Performance &amp; Production Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="theory.html">Theory &amp; Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="limitations.html">Known Limitations</a></li>
@@ -90,23 +91,47 @@
             
   <section id="tensorquantlib-documentation">
 <h1>TensorQuantLib Documentation<a class="headerlink" href="#tensorquantlib-documentation" title="Link to this heading">¶</a></h1>
-<p><strong>TensorQuantLib</strong> is a Tensor-Train based surrogate pricing engine with
-reverse-mode autodiff for multi-asset options, designed to run on a laptop.</p>
+<p><strong>TensorQuantLib</strong> is a comprehensive quantitative finance library with
+tensor-train compression, automatic differentiation, and stochastic models —
+built from scratch with NumPy and SciPy. 150+ public functions covering
+derivatives pricing, risk management, and portfolio analysis.</p>
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#installation">Installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#your-first-surrogate">Your First Surrogate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#pricer-decision-guide">Pricer Decision Guide</a></li>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#autodiff-greeks">Autodiff Greeks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#second-order-greeks">Second-Order Greeks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#heston-stochastic-volatility">Heston Stochastic Volatility</a></li>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#american-options">American Options</a></li>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#implied-volatility">Implied Volatility</a></li>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#exotic-options">Exotic Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#volatility-surface-models">Volatility Surface Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#interest-rate-models">Interest Rate Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#fx-options">FX Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#credit-risk">Credit Risk</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#jump-diffusion-models">Jump-Diffusion Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#ir-derivatives">IR Derivatives</a></li>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#variance-reduction">Variance Reduction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#risk-metrics">Risk Metrics</a></li>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#tt-compression">TT Compression</a></li>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#cli">CLI</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="performance.html">Performance &amp; Production Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="performance.html#at-a-glance-latency-table">At-a-Glance Latency Table</a></li>
+<li class="toctree-l2"><a class="reference internal" href="performance.html#choosing-the-right-pricer">Choosing the Right Pricer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="performance.html#batch-vectorised-pricing">Batch / Vectorised Pricing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="performance.html#tt-rank-and-n-points-tuning">TT-Rank and <code class="docutils literal notranslate"><span class="pre">n_points</span></code> Tuning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="performance.html#heston-calibration-from-10-s-to-2-s">Heston Calibration: From 10 s to &lt; 2 s</a></li>
+<li class="toctree-l2"><a class="reference internal" href="performance.html#memory-profiling">Memory Profiling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="performance.html#monte-carlo-variance-reduction-which-method-when">Monte Carlo Variance Reduction: Which Method When</a></li>
+<li class="toctree-l2"><a class="reference internal" href="performance.html#parallelism-pricing-a-large-portfolio">Parallelism: Pricing a Large Portfolio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="performance.html#production-configuration-checklist">Production Configuration Checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="performance.html#interpreting-print-summary-output">Interpreting <code class="docutils literal notranslate"><span class="pre">print_summary()</span></code> Output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="performance.html#profiling-your-own-workflow">Profiling Your Own Workflow</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a><ul>
@@ -123,7 +148,17 @@ reverse-mode autodiff for multi-asset options, designed to run on a laptop.</p>
 <li class="toctree-l2"><a class="reference internal" href="theory.html#tensor-train-decomposition">Tensor-Train Decomposition</a></li>
 <li class="toctree-l2"><a class="reference internal" href="theory.html#reverse-mode-automatic-differentiation">Reverse-Mode Automatic Differentiation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="theory.html#black-scholes-model">Black-Scholes Model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="theory.html#basket-options">Basket Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="theory.html#heston-stochastic-volatility">Heston Stochastic Volatility</a></li>
+<li class="toctree-l2"><a class="reference internal" href="theory.html#american-options-longstaff-schwartz">American Options — Longstaff-Schwartz</a></li>
+<li class="toctree-l2"><a class="reference internal" href="theory.html#basket-options-moment-matching">Basket Options &amp; Moment Matching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="theory.html#sabr-model">SABR Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="theory.html#svi-parameterization">SVI Parameterization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="theory.html#vasicek-short-rate-model">Vasicek Short-Rate Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="theory.html#cir-model">CIR Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="theory.html#merton-structural-credit-model">Merton Structural Credit Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="theory.html#garman-kohlhagen-fx-model">Garman-Kohlhagen FX Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="theory.html#merton-jump-diffusion">Merton Jump-Diffusion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="theory.html#black-76-for-ir-derivatives">Black-76 for IR Derivatives</a></li>
 <li class="toctree-l2"><a class="reference internal" href="theory.html#surrogate-pricing">Surrogate Pricing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="theory.html#references">References</a></li>
 </ul>
@@ -140,9 +175,17 @@ reverse-mode autodiff for multi-asset options, designed to run on a laptop.</p>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Quant traders / fintech engineers</strong>: see the <a class="reference internal" href="performance.html"><span class="doc">Performance &amp; Production Guide</span></a> guide for
+latency tables, Heston calibration speedups, TT-rank tuning, and the
+production configuration checklist.</p>
+<p><strong>Researchers</strong>: the <a class="reference internal" href="theory.html"><span class="doc">Theory &amp; Background</span></a> page has full mathematical derivations
+for every model.</p>
+</div>
 <section id="quick-overview">
 <h2>Quick Overview<a class="headerlink" href="#quick-overview" title="Link to this heading">¶</a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">tensorquantlib</span> <span class="kn">import</span> <span class="n">TTSurrogate</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">tensorquantlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">TTSurrogate</span>
 
 <span class="c1"># Build a 3-asset basket option surrogate</span>
 <span class="n">surr</span> <span class="o">=</span> <span class="n">TTSurrogate</span><span class="o">.</span><span class="n">from_basket_analytic</span><span class="p">(</span>
@@ -154,7 +197,8 @@ reverse-mode autodiff for multi-asset options, designed to run on a laptop.</p>
 <span class="p">)</span>
 <span class="n">surr</span><span class="o">.</span><span class="n">print_summary</span><span class="p">()</span>
 
-<span class="c1"># Evaluate the surrogate — 1000× faster than grid lookup</span>
+<span class="c1"># Evaluate the surrogate — ~5 microseconds per eval</span>
+<span class="c1"># (100-1000× faster than re-running Monte Carlo for repeated evals)</span>
 <span class="n">price</span> <span class="o">=</span> <span class="n">surr</span><span class="o">.</span><span class="n">evaluate</span><span class="p">([</span><span class="mf">100.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">])</span>
 <span class="n">greeks</span> <span class="o">=</span> <span class="n">surr</span><span class="o">.</span><span class="n">greeks</span><span class="p">([</span><span class="mf">100.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">])</span>
 </pre></div>
@@ -163,13 +207,26 @@ reverse-mode autodiff for multi-asset options, designed to run on a laptop.</p>
 <section id="features">
 <h2>Features<a class="headerlink" href="#features" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><strong>Reverse-mode autodiff</strong>: Tensor class with 16+ differentiable ops</p></li>
+<li><p><strong>Reverse-mode autodiff</strong>: Tensor class with 23+ differentiable ops</p></li>
+<li><p><strong>Second-order autodiff</strong>: Hessians, HVPs, Gamma/Vanna/Volga</p></li>
 <li><p><strong>Black-Scholes engine</strong>: pricing + all analytical Greeks</p></li>
-<li><p><strong>Basket option pricing</strong>: Monte Carlo with correlated GBM</p></li>
-<li><p><strong>TT-SVD compression</strong>: Oseledets (2011) algorithm with rounding</p></li>
-<li><p><strong>TT arithmetic</strong>: add, scale, Hadamard, dot, Frobenius norm</p></li>
-<li><p><strong>TTSurrogate</strong>: multi-linear interpolation on compressed grids</p></li>
-<li><p><strong>Visualization</strong>: publication-quality plotting utilities</p></li>
+<li><p><strong>Heston stochastic volatility</strong>: semi-analytic CF, QE Monte Carlo, calibration</p></li>
+<li><p><strong>American options</strong>: Longstaff-Schwartz LSM with exercise boundary</p></li>
+<li><p><strong>Exotic options</strong>: Asian, Digital, Barrier (8 types), Lookback, Cliquet, Rainbow</p></li>
+<li><p><strong>Volatility surface</strong>: SABR (Hagan 2002), SVI (Gatheral 2004) with calibration</p></li>
+<li><p><strong>Interest rates</strong>: Vasicek, CIR, Nelson-Siegel, yield curve bootstrapping</p></li>
+<li><p><strong>FX options</strong>: Garman-Kohlhagen, FX Greeks, forwards, quanto</p></li>
+<li><p><strong>Credit risk</strong>: Merton structural model, CDS pricing, hazard rates</p></li>
+<li><p><strong>Jump-diffusion</strong>: Merton jump-diffusion, Kou double-exponential</p></li>
+<li><p><strong>Local volatility</strong>: Dupire local vol, local vol Monte Carlo</p></li>
+<li><p><strong>IR derivatives</strong>: Black-76 caps/floors, swaptions, swap rate</p></li>
+<li><p><strong>Variance reduction</strong>: antithetic, control variate, QMC, importance sampling, stratified</p></li>
+<li><p><strong>Risk metrics</strong>: VaR (parametric/historical/MC), CVaR, scenario analysis</p></li>
+<li><p><strong>Backtesting</strong>: engine, strategies, performance metrics (Sharpe, Sortino, Calmar)</p></li>
+<li><p><strong>TT compression</strong>: TT-SVD, TT-cross, rounding, arithmetic, surrogate pricing</p></li>
+<li><p><strong>Basket options</strong>: correlated GBM Monte Carlo, analytic moment-matching</p></li>
+<li><p><strong>Visualization</strong>: pricing surfaces, Greek surfaces, TT-rank charts</p></li>
+<li><p><strong>CLI</strong>: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">tensorquantlib</span></code> — info, price, greeks, demo</p></li>
 </ul>
 </section>
 </section>
@@ -202,7 +259,7 @@ reverse-mode autodiff for multi-asset options, designed to run on a laptop.</p>
     </div>
 
     
-    <a href="https://github.com/raswanthmalai19/TensorQuantLib" class="github">
+    <a href="https://github.com/raswanthmalai19/TensorQuantLib." class="github">
         <img src="_static/github-banner.svg" alt="Fork me on GitHub" class="github"/>
     </a>
     

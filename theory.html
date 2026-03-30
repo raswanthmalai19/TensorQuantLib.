@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Theory &amp; Background &#8212; TensorQuantLib 0.3.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=f6a572b4" />
     <script src="_static/documentation_options.js?v=e259d695"></script>
@@ -39,7 +39,7 @@
 
 
 <p>
-<iframe src="https://ghbtns.com/github-btn.html?user=raswanthmalai19&repo=TensorQuantLib&type=watch&count=true&size=large&v=2"
+<iframe src="https://ghbtns.com/github-btn.html?user=raswanthmalai19&repo=TensorQuantLib.&type=watch&count=true&size=large&v=2"
   allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
 </p>
 
@@ -60,12 +60,23 @@
 <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="performance.html">Performance &amp; Production Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Theory &amp; Background</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#tensor-train-decomposition">Tensor-Train Decomposition</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#reverse-mode-automatic-differentiation">Reverse-Mode Automatic Differentiation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#black-scholes-model">Black-Scholes Model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#basket-options">Basket Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#heston-stochastic-volatility">Heston Stochastic Volatility</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#american-options-longstaff-schwartz">American Options — Longstaff-Schwartz</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basket-options-moment-matching">Basket Options &amp; Moment Matching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sabr-model">SABR Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#svi-parameterization">SVI Parameterization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#vasicek-short-rate-model">Vasicek Short-Rate Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cir-model">CIR Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#merton-structural-credit-model">Merton Structural Credit Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#garman-kohlhagen-fx-model">Garman-Kohlhagen FX Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#merton-jump-diffusion">Merton Jump-Diffusion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#black-76-for-ir-derivatives">Black-76 for IR Derivatives</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#surrogate-pricing">Surrogate Pricing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
 </ul>
@@ -149,6 +160,22 @@ traverses in reverse, accumulating gradients via the chain rule.</p></li>
 </ol>
 <p>This gives exact first-order derivatives (Delta, Vega) of any pricing function
 built from the supported operations.</p>
+<section id="second-order-automatic-differentiation">
+<h3>Second-Order Automatic Differentiation<a class="headerlink" href="#second-order-automatic-differentiation" title="Link to this heading">¶</a></h3>
+<p>Second-order Greeks are computed via a <strong>4-point finite-difference stencil</strong>
+on the forward pricing function:</p>
+<div class="math notranslate nohighlight">
+\[\Gamma = \frac{\partial^2 V}{\partial S^2}
+\approx \frac{V(S+h, \sigma) + V(S-h, \sigma) - 2V_0}{h^2}\]</div>
+<div class="math notranslate nohighlight">
+\[\text{Volga} = \frac{\partial^2 V}{\partial \sigma^2}
+\approx \frac{V(S, \sigma+h) + V(S, \sigma-h) - 2V_0}{h^2}\]</div>
+<div class="math notranslate nohighlight">
+\[\text{Vanna} = \frac{\partial^2 V}{\partial S \, \partial \sigma}
+\approx \frac{V_{++} - V_{+-} - V_{-+} + V_{--}}{4 h_S h_\sigma}\]</div>
+<p>All three Greeks share the same 4 corner evaluations, making the combined
+computation more efficient than separate calls.</p>
+</section>
 </section>
 <section id="black-scholes-model">
 <h2>Black-Scholes Model<a class="headerlink" href="#black-scholes-model" title="Link to this heading">¶</a></h2>
@@ -160,18 +187,159 @@ risk-free rate <span class="math notranslate nohighlight">\(r\)</span>, time to 
 <div class="math notranslate nohighlight">
 \[d_1 = \frac{\ln(S/K) + (r + \tfrac{1}{2}\sigma^2)T}{\sigma\sqrt{T}}, \quad
 d_2 = d_1 - \sigma\sqrt{T}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\Phi\)</span> is the standard normal CDF.</p>
+<p><strong>Greeks</strong> are the partial derivatives:</p>
+<ul class="simple">
+<li><p><strong>Delta</strong> = <span class="math notranslate nohighlight">\(\Phi(d_1)\)</span></p></li>
+<li><p><strong>Gamma</strong> = <span class="math notranslate nohighlight">\(\phi(d_1) / (S \sigma \sqrt{T})\)</span></p></li>
+<li><p><strong>Vega</strong> = <span class="math notranslate nohighlight">\(S \phi(d_1) \sqrt{T}\)</span></p></li>
+<li><p><strong>Theta</strong> = <span class="math notranslate nohighlight">\(-\frac{S \phi(d_1) \sigma}{2\sqrt{T}} - r K e^{-rT} \Phi(d_2)\)</span></p></li>
+<li><p><strong>Rho</strong> = <span class="math notranslate nohighlight">\(K T e^{-rT} \Phi(d_2)\)</span></p></li>
+</ul>
 </section>
-<section id="basket-options">
-<h2>Basket Options<a class="headerlink" href="#basket-options" title="Link to this heading">¶</a></h2>
-<p>A basket call on <span class="math notranslate nohighlight">\(d\)</span> assets with equal weights pays
-<span class="math notranslate nohighlight">\(\max\!\bigl(\frac{1}{d}\sum_i S_i^T - K, \; 0\bigr)\)</span>.</p>
-<p>We price via <strong>Monte-Carlo</strong> simulation of correlated geometric Brownian
-motions:</p>
+<section id="heston-stochastic-volatility">
+<h2>Heston Stochastic Volatility<a class="headerlink" href="#heston-stochastic-volatility" title="Link to this heading">¶</a></h2>
+<p>The Heston (1993) model augments Black-Scholes with a mean-reverting
+variance process:</p>
+<div class="math notranslate nohighlight">
+\[dS = (r - q) S \, dt + \sqrt{V} S \, dW_S\]</div>
+<div class="math notranslate nohighlight">
+\[dV = \kappa (\theta - V) \, dt + \xi \sqrt{V} \, dW_V\]</div>
+<div class="math notranslate nohighlight">
+\[\text{Corr}(dW_S, dW_V) = \rho \, dt\]</div>
+<p>where <span class="math notranslate nohighlight">\(\kappa\)</span> is the mean-reversion speed, <span class="math notranslate nohighlight">\(\theta\)</span> the long-run
+variance, <span class="math notranslate nohighlight">\(\xi\)</span> the vol-of-vol, and <span class="math notranslate nohighlight">\(\rho\)</span> the correlation.</p>
+<p>The <strong>Feller condition</strong> <span class="math notranslate nohighlight">\(2\kappa\theta &gt; \xi^2\)</span> ensures the variance
+process stays strictly positive.</p>
+<p><strong>Semi-analytic pricing</strong> uses Gil-Pelaez inversion of the Heston
+characteristic function:</p>
+<div class="math notranslate nohighlight">
+\[C = S e^{-qT} P_1 - K e^{-rT} P_2\]</div>
+<p>where <span class="math notranslate nohighlight">\(P_j\)</span> are computed via numerical integration of the characteristic
+function <span class="math notranslate nohighlight">\(\phi_j(u)\)</span>.</p>
+<p><strong>Monte Carlo</strong> uses the Quadratic-Exponential (QE) scheme
+(Andersen, 2008) for efficient discretisation of the CIR variance path.</p>
+</section>
+<section id="american-options-longstaff-schwartz">
+<h2>American Options — Longstaff-Schwartz<a class="headerlink" href="#american-options-longstaff-schwartz" title="Link to this heading">¶</a></h2>
+<p>The Longstaff-Schwartz (2001) algorithm prices American options via
+<strong>least-squares Monte Carlo (LSM)</strong>:</p>
+<ol class="arabic simple">
+<li><p>Simulate <span class="math notranslate nohighlight">\(N\)</span> paths of the underlying asset.</p></li>
+<li><p>At each exercise date (backwards from maturity), regress the
+<em>continuation value</em> on polynomial basis functions of the spot price.</p></li>
+<li><p>Exercise if the immediate payoff exceeds the estimated continuation value.</p></li>
+<li><p>Discount and average to obtain the option price.</p></li>
+</ol>
+<p>The exercise boundary is implicitly determined by the regression.
+The library uses Laguerre polynomials for the basis functions.</p>
+</section>
+<section id="basket-options-moment-matching">
+<h2>Basket Options &amp; Moment Matching<a class="headerlink" href="#basket-options-moment-matching" title="Link to this heading">¶</a></h2>
+<p>A basket call on <span class="math notranslate nohighlight">\(d\)</span> assets with weights <span class="math notranslate nohighlight">\(w_i\)</span> pays
+<span class="math notranslate nohighlight">\(\max\!\bigl(\sum_i w_i S_i^T - K, \; 0\bigr)\)</span>.</p>
+<p><strong>Monte Carlo</strong>: simulate correlated geometric Brownian motions:</p>
 <div class="math notranslate nohighlight">
 \[S_i^T = S_i^0 \exp\!\Bigl[\bigl(r - \tfrac{1}{2}\sigma_i^2\bigr)T
 + \sigma_i \sqrt{T}\, Z_i\Bigr]\]</div>
 <p>where <span class="math notranslate nohighlight">\(Z \sim \mathcal{N}(0, \Sigma)\)</span> and <span class="math notranslate nohighlight">\(\Sigma\)</span> is the
 correlation matrix (Cholesky-factored for sampling).</p>
+<p><strong>Analytic approximation</strong> (Gentle, 1993): match the first two moments of the
+basket to a lognormal distribution, then apply the Black-Scholes formula with
+the matched parameters <span class="math notranslate nohighlight">\(\mu_B, \sigma_B\)</span>.</p>
+</section>
+<section id="sabr-model">
+<h2>SABR Model<a class="headerlink" href="#sabr-model" title="Link to this heading">¶</a></h2>
+<p>The SABR model (Hagan et al., 2002) for the forward rate <span class="math notranslate nohighlight">\(F\)</span> and
+stochastic volatility <span class="math notranslate nohighlight">\(\alpha\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[dF = \alpha F^\beta \, dW_1, \quad d\alpha = \nu \alpha \, dW_2, \quad
+\text{Corr}(dW_1, dW_2) = \rho\]</div>
+<p>The Hagan (2002) asymptotic approximation gives an implied Black volatility
+<span class="math notranslate nohighlight">\(\sigma_B(K, F)\)</span> in closed form:</p>
+<p><strong>ATM</strong> (<span class="math notranslate nohighlight">\(K = F\)</span>):</p>
+<div class="math notranslate nohighlight">
+\[\sigma_{ATM} = \frac{\alpha}{F^{1-\beta}}
+\left[1 + \left(\frac{(1-\beta)^2}{24}\frac{\alpha^2}{F^{2-2\beta}}
++ \frac{\rho \beta \nu \alpha}{4 F^{1-\beta}}
++ \frac{2-3\rho^2}{24}\nu^2\right) T\right]\]</div>
+</section>
+<section id="svi-parameterization">
+<h2>SVI Parameterization<a class="headerlink" href="#svi-parameterization" title="Link to this heading">¶</a></h2>
+<p>The SVI (Stochastic Volatility Inspired) raw parameterization
+(Gatheral, 2004) for total implied variance <span class="math notranslate nohighlight">\(w(k)\)</span> as a function
+of log-moneyness <span class="math notranslate nohighlight">\(k = \ln(K/F)\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[w(k) = a + b \left[\rho (k - m) + \sqrt{(k - m)^2 + \sigma^2}\right]\]</div>
+<p>where <span class="math notranslate nohighlight">\(a, b, \rho, m, \sigma\)</span> are the 5 SVI parameters.
+Implied volatility is <span class="math notranslate nohighlight">\(\sigma_B = \sqrt{w(k) / T}\)</span>.</p>
+</section>
+<section id="vasicek-short-rate-model">
+<h2>Vasicek Short-Rate Model<a class="headerlink" href="#vasicek-short-rate-model" title="Link to this heading">¶</a></h2>
+<p>The Vasicek (1977) model for the short rate:</p>
+<div class="math notranslate nohighlight">
+\[dr = \kappa (\theta - r) \, dt + \sigma \, dW\]</div>
+<p>Zero-coupon bond price <span class="math notranslate nohighlight">\(P(0, T)\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[P(0, T) = A(T) \exp(-B(T) r_0)\]</div>
+<div class="math notranslate nohighlight">
+\[B(T) = \frac{1 - e^{-\kappa T}}{\kappa}, \quad
+A(T) = \exp\!\left[\left(\theta - \frac{\sigma^2}{2\kappa^2}\right)(B - T)
+- \frac{\sigma^2}{4\kappa} B^2\right]\]</div>
+</section>
+<section id="cir-model">
+<h2>CIR Model<a class="headerlink" href="#cir-model" title="Link to this heading">¶</a></h2>
+<p>The Cox-Ingersoll-Ross (1985) model:</p>
+<div class="math notranslate nohighlight">
+\[dr = \kappa (\theta - r) \, dt + \sigma \sqrt{r} \, dW\]</div>
+<p>The square-root diffusion ensures non-negative rates when the Feller condition
+<span class="math notranslate nohighlight">\(2\kappa\theta &gt; \sigma^2\)</span> holds.</p>
+<p>Bond pricing is analytic with expressions involving <span class="math notranslate nohighlight">\(\gamma = \sqrt{\kappa^2 + 2\sigma^2}\)</span>.</p>
+</section>
+<section id="merton-structural-credit-model">
+<h2>Merton Structural Credit Model<a class="headerlink" href="#merton-structural-credit-model" title="Link to this heading">¶</a></h2>
+<p>The Merton (1974) model treats firm equity as a call option on assets:</p>
+<div class="math notranslate nohighlight">
+\[P(\text{default}) = \Phi(-d_2), \quad
+d_2 = \frac{\ln(V/D) + (r - \tfrac{1}{2}\sigma_V^2) T}{\sigma_V \sqrt{T}}\]</div>
+<p>where <span class="math notranslate nohighlight">\(V\)</span> is the firm asset value, <span class="math notranslate nohighlight">\(D\)</span> the debt face value,
+and <span class="math notranslate nohighlight">\(\sigma_V\)</span> the asset volatility.</p>
+<p>The <strong>credit spread</strong> is derived as:
+<span class="math notranslate nohighlight">\(s = -\frac{1}{T}\ln\!\left(\frac{B}{D e^{-rT}}\right)\)</span> where
+<span class="math notranslate nohighlight">\(B = D e^{-rT} - \text{Put}(V, D, T)\)</span>.</p>
+</section>
+<section id="garman-kohlhagen-fx-model">
+<h2>Garman-Kohlhagen FX Model<a class="headerlink" href="#garman-kohlhagen-fx-model" title="Link to this heading">¶</a></h2>
+<p>The Garman-Kohlhagen (1983) model extends Black-Scholes for FX options,
+treating the foreign risk-free rate <span class="math notranslate nohighlight">\(r_f\)</span> as a continuous dividend yield:</p>
+<div class="math notranslate nohighlight">
+\[C = S e^{-r_f T} \Phi(d_1) - K e^{-r_d T} \Phi(d_2)\]</div>
+<div class="math notranslate nohighlight">
+\[d_1 = \frac{\ln(S/K) + (r_d - r_f + \tfrac{1}{2}\sigma^2)T}{\sigma\sqrt{T}}\]</div>
+</section>
+<section id="merton-jump-diffusion">
+<h2>Merton Jump-Diffusion<a class="headerlink" href="#merton-jump-diffusion" title="Link to this heading">¶</a></h2>
+<p>The Merton (1976) model adds Poisson jumps to GBM:</p>
+<div class="math notranslate nohighlight">
+\[\frac{dS}{S} = (r - \lambda k) \, dt + \sigma \, dW + J \, dN\]</div>
+<p>where <span class="math notranslate nohighlight">\(N \sim \text{Poisson}(\lambda T)\)</span> and
+<span class="math notranslate nohighlight">\(\ln(1 + J) \sim \mathcal{N}(\mu_j, \sigma_j^2)\)</span>.</p>
+<p>The price is a weighted sum of Black-Scholes prices:</p>
+<div class="math notranslate nohighlight">
+\[C = \sum_{n=0}^{\infty} \frac{e^{-\lambda' T} (\lambda' T)^n}{n!}
+\cdot \text{BS}(S, K, T, r_n, \sigma_n)\]</div>
+</section>
+<section id="black-76-for-ir-derivatives">
+<h2>Black-76 for IR Derivatives<a class="headerlink" href="#black-76-for-ir-derivatives" title="Link to this heading">¶</a></h2>
+<p>Interest rate caps, floors, and swaptions are priced using the
+Black (1976) formula applied to forward rates:</p>
+<div class="math notranslate nohighlight">
+\[\text{Caplet} = \tau \cdot N \cdot \text{DF} \cdot
+[F \Phi(d_1) - K \Phi(d_2)]\]</div>
+<div class="math notranslate nohighlight">
+\[d_1 = \frac{\ln(F/K) + \tfrac{1}{2}\sigma^2 T}{\sigma\sqrt{T}}\]</div>
+<p>A <strong>cap</strong> is a portfolio of caplets; a <strong>floor</strong> is a portfolio of floorlets.
+<strong>Swaptions</strong> use the same formula with the forward swap rate as the underlying.</p>
 </section>
 <section id="surrogate-pricing">
 <h2>Surrogate Pricing<a class="headerlink" href="#surrogate-pricing" title="Link to this heading">¶</a></h2>
@@ -195,8 +363,84 @@ compressed TT cores, avoiding full grid reconstruction.</p></li>
 </li>
 </ol>
 </li>
-<li><p>F. Black and M. Scholes, <em>The Pricing of Options and Corporate Liabilities</em>,
-J. Political Economy, 1973.</p></li>
+<li><ol class="upperalpha simple" start="19">
+<li><ol class="upperalpha simple" start="12">
+<li><p>Heston, <em>A Closed-Form Solution for Options with Stochastic Volatility</em>, RFS, 1993.</p></li>
+</ol>
+</li>
+</ol>
+</li>
+<li><ol class="upperalpha simple" start="12">
+<li><ol class="upperalpha simple" start="2">
+<li><ol class="upperalpha simple" start="7">
+<li><p>Andersen, <em>Efficient Simulation of the Heston Stochastic Volatility Model</em>, J. Comp. Fin., 2008.</p></li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+</li>
+<li><ol class="upperalpha simple" start="6">
+<li><ol class="upperalpha simple">
+<li><p>Longstaff and E. S. Schwartz, <em>Valuing American Options by Simulation</em>, RFS, 2001.</p></li>
+</ol>
+</li>
+</ol>
+</li>
+<li><ol class="upperalpha simple" start="16">
+<li><ol class="upperalpha simple" start="19">
+<li><p>Hagan et al., <em>Managing Smile Risk</em>, Wilmott Magazine, 2002.</p></li>
+</ol>
+</li>
+</ol>
+</li>
+<li><ol class="upperalpha simple" start="10">
+<li><p>Gatheral, <em>A Parsimonious Arbitrage-Free Implied Volatility Parameterization</em> (SVI), 2004.</p></li>
+</ol>
+</li>
+<li><ol class="upperalpha simple" start="15">
+<li><ol class="upperalpha simple">
+<li><p>Vasicek, <em>An Equilibrium Characterization of the Term Structure</em>, J. Fin. Econ., 1977.</p></li>
+</ol>
+</li>
+</ol>
+</li>
+<li><ol class="upperalpha simple" start="10">
+<li><ol class="upperalpha simple" start="3">
+<li><p>Cox, J. E. Ingersoll, S. A. Ross, <em>A Theory of the Term Structure of Interest Rates</em>, Econometrica, 1985.</p></li>
+</ol>
+</li>
+</ol>
+</li>
+<li><ol class="upperalpha simple" start="18">
+<li><ol class="upperalpha simple" start="3">
+<li><p>Merton, <em>On the Pricing of Corporate Debt</em>, J. Finance, 1974.</p></li>
+</ol>
+</li>
+</ol>
+</li>
+<li><ol class="upperalpha simple" start="18">
+<li><ol class="upperalpha simple" start="3">
+<li><p>Merton, <em>Option Pricing When Underlying Stock Returns Are Discontinuous</em>, J. Fin. Econ., 1976.</p></li>
+</ol>
+</li>
+</ol>
+</li>
+<li><ol class="upperalpha simple" start="13">
+<li><ol class="upperalpha simple" start="2">
+<li><p>Garman and S. W. Kohlhagen, <em>Foreign Currency Option Values</em>, J. Int. Money &amp; Finance, 1983.</p></li>
+</ol>
+</li>
+</ol>
+</li>
+<li><ol class="upperalpha simple" start="6">
+<li><p>Black, <em>The Pricing of Commodity Contracts</em>, J. Fin. Econ., 1976.</p></li>
+</ol>
+</li>
+<li><ol class="upperalpha simple" start="6">
+<li><p>Black and M. Scholes, <em>The Pricing of Options and Corporate Liabilities</em>, J. Pol. Econ., 1973.</p></li>
+</ol>
+</li>
 <li><ol class="upperalpha simple" start="16">
 <li><p>Glasserman, <em>Monte Carlo Methods in Financial Engineering</em>, Springer, 2003.</p></li>
 </ol>
@@ -225,7 +469,7 @@ J. Political Economy, 1973.</p></li>
     </div>
 
     
-    <a href="https://github.com/raswanthmalai19/TensorQuantLib" class="github">
+    <a href="https://github.com/raswanthmalai19/TensorQuantLib." class="github">
         <img src="_static/github-banner.svg" alt="Fork me on GitHub" class="github"/>
     </a>
     
