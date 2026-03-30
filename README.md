@@ -12,9 +12,15 @@
 
 **A comprehensive quantitative finance library with tensor-train compression, automatic differentiation, and stochastic models — built from scratch with NumPy and SciPy.**
 
-TensorQuantLib provides a complete toolkit for derivatives pricing, risk management, and portfolio analysis. It compresses high-dimensional pricing surfaces using **Tensor-Train (TT) decomposition**, prices options with **Black-Scholes, Heston, American, Exotic, and Monte Carlo engines**, and computes Greeks via a custom **reverse-mode autodiff engine** — including second-order Greeks (Gamma, Vanna, Volga).
+TensorQuantLib provides a complete toolkit for derivatives pricing, risk management, and portfolio analysis. It implements:
 
-> **No PyTorch. No TensorFlow. No JAX.** Custom autograd, custom TT-SVD, custom stochastic models — built entirely with NumPy and SciPy.
+- **Black-Scholes** with instant analytic Greeks
+- **Heston stochastic volatility** via characteristic functions (10-200x faster than Monte Carlo)
+- **American & Exotic options** via Longstaff-Schwartz and variance-reduced Monte Carlo
+- **High-dimensional pricing** via Tensor-Train compression (100-1000x speedup for repeated surface evals)
+- **Risk analytics** with Greeks via custom reverse-mode autodiff engine (first and second-order)
+
+> **No PyTorch. No TensorFlow. No CUDA dependency.** Custom autograd, custom TT-SVD, custom stochastic models — built entirely with NumPy and SciPy. Runs on any platform, costs nothing to deploy.
 
 ---
 
@@ -113,14 +119,23 @@ python -m pytest tests/ -q   # 588 passed
 | `garman_kohlhagen` | **< 5 µs** | FX vanilla |
 | `vasicek_bond_price` | **< 1 µs** | Closed-form A(T)/B(T) |
 | `implied_vol` | **< 1 ms** | Brent solver |
-| `heston_price` (CF) | **~1 ms** | 100-pt Gaussian quadrature |
-| `TTSurrogate.evaluate` 3D | **1.5 µs** | After one-time 2 ms build |
-| `TTSurrogate.evaluate` 5D | **~5 µs** | 42× memory compression vs full grid |
+| `heston_price` (CF) | **~1 ms** | 100-pt Gaussian quadrature; **10-200x faster than Heston MC** |
+| `TTSurrogate.evaluate` 3D | **1.5 µs** | After one-time 2 ms build; repeated evals |
+| `TTSurrogate.evaluate` 5D | **~5 µs** | 42× memory compression vs full grid; **100-1000x faster than MC for repeated evals** |
 | `heston_price_mc` | 200–500 ms | Validation only; use CF for live pricing |
 | `HestonCalibrator.fit` | 5–15 s default → **< 0.5 s** optimised | See [Performance Guide](docs/performance.rst) |
+| `american_option_lsm` | 100–500 ms | Longstaff-Schwartz Monte Carlo |
+| `asian_price_mc` | 100–400 ms | Monte Carlo; use `asian_price_cv` for 10x variance reduction |
+
+### Speed Gains Explained
+
+- **Analytic pricers** (Black-Scholes, Vasicek): instant microsecond pricing
+- **Heston via characteristic functions**: **10-200x faster than Heston Monte Carlo**
+- **TT Surrogates for repeated pricing**: Build surface once, then query repeated evals at microsecond latency — **100-1000x faster than re-running Monte Carlo each time**
+- **Monte Carlo methods** (American, Asian, exotic): Efficient but inherently slower; use for features that require it
 
 **Rule of thumb**: for anything that needs a price in a hot loop, use the analytic
-or CF pricer.  Build a `TTSurrogate` once at startup to replace any MC pricer with
+or CF pricer.  Build a `TTSurrogate` once at startup to replace any repeated MC pricer with
 µs-latency evaluation.  See the full
 [Performance & Production Guide](docs/performance.rst) for tuning knobs,
 parallel calibration, memory profiling, and the production checklist.

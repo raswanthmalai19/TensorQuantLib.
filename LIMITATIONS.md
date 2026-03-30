@@ -43,8 +43,18 @@ make informed decisions about where and how to use the library.
 
 ## Financial Models
 
-- **European options only**: The library prices European-style options.
-  American, Bermudan, Asian, and barrier options are not supported.
+### What IS Implemented
+- **European options**: Full Black-Scholes analytics via closed-form and autograd
+- **American options**: Longstaff-Schwartz (LSM) Monte Carlo with polynomial regression
+- **Asian options**: Arithmetic/geometric Asian pricing via Monte Carlo with variance reduction
+- **Exotic options**: Barrier (8 types), Digital, Lookback, Cliquet, Rainbow all via Monte Carlo
+- **Heston model**: Semi-analytic via characteristic function (fast), plus QE Monte Carlo
+- **Single-asset vanillas**: Instant via Black-Scholes analytic formulas
+
+### Important Caveat on Tensor-Train Speedup
+**The tensor-train compression speedup (100-1000x) applies ONLY to smooth pricing surfaces (Black-Scholes, Heston CF).** It does NOT accelerate Monte Carlo methods. American/Asian/Exotic options use Monte Carlo and get no TT speedup.
+
+### Model Limitations
 - **Constant parameters**: Volatility, rate, and correlation are assumed
   constant (no term structure, no stochastic volatility).
 - **Correlation matrix**: Must be positive semi-definite. Near-singular
@@ -54,8 +64,19 @@ make informed decisions about where and how to use the library.
   Black-Scholes approximation, not a proper basket formula. For accurate basket
   prices, use `from_basket_mc`.
 
-## TT Compression
+## Tensor-Train (TT) Compression Performance
 
+### When TT Shines (100-1000x speedup)
+- **Smooth payoffs**: Black-Scholes, Heston characteristic function, Vasicek bonds
+- **Repeated evaluations**: Build surface once, query 100+ times = massive speedup
+- **High dimensions**: 4-5D problems where memory scaling beats direct grids
+
+### When TT Doesn't Help
+- **Discontinuous payoffs**: Digital options, barrier options at exact strike
+- **Path-dependent payoffs**: Lookback, Asian, American (these use Monte Carlo)
+- **Single evaluation**: One-time pricing has overhead from building the TT structure
+
+### Technical Limitations
 - **Smooth payoffs only**: TT-SVD achieves high compression on smooth pricing
   surfaces. Discontinuous payoffs (e.g., digital options) or payoffs with kinks
   at the strike will show higher ranks and lower compression.

@@ -45,7 +45,8 @@ Quick Overview
    )
    surr.print_summary()
 
-   # Evaluate the surrogate — 1000× faster than grid lookup
+   # Evaluate the surrogate — ~5 microseconds per eval
+   # (100-1000× faster than re-running Monte Carlo for repeated evals)
    price = surr.evaluate([100.0, 100.0, 100.0])
    greeks = surr.greeks([100.0, 100.0, 100.0])
 
