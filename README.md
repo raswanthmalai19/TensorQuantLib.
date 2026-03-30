@@ -28,16 +28,16 @@ TensorQuantLib provides a complete toolkit for derivatives pricing, risk managem
 
 ### 📖 **Documentation Links**
 
-**Full Documentation Site:** https://raswanthmalai19.github.io/TensorQuantLib/
+**Full Documentation Site:** https://raswanthmalai19.github.io/TensorQuantLib./
 
 **Key Pages:**
-- **Main Site:** https://raswanthmalai19.github.io/TensorQuantLib/
-- **Quick Start Guide:** https://raswanthmalai19.github.io/TensorQuantLib/quickstart.html
-- **API Reference:** https://raswanthmalai19.github.io/TensorQuantLib/api.html
-- **Theory & Math:** https://raswanthmalai19.github.io/TensorQuantLib/theory.html
-- **Performance & Benchmarks:** https://raswanthmalai19.github.io/TensorQuantLib/performance.html
-- **Limitations & Roadmap:** https://raswanthmalai19.github.io/TensorQuantLib/limitations.html
-- **Changelog:** https://raswanthmalai19.github.io/TensorQuantLib/changelog.html
+- **Main Site:** https://raswanthmalai19.github.io/TensorQuantLib./
+- **Quick Start Guide:** https://raswanthmalai19.github.io/TensorQuantLib./quickstart.html
+- **API Reference:** https://raswanthmalai19.github.io/TensorQuantLib./api.html
+- **Theory & Math:** https://raswanthmalai19.github.io/TensorQuantLib./theory.html
+- **Performance & Benchmarks:** https://raswanthmalai19.github.io/TensorQuantLib./performance.html
+- **Limitations & Roadmap:** https://raswanthmalai19.github.io/TensorQuantLib./limitations.html
+- **Changelog:** https://raswanthmalai19.github.io/TensorQuantLib./changelog.html
 
 ### 📦 **Package & Repository Links**
 
