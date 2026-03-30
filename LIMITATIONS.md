@@ -96,22 +96,23 @@ make informed decisions about where and how to use the library.
 
 ## Packaging & Deployment
 
-- **Not yet on PyPI**: Install from source. PyPI publishing is configured via
-  GitHub Actions but not yet triggered.
-- **No conda package**: Only pip installation is supported.
-- **Python ≥ 3.10**: Python 3.9 is not explicitly tested in CI despite
-  `requires-python = ">=3.10"` in pyproject.toml.
+- **Published on PyPI**: Install via `pip install tensorquantlib` (v0.3.0 stable).
+- **No conda package**: Only pip installation is supported at this time.
+- **Python ≥ 3.10**: Python 3.10, 3.11, and 3.12 are tested in CI.
 
 ---
 
 ## Roadmap
 
-Potential improvements (contributions welcome):
+### Completed ✅
+- **American option support via Longstaff-Schwartz** (v0.3.0)
+- **Stochastic volatility models (Heston)** via characteristic function and Monte Carlo (v0.3.0)
+- **Second-order Greeks** via autodiff (Gamma, Vanna, Volga) (v0.3.0)
 
+### Potential Improvements (Contributions Welcome)
 1. GPU acceleration via CuPy/JAX backends
-2. Second-order autodiff (Hessian-vector products)
-3. American option support via Longstaff-Schwartz
-4. Adaptive grid refinement near the strike
-5. Stochastic volatility models (Heston)
-6. Higher-dimensional support (d > 5) via cross-approximation
-7. Streaming/online TT updates for live pricing
+2. Adaptive grid refinement near the strike
+3. Higher-dimensional support (d > 5) via cross-approximation
+4. Streaming/online TT updates for live pricing
+5. Stochastic correlation models
+6. Multi-curve yield curve framework

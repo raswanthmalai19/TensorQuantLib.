@@ -78,18 +78,19 @@ TT Compression
 Roadmap
 -------
 
-Completed (v0.3.0):
+Completed ✅ (v0.3.0):
 
-✅ Reverse-mode autodiff (23+ ops)
+✅ Reverse-mode autodiff (23+ differentiable ops)
 ✅ American option support (Longstaff-Schwartz LSM)
-✅ Stochastic volatility (Heston semi-analytic + QE)
-✅ Exotic options (all types via MC + VR)
-✅ 588 test cases, 98% code coverage
+✅ Stochastic volatility (Heston semi-analytic CF + QE)
+✅ Exotic options (all types via MC + variance reduction)
+✅ Second-order Greeks (Gamma, Vanna, Volga via autodiff)
+✅ 698 test cases, 98% code coverage
 
 Potential improvements (contributions welcome):
 
 1. GPU acceleration via CuPy/JAX backends
-2. Second-order autodiff (Hessian-vector products)
-3. Adaptive grid refinement near the strike
-4. Higher-dimensional support (d > 5) via cross-approximation
-5. Streaming/online TT updates for live pricing
+2. Adaptive grid refinement near the strike
+3. Higher-dimensional support (d > 5) via cross-approximation
+4. Streaming/online TT updates for live pricing
+5. Stochastic correlation models

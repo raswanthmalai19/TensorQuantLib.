@@ -7,8 +7,8 @@
 [![Coverage: 98%](https://img.shields.io/badge/coverage-98%25-brightgreen.svg)](https://github.com/raswanthmalai19/TensorQuantLib)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://docs.astral.sh/ruff/)
 [![Typed: mypy strict](https://img.shields.io/badge/typed-mypy%20strict-blue.svg)](https://mypy-lang.org/)
-[![Tests: 588](https://img.shields.io/badge/tests-588%20passing-brightgreen.svg)](https://github.com/raswanthmalai19/TensorQuantLib/actions)
-[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://raswanthmalai19.github.io/TensorQuantLib./)
+[![Tests: 698](https://img.shields.io/badge/tests-698%20passing-brightgreen.svg)](https://github.com/raswanthmalai19/TensorQuantLib/actions)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://raswanthmalai19.github.io/TensorQuantLib/)
 
 **A comprehensive quantitative finance library with tensor-train compression, automatic differentiation, and stochastic models — built from scratch with NumPy and SciPy.**
 
@@ -29,15 +29,15 @@ TensorQuantLib provides a complete toolkit for derivatives pricing, risk managem
 Complete documentation with API reference, tutorials, and examples:
 
 ### Primary Resources
-- **[GitHub Documentation](https://raswanthmalai19.github.io/TensorQuantLib./)** — Full docs, tutorials, and examples
+- **[GitHub Documentation](https://raswanthmalai19.github.io/TensorQuantLib/)** — Full docs, tutorials, and examples
 - **[PyPI Package](https://pypi.org/project/tensorquantlib/)** — Installation and releases
 - **[GitHub Repository](https://github.com/raswanthmalai19/TensorQuantLib)** — Source code and issues
 
 ### Quick Links
-- [**API Reference**](https://raswanthmalai19.github.io/TensorQuantLib./api.html) — Full module documentation
-- [**Quick Start**](https://raswanthmalai19.github.io/TensorQuantLib./quickstart.html) — Getting started guide
-- [**Theory**](https://raswanthmalai19.github.io/TensorQuantLib./theory.html) — Mathematical foundations
-- [**Changelog**](https://raswanthmalai19.github.io/TensorQuantLib./changelog.html) — Version history
+- [**API Reference**](https://raswanthmalai19.github.io/TensorQuantLib/api.html) — Full module documentation
+- [**Quick Start**](https://raswanthmalai19.github.io/TensorQuantLib/quickstart.html) — Getting started guide
+- [**Theory**](https://raswanthmalai19.github.io/TensorQuantLib/theory.html) — Mathematical foundations
+- [**Changelog**](https://raswanthmalai19.github.io/TensorQuantLib/changelog.html) — Version history
 
 ---
 
@@ -103,7 +103,7 @@ pip install git+https://github.com/raswanthmalai19/TensorQuantLib.git
 git clone https://github.com/raswanthmalai19/TensorQuantLib.git
 cd TensorQuantLib
 pip install -e ".[dev]"
-python -m pytest tests/ -q   # 588 passed
+python -m pytest tests/ -q   # 698 passed
 ```
 
 ---
