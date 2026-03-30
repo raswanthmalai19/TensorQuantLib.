@@ -72,7 +72,7 @@ all = [
 [project.urls]
 Homepage = "https://pypi.org/project/tensorquantlib/"
 Repository = "https://github.com/raswanthmalai19/TensorQuantLib"
-Documentation = "https://raswanthmalai19.github.io/TensorQuantLib./"
+Documentation = "https://raswanthmalai19.github.io/TensorQuantLib/"
 "Bug Tracker" = "https://github.com/raswanthmalai19/TensorQuantLib/issues"
 Changelog = "https://github.com/raswanthmalai19/TensorQuantLib/blob/main/CHANGELOG.md"
 
