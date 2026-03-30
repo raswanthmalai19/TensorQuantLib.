@@ -31,7 +31,6 @@ TensorQuantLib provides a complete toolkit for derivatives pricing, risk managem
 **Full Documentation Site:** https://raswanthmalai19.github.io/TensorQuantLib./
 
 **Key Pages:**
-- **Main Site:** https://raswanthmalai19.github.io/TensorQuantLib./
 - **Quick Start Guide:** https://raswanthmalai19.github.io/TensorQuantLib./quickstart.html
 - **API Reference:** https://raswanthmalai19.github.io/TensorQuantLib./api.html
 - **Theory & Math:** https://raswanthmalai19.github.io/TensorQuantLib./theory.html
@@ -44,8 +43,7 @@ TensorQuantLib provides a complete toolkit for derivatives pricing, risk managem
 **PyPI Package (Install):** https://pypi.org/project/tensorquantlib/
 - Install with: `pip install tensorquantlib`
 
-**GitHub Repository:** https://github.com/raswanthmalai19/TensorQuantLib.
-- Source code, issues, and contributions
+
 
 ---
 
@@ -561,31 +559,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for development setup, coding standards
 
 MIT — see [`LICENSE`](LICENSE).
 
----
 
-## Roadmap
-
-- [x] Custom autograd engine (23+ differentiable ops)
-- [x] Second-order autodiff (Hessian, HVP, Gamma/Vanna/Volga)
-- [x] Black-Scholes pricing + full Greeks
-- [x] TT-SVD compression + surrogate pricing
-- [x] Heston stochastic volatility (analytic + MC + calibration)
-- [x] American options (Longstaff-Schwartz LSM)
-- [x] Exotic options (Asian, Digital, Barrier, Lookback, Cliquet, Rainbow)
-- [x] Variance reduction techniques (5 methods + comparison)
-- [x] Risk metrics (VaR, CVaR, scenario analysis)
-- [x] Volatility surface models (SABR, SVI + calibration)
-- [x] Interest rate models (Vasicek, CIR, Nelson-Siegel)
-- [x] FX options (Garman-Kohlhagen, forwards, quanto)
-- [x] Credit risk (Merton structural, CDS pricing)
-- [x] Jump-diffusion models (Merton, Kou)
-- [x] Local volatility (Dupire, MC)
-- [x] IR derivatives (Black-76 caps/floors, swaptions)
-- [x] Market data integration (Yahoo Finance)
-- [x] Backtesting framework (engine, strategies, metrics)
-- [x] CLI interface
-- [x] PyPI release
-- [ ] GPU acceleration via CuPy
 
 ---
 
