@@ -26,21 +26,26 @@ TensorQuantLib provides a complete toolkit for derivatives pricing, risk managem
 
 ## 📚 Documentation
 
-**Complete API reference, tutorials, and guides:**
+### 📖 **Documentation Links**
 
-| Resource | Link | Purpose |
-|----------|------|---------|
-| **Main Site** | [raswanthmalai19.github.io/TensorQuantLib/](https://raswanthmalai19.github.io/TensorQuantLib/) | Full documentation with tutorials |
-| **Quick Start** | [Getting Started in 5 min](https://raswanthmalai19.github.io/TensorQuantLib/quickstart.html) | Installation and first example |
-| **API Reference** | [Complete API docs](https://raswanthmalai19.github.io/TensorQuantLib/api.html) | All functions and classes |
-| **Theory** | [Math & algorithms](https://raswanthmalai19.github.io/TensorQuantLib/theory.html) | Mathematical foundations |
-| **Performance** | [Benchmarks & tuning](https://raswanthmalai19.github.io/TensorQuantLib/performance.html) | Latency, optimization, production guide |
-| **Limitations** | [What to know](https://raswanthmalai19.github.io/TensorQuantLib/limitations.html) | Current limitations and roadmap |
+**Full Documentation Site:** https://raswanthmalai19.github.io/TensorQuantLib/
 
-### Other Links
-- **[PyPI Package](https://pypi.org/project/tensorquantlib/)** — `pip install tensorquantlib`
-- **[GitHub Repository](https://github.com/raswanthmalai19/TensorQuantLib.)** — Source code and issues
-- **[Changelog](https://raswanthmalai19.github.io/TensorQuantLib/changelog.html)** — Version history
+**Key Pages:**
+- **Main Site:** https://raswanthmalai19.github.io/TensorQuantLib/
+- **Quick Start Guide:** https://raswanthmalai19.github.io/TensorQuantLib/quickstart.html
+- **API Reference:** https://raswanthmalai19.github.io/TensorQuantLib/api.html
+- **Theory & Math:** https://raswanthmalai19.github.io/TensorQuantLib/theory.html
+- **Performance & Benchmarks:** https://raswanthmalai19.github.io/TensorQuantLib/performance.html
+- **Limitations & Roadmap:** https://raswanthmalai19.github.io/TensorQuantLib/limitations.html
+- **Changelog:** https://raswanthmalai19.github.io/TensorQuantLib/changelog.html
+
+### 📦 **Package & Repository Links**
+
+**PyPI Package (Install):** https://pypi.org/project/tensorquantlib/
+- Install with: `pip install tensorquantlib`
+
+**GitHub Repository:** https://github.com/raswanthmalai19/TensorQuantLib.
+- Source code, issues, and contributions
 
 ---
 
